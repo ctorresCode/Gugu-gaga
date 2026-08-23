@@ -108,8 +108,8 @@ USE_TZ = True
 
 AUTH_USER_MODEL = 'usuarios.UsuarioForo'
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'Login'
+LOGIN_REDIRECT_URL = 'inicio'
+LOGOUT_REDIRECT_URL = 'login'
 
 
 # Static files (CSS, JavaScript, Images)
