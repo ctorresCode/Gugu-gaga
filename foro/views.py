@@ -56,5 +56,17 @@ class detalleHilo(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['respuestas'] = self.object.respuestas.filter(activo=True).select_related('autor')
-        return context    
+        return context   
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        contenido = request.POST.get('contenido')
+
+        if contenido:
+            self.object.respuestas.create(
+                contenido=contenido,
+                autor=request.user
+            ) 
+
+        return redirect('detalle_hilo', pk=self.object.pk)    
 
