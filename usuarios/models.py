@@ -10,6 +10,7 @@ class Universidad(models.Model):
 
 class UsuarioForo(AbstractUser):
     universidad = models.ForeignKey(Universidad, on_delete=models.SET_NULL, null=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     email = None
 
     def __str__(self):

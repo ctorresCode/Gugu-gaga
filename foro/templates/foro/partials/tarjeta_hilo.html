@@ -2,15 +2,21 @@
 <div class="bg-white p-4 hover:bg-gray-50/50 transition-colors cursor-pointer border-b border-gray-100">
     <div class="flex items-start gap-3">
         <div class="flex-shrink-0">
-            <div class="w-10 h-10 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center font-bold text-gray-700 uppercase select-none text-sm">
-                {{ hilo.autor.username|make_list|first|default:"U" }}
-            </div>
+            <a href="{% url 'perfil_usuario' hilo.autor.username %}">
+                {% if hilo.autor.avatar %}
+                    <img src="{{ hilo.autor.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
+                {% else %}
+                    <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none">
+                        {{ hilo.autor.username|make_list|first }}
+                    </div>
+                {% endif %}
+            </a>
         </div>
         
         <div class="flex-grow min-w-0">
             <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2 min-w-0">
-                    <span class="font-bold text-gray-900 text-sm truncate">{{ hilo.autor.username }}</span>
+                    <a href="{% url 'perfil_usuario' hilo.autor.username %}" class="font-bold text-gray-900 text-sm truncate hover:underline">{{ hilo.autor.username }}</a>
                     <span class="text-gray-500 text-xs whitespace-nowrap">· {{ hilo.fecha_creacion|timesince }}</span>
                 </div>
                 <span class="bg-gray-900 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0 ml-2">
@@ -18,19 +24,21 @@
                 </span>
             </div>
 
-            <p class="text-gray-900 text-sm md:text-base leading-relaxed font-normal mb-3">{{ hilo.contenido }}</p>
+            <a href="{% url 'detalle_hilo' hilo.pk %}" class="block">
+                <p class="text-gray-900 text-sm md:text-base leading-relaxed font-normal mb-3">{{ hilo.contenido }}</p>
 
-            {% if hilo.imagen %}
-                <img src="{{ hilo.imagen.url }}" class="mb-3 rounded-2xl max-h-96 w-full object-cover border border-gray-100">
-            {% endif %}
+                {% if hilo.imagen %}
+                    <img src="{{ hilo.imagen.url }}" class="mb-3 rounded-2xl max-h-96 w-full object-cover border border-gray-100">
+                {% endif %}
+            </a>
 
             <div class="flex items-center justify-between text-gray-500 max-w-md pr-4 pt-1">
-                <div class="flex items-center gap-2 group hover:text-blue-500 transition-colors">
+                <a href="{% url 'detalle_hilo' hilo.pk %}" class="flex items-center gap-2 group hover:text-blue-500 transition-colors">
                     <div class="p-2 -ml-2 rounded-full group-hover:bg-blue-50 transition-colors">
                         <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
                     </div>
-                    <span class="text-xs font-medium">0</span>
-                </div>
+                    <span class="text-xs font-medium">{{ hilo.respuestas.count|default:"0" }}</span>
+                </a>
 
                 <div class="flex items-center gap-2 group hover:text-red-500 transition-colors">
                     <div class="p-2 rounded-full group-hover:bg-red-50 transition-colors">

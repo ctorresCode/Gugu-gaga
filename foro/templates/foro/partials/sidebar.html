@@ -1,0 +1,35 @@
+<header class="w-64 flex flex-col justify-between py-4 px-2 h-screen sticky top-0 border-r border-gray-100 hidden md:flex">
+    <div class="flex flex-col gap-6">
+        <div class="text-2xl font-black px-3 tracking-wider text-gray-900">
+            VozUni
+        </div>
+        
+        <nav class="flex flex-col gap-1">
+            <a href="{% url 'inicio' %}" class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 font-bold text-gray-900 text-lg transition-colors">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+                Inicio
+            </a>
+            <a href="{% url 'perfil_usuario' user.username %}" class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 font-medium text-gray-700 text-lg transition-colors">
+                <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                Perfil
+            </a>
+        </nav>
+    </div>
+
+    <div class="flex items-center justify-between p-3 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
+        <div class="flex items-center gap-3">
+            {% if request.user.avatar %}
+                <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
+            {% else %}
+                <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none">
+                    {{ request.user.username|make_list|first }}
+                </div>
+            {% endif %}
+            <div class="flex flex-col overflow-hidden">
+                <span class="font-bold text-gray-900 text-sm truncate">{{ request.user.username }}</span>
+                <span class="text-gray-500 text-xs truncate">@{{ request.user.username|lower }}</span>
+            </div>
+        </div>
+        <span class="text-gray-500 font-bold">···</span>
+    </div>
+</header>
