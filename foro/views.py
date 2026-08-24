@@ -1,5 +1,5 @@
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, TemplateView
+from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from foro.models import Hilo, Universidad
 from django.shortcuts import redirect, render
@@ -47,4 +47,14 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
 
         return redirect(request.META.get('HTTP_REFERER', '/'))
+
+class detalleHilo(LoginRequiredMixin, DetailView):
+    model = Hilo
+    template_name = 'foro/detalle_hilo.html'
+    context_object_name = 'hilo'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['respuestas'] = self.object.respuestas.filter(activo=True).select_related('autor')
+        return context    
 

@@ -6,80 +6,125 @@
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
     body {
         font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #ffffff;
     }
 </style>
 
-<div class="max-w-2xl mx-auto px-4 py-4 min-h-screen mt-4">
+<div class="min-h-screen flex justify-center mx-auto max-w-4xl px-0 md:px-4">
     
-    <form method="get" class="mb-4">
-        <input type="text" name="q" value="{{ busqueda_actual }}" placeholder="Buscador universidad" class="w-full px-5 py-2.5 text-base md:text-lg border-2 border-gray-900 rounded-full bg-white outline-none focus:border-blue-600 transition-colors font-bold text-gray-800 placeholder-gray-500 shadow-sm">
-        
-        {% if uni_actual %}
-            <input type="hidden" name="uni" value="{{ uni_actual }}">
-        {% endif %}
-    </form>
+    <header class="w-64 flex flex-col justify-between py-4 px-2 h-screen sticky top-0 border-r border-gray-100 hidden md:flex">
+        <div class="flex flex-col gap-6">
+            <div class="text-2xl font-black px-3 tracking-wider text-gray-900">
+                <a href="#">VozUni</a>
+            </div>
+            
+            <nav class="flex flex-col gap-1">
+                <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 font-bold text-gray-900 text-lg transition-colors">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+                    Inicio
+                </a>
+                <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 font-medium text-gray-700 text-lg transition-colors">
+                    <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Perfil
+                </a>
+            </nav>
+        </div>
 
-    <div class="flex flex-wrap gap-2 mb-6 items-center justify-start">
-        <a href="?q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm {% if not uni_actual %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
-            TODAS
-        </a>
-        
-        {% for uni in universidades %}
-            <a href="?uni={{ uni.id }}&q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm {% if uni_actual == uni.id %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
-                {{ uni.nombre }}
-            </a>
-        {% endfor %}
-    </div>
+        <div class="flex items-center justify-between p-3 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none">
+                    {{ user.username|make_list|first|default:"U" }}
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <span class="font-bold text-gray-900 text-sm truncate">{{ user.username }}</span>
+                    <span class="text-gray-500 text-xs truncate">@{{ user.username|lower }}</span>
+                </div>
+            </div>
+            <span class="text-gray-500 font-bold">···</span>
+        </div>
+    </header>
 
-    <form id="form-post" method="post" enctype="multipart/form-data" class="bg-white border-b border-gray-200 pb-4 mb-6 flex gap-3 px-2">
-        {% csrf_token %}
+    <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
         
-        <div class="flex-shrink-0">
-            <div class="w-10 h-10 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center font-bold text-gray-700 uppercase select-none text-sm">
+        <div class="flex md:hidden items-center justify-between px-4 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
+            <div class="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase select-none">
                 {{ user.username|make_list|first|default:"U" }}
             </div>
-        </div>
-
-        <div class="flex-grow flex flex-col pt-1">
-            <input type="hidden" name="titulo" value="Publicación de {{ user.username }}">
-            
-            <textarea name="contenido" rows="2" placeholder="What's happening?" class="w-full resize-none outline-none text-lg text-gray-900 placeholder-gray-500 bg-transparent font-normal border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
-            
-            <div class="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
-                <label class="cursor-pointer text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors inline-flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
-                        <g><path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path></g>
-                    </svg>
-                    <input type="file" name="imagen" accept="image/*" class="hidden">
-                </label>
-
-                <button type="submit" class="bg-[#0000fe] text-white font-bold py-1.5 px-5 rounded-full hover:bg-[#00006e] transition-colors text-sm">
-                    Post
-                </button>
+            <div class="text-xl font-black tracking-wider text-gray-900">
+                VozUni
             </div>
+            <div class="w-8"></div>
         </div>
-    </form>
 
-    <div id="lista-hilos" class="space-y-4">
-        {% for hilo in hilos %}
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                        {{ hilo.universidad.nombre|default:"Global" }}
-                    </span>
-                    <span class="text-xs text-gray-500 font-semibold">{{ hilo.fecha_creacion|timesince }}</span>
-                </div>
-                <p class="text-gray-900 text-base leading-relaxed font-normal">{{ hilo.contenido }}</p>
-                {% if hilo.imagen %}
-                    <img src="{{ hilo.imagen.url }}" class="mt-3 rounded-2xl max-h-96 w-full object-cover border border-gray-100">
+        <div class="p-4 sticky top-[53px] md:top-0 bg-white/80 backdrop-blur-md z-10 border-b border-gray-100">
+            <form method="get">
+                <input type="text" name="q" value="{{ busqueda_actual }}" placeholder="Buscador universidad" class="w-full px-5 py-2.5 text-base border-2 border-gray-900 rounded-full bg-white outline-none focus:border-blue-600 transition-colors font-bold text-gray-800 placeholder-gray-500 shadow-sm">
+                {% if uni_actual %}
+                    <input type="hidden" name="uni" value="{{ uni_actual }}">
                 {% endif %}
+            </form>
+        </div>
+
+        <div class="flex flex-nowrap gap-2 px-4 py-3 border-b border-gray-100 items-center overflow-x-auto whitespace-nowrap scrollbar-none">
+            <a href="?q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm flex-shrink-0 {% if not uni_actual %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
+                TODAS
+            </a>
+            
+            {% for uni in universidades %}
+                <a href="?uni={{ uni.id }}&q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm flex-shrink-0 {% if uni_actual == uni.id %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
+                    {{ uni.nombre }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <form id="form-post" method="post" enctype="multipart/form-data" class="bg-white border-b border-gray-100 p-4 flex gap-3">
+            {% csrf_token %}
+            <div class="flex-shrink-0">
+                <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-sm">
+                    {{ user.username|make_list|first|default:"U" }}
+                </div>
             </div>
-        {% empty %}
-            <div class="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                <p class="text-gray-500 font-bold text-base">Aún no hay publicaciones aquí.</p>
+
+            <div class="flex-grow flex flex-col pt-1">
+                <input type="hidden" name="titulo" value="Publicación de {{ user.username }}">
+                
+                <textarea name="contenido" rows="2" placeholder="What's happening?" class="w-full resize-none outline-none text-lg text-gray-900 placeholder-gray-500 bg-transparent font-normal border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+                
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
+                    <label class="cursor-pointer text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors inline-flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
+                            <path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path>
+                        </svg>
+                        <input type="file" name="imagen" accept="image/*" class="hidden">
+                    </label>
+
+                    <button type="submit" class="bg-[#0000fe] text-white font-bold py-1.5 px-5 rounded-full hover:bg-[#00006e] transition-colors text-sm">
+                        Post
+                    </button>
+                </div>
             </div>
-        {% endfor %}
-    </div>
+        </form>
+
+        <div id="lista-hilos">
+            {% for hilo in hilos %}
+                {% include 'foro/partials/tarjeta_hilo.html' %}
+            {% empty %}
+                <div class="text-center py-16 bg-white">
+                    <p class="text-gray-500 font-bold text-base">Aún no hay publicaciones aquí.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center py-3 z-30 md:hidden shadow-lg">
+        <a href="#" class="p-2 text-gray-900 hover:text-blue-500 transition-colors">
+            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+        </a>
+        <a href="#" class="p-2 text-gray-500 hover:text-blue-500 transition-colors">
+            <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </a>
+    </nav>
 
 </div>
 
