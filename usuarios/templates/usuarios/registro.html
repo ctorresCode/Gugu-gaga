@@ -1,9 +1,102 @@
 {% extends 'base.html' %} 
+{% load static %}
 {% block title %} Registro {% endblock %} 
+
 {% block content %}
-<h1>Registro de Usuario</h1>
-<form method="post">
-  {% csrf_token %} {{ form.as_p }}
-  <button type="submit">Registrar</button>
-</form>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus Jakarta Sans:wght@300;400;500;600;700;800&display=swap');
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .bg-registro {
+        background-image: url("{% static 'img/UniversidadSinFiltro.jpg' %}");
+    }
+
+    .custom-select {
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.1em;
+    }
+</style>
+
+<div class="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+
+    <div class="hidden md:flex md:w-[50%] lg:w-[55%] relative items-end p-10 lg:p-16 overflow-hidden">
+        <div class="absolute inset-0 bg-cover bg-center bg-registro"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-blue-950/95 via-blue-950/50 to-blue-950/10"></div>
+        <!--
+        <div class="relative z-10 text-white">
+          <h2 class="text-4xl lg:text-5xl font-extrabold mb-4 tracking-tight">VozUni</h2>
+          <p class="text-blue-100 text-sm lg:text-base max-w-sm leading-relaxed">
+            La voz anónima de la comunidad universitaria dominicana. Comparte, opina y conecta con estudiantes de tu universidad.
+          </p>
+        </div>
+        -->
+    </div>
+
+    <div class="w-full md:w-[50%] lg:w-[45%] flex items-center justify-center p-4 sm:p-8">
+        
+        <div class="bg-white p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+            
+            <div class="mb-8 text-center">
+                <h1 class="text-2xl font-bold text-[#164e91]">Crea tu cuenta</h1>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %} 
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
+                        <input type="text" name="username" placeholder="Tu nombre de usuario"
+                            class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Universidad</label>
+                        <select name="universidad" class="custom-select w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all cursor-pointer">
+                            <option value="">Selecciona una universidad</option>
+                            {% for uni in universidades %}
+                                <option value="{{ uni.id }}">{{ uni.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                        <input type="password" name="password1" placeholder="••••••••"
+                            class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Confirmar password</label>
+                        <input type="password" name="password2" placeholder="••••••••"
+                            class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" required>
+                    </div>
+
+                    <div class="flex items-start gap-3 pt-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                        <input type="checkbox" name="consentimiento" id="consentimiento" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" required>
+                        <label for="consentimiento" class="text-xs text-gray-600 leading-snug cursor-pointer select-none">
+                            Entiendo y acepto que soy totalmente responsable de lo que publique de forma anónima.
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-[#175196] text-white font-bold py-3 mt-8 rounded-xl hover:bg-[#164d8e] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 shadow-md">
+                    Registrar
+                </button>
+            </form>
+
+            <p class="text-center text-sm text-gray-500 mt-6">
+                ¿Ya tienes una cuenta?
+                <a href="{% url 'login'%}" class="text-[#175196] font-semibold hover:underline">Inicia sesión</a>
+            </p>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

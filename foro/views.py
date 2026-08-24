@@ -1,6 +1,50 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from foro.models import Hilo, Universidad
+from django.shortcuts import redirect, render
 
-# Create your views here.
-class InicioView(TemplateView):
+class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        busqueda = self.request.GET.get('q', '')
+        universidad_id = self.request.GET.get('uni', '')
+
+        universidades = Universidad.objects.all()
+        if busqueda:
+            universidades = universidades.filter(nombre__icontains=busqueda)
+
+        hilos = Hilo.objects.select_related('universidad', 'autor').filter(activo=True)
+        
+        if universidad_id and universidad_id.isdigit():
+            hilos = hilos.filter(universidad_id=universidad_id)
+
+        context['universidades'] = universidades
+        context['hilos'] = hilos
+        context['busqueda_actual'] = busqueda
+        context['uni_actual'] = int(universidad_id) if universidad_id.isdigit() else ''
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        contenido = request.POST.get('contenido')
+        titulo = request.POST.get('titulo')
+        imagen = request.FILES.get('imagen')
+
+        if contenido:
+            nuevo_hilo = Hilo.objects.create(
+                titulo=titulo,
+                contenido=contenido,
+                imagen=imagen if imagen else None,
+                autor=request.user,
+                universidad=getattr(request.user, 'universidad', None)
+            )
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
+
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+

@@ -1,7 +1,107 @@
-{%extends 'base.html'%}
+{% extends 'base.html' %} 
+{% block title %} Inicio {% endblock %} 
 
-{%block title%}Inicio{% endblock %} 
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+</style>
 
-{% block content%}
-<h1 class="text-3xl font-bold p-5">Bienvenido a la página de inicio</h1>
-{%endblock%}
+<div class="max-w-2xl mx-auto px-4 py-4 min-h-screen mt-4">
+    
+    <form method="get" class="mb-4">
+        <input type="text" name="q" value="{{ busqueda_actual }}" placeholder="Buscador universidad" class="w-full px-5 py-2.5 text-base md:text-lg border-2 border-gray-900 rounded-full bg-white outline-none focus:border-blue-600 transition-colors font-bold text-gray-800 placeholder-gray-500 shadow-sm">
+        
+        {% if uni_actual %}
+            <input type="hidden" name="uni" value="{{ uni_actual }}">
+        {% endif %}
+    </form>
+
+    <div class="flex flex-wrap gap-2 mb-6 items-center justify-start">
+        <a href="?q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm {% if not uni_actual %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
+            TODAS
+        </a>
+        
+        {% for uni in universidades %}
+            <a href="?uni={{ uni.id }}&q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm {% if uni_actual == uni.id %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
+                {{ uni.nombre }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <form id="form-post" method="post" enctype="multipart/form-data" class="bg-white border-b border-gray-200 pb-4 mb-6 flex gap-3 px-2">
+        {% csrf_token %}
+        
+        <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center font-bold text-gray-700 uppercase select-none text-sm">
+                {{ user.username|make_list|first|default:"U" }}
+            </div>
+        </div>
+
+        <div class="flex-grow flex flex-col pt-1">
+            <input type="hidden" name="titulo" value="Publicación de {{ user.username }}">
+            
+            <textarea name="contenido" rows="2" placeholder="What's happening?" class="w-full resize-none outline-none text-lg text-gray-900 placeholder-gray-500 bg-transparent font-normal border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+            
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
+                <label class="cursor-pointer text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors inline-flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
+                        <g><path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path></g>
+                    </svg>
+                    <input type="file" name="imagen" accept="image/*" class="hidden">
+                </label>
+
+                <button type="submit" class="bg-[#0000fe] text-white font-bold py-1.5 px-5 rounded-full hover:bg-[#00006e] transition-colors text-sm">
+                    Post
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div id="lista-hilos" class="space-y-4">
+        {% for hilo in hilos %}
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                        {{ hilo.universidad.nombre|default:"Global" }}
+                    </span>
+                    <span class="text-xs text-gray-500 font-semibold">{{ hilo.fecha_creacion|timesince }}</span>
+                </div>
+                <p class="text-gray-900 text-base leading-relaxed font-normal">{{ hilo.contenido }}</p>
+                {% if hilo.imagen %}
+                    <img src="{{ hilo.imagen.url }}" class="mt-3 rounded-2xl max-h-96 w-full object-cover border border-gray-100">
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <p class="text-gray-500 font-bold text-base">Aún no hay publicaciones aquí.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+    document.getElementById('form-post').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+        
+        fetch('.', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('lista-hilos').insertAdjacentHTML('afterbegin', html);
+            this.reset();
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
+{% endblock %}
