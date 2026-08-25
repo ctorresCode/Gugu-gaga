@@ -34,6 +34,12 @@ class InicioView(LoginRequiredMixin, TemplateView):
         titulo = request.POST.get('titulo')
         imagen = request.FILES.get('imagen')
 
+        if imagen:
+            limite_tamano = 5 * 1024 * 1024
+            if imagen.size > limite_tamano:
+                return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
         if contenido:
             nuevo_hilo = Hilo.objects.create(
                 titulo=titulo,

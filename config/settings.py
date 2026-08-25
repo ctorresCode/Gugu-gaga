@@ -107,9 +107,10 @@ USE_I18N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'usuarios.UsuarioForo'
-LOGIN_URL = 'login'
+
 LOGIN_REDIRECT_URL = 'inicio'
 LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'login'
 
 
 

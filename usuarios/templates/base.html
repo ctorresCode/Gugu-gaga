@@ -3,10 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="htmx-config" content='{"historyCacheSize": 0}' />
     <title>{%block title%} {%endblock%}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <style>
+      html {
+        scrollbar-gutter: stable;
+        overflow-y: scroll;
+      }
+    </style>
   </head>
-  <body>
+  <body hx-boost="true">
     {%block content%} {%endblock%}
   </body>
 </html>

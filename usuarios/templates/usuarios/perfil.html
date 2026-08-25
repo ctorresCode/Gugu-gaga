@@ -51,6 +51,27 @@
                     {% endif %}
                 </div>
 
+                <div class="pt-3">
+                    {% if request.user == perfil_usuario %}
+                        <button class="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-sm text-gray-900 hover:bg-gray-50 transition-colors">
+                            Edit profile
+                        </button>
+                    {% else %}
+                        <form method="post" action="{% url 'seguir_usuario' perfil_usuario.username %}">
+                            {% csrf_token %}
+                            {% if lo_sigo %}
+                                <button type="submit" class="px-4 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-full font-bold text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-600 transition-colors group w-32">
+                                    <span class="group-hover:hidden">Seguido</span>
+                                    <span class="hidden group-hover:inline">Dejar de seguir</span>
+                                </button>
+                            {% else %}
+                                <button type="submit" class="px-5 py-1.5 bg-gray-900 text-white rounded-full font-bold text-sm hover:bg-gray-800 transition-colors w-24">
+                                    Seguir
+                                </button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
+                </div>
             </div>
 
             <div class="flex flex-col mb-3">
@@ -63,9 +84,13 @@
                 <span>Joined {{ perfil_usuario.date_joined|date:"F Y" }}</span>
             </div>
 
+            <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-3">
+                <span>University: {{ perfil_usuario.universidad.nombre }}</span>
+            </div>
+
             <div class="flex gap-4 text-sm">
-                <span class="text-gray-900 font-bold">1 <span class="text-gray-500 font-normal">Following</span></span>
-                <span class="text-gray-900 font-bold">0 <span class="text-gray-500 font-normal">Followers</span></span>
+                <span class="text-gray-900 font-bold">{{ perfil_usuario.seguidos.count }} <span class="text-gray-500 font-normal">Following</span></span>
+                <span class="text-gray-900 font-bold">{{ perfil_usuario.seguidores.count }} <span class="text-gray-500 font-normal">Followers</span></span>
             </div>
         </div>
 
@@ -101,28 +126,34 @@
 </div>
 
 <script>
-    const inputAvatar = document.getElementById('input-avatar');
-    if (inputAvatar) {
-        inputAvatar.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                let formData = new FormData(document.getElementById('form-avatar'));
-                
-                fetch("{% url 'actualizar_avatar' %}", {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        location.reload();
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        });
-    }
+    (function() {
+        const inputAvatar = document.getElementById('input-avatar');
+        if (inputAvatar) {
+            const newAvatarInput = inputAvatar.cloneNode(true);
+            inputAvatar.parentNode.replaceChild(newAvatarInput, inputAvatar);
+            
+            newAvatarInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    let formData = new FormData(document.getElementById('form-avatar'));
+                    
+                    fetch("{% url 'actualizar_avatar' %}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+        }
+    })();
 </script>
+
 {% endblock %}
