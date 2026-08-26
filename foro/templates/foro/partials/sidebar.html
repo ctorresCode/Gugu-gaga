@@ -47,22 +47,25 @@
             </a>
         </div>
 
-        <div onclick="toggleLogoutMenu(event)" class="flex items-center justify-between p-3 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
-            <div class="flex items-center gap-3">
-                {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
-                {% else %}
-                    <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none shadow-sm">
-                        {{ request.user.username|make_list|first }}
-                    </div>
-                {% endif %}
-                <div class="flex flex-col overflow-hidden">
-                    <span class="font-bold text-gray-900 text-sm truncate">{{ request.user.username }}</span>
-                    <span class="text-gray-500 text-xs truncate">@{{ request.user.username|lower }}</span>
-                </div>
+        <a href="{% url 'perfil_usuario' request.user.username %}" class="flex items-center justify-between p-3 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
+    <div class="flex items-center gap-3">
+        {% if request.user.avatar %}
+            <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
+        {% else %}
+            <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none shadow-sm">
+                {{ request.user.username|make_list|first }}
             </div>
-            <span class="text-gray-500 font-bold">···</span>
+        {% endif %}
+        <div class="flex flex-col overflow-hidden group-hover:underline">
+            <span class="font-bold text-gray-900 text-sm truncate">{{ request.user.username }}</span>
+            <span class="text-gray-500 text-xs truncate">@{{ request.user.username|lower }}</span>
         </div>
+    </div>
+    
+    <button onclick="event.preventDefault(); event.stopPropagation(); toggleLogoutMenu(event);" class="text-gray-500 font-bold px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+        ···
+    </button>
+</a>
     </div>
 </header>
 

@@ -3,6 +3,7 @@ from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from foro.models import Hilo, Universidad
 from django.shortcuts import redirect, render
+from django.contrib.auth.decorators import login_required
 
 class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
@@ -76,3 +77,14 @@ class detalleHilo(LoginRequiredMixin, DetailView):
 
         return redirect('detalle_hilo', pk=self.object.pk)    
 
+
+@login_required
+def boton_like(request, hilo_id):
+    hilo = Hilo.objects.get(pk=hilo_id)
+
+    if request.user in hilo.likes.all():
+        hilo.likes.remove(request.user)
+    else:
+        hilo.likes.add(request.user)
+        
+    return render(request, 'foro/partials/boton_like.html', {'hilo': hilo})

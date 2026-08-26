@@ -16,6 +16,8 @@ class Hilo(models.Model):
     ultima_actividad = models.DateTimeField(default=timezone.now) 
     activo = models.BooleanField(default=True)
 
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='hilos_likes', blank=True )
+
     class Meta:
         ordering = ['-ultima_actividad']
 
