@@ -1,5 +1,5 @@
 {% extends 'base.html' %} 
-{% block title %} detalle {{ hilo.autor.username }} {% endblock %} 
+{% block title %} Post de {{ respuesta.autor.username }} {% endblock %} 
 
 {% block content %}
 <style>
@@ -17,7 +17,7 @@
     <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
         
         <div class="flex items-center gap-6 px-4 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-            <a href="{% url 'inicio' %}" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-900">
+            <a href="javascript:history.back()" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-900">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></svg>
             </a>
             <h1 class="text-xl font-bold text-gray-900">Post</h1>
@@ -26,35 +26,30 @@
         <div class="bg-white p-4 border-b border-gray-100">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
-                    <a href="{% url 'perfil_usuario' hilo.autor.username %}">
-                        {% if hilo.autor.avatar %}
-                            <img src="{{ hilo.autor.avatar.url }}" class="w-12 h-12 rounded-full object-cover">
+                    <a href="{% url 'perfil_usuario' respuesta.autor.username %}">
+                        {% if respuesta.autor.avatar %}
+                            <img src="{{ respuesta.autor.avatar.url }}" class="w-12 h-12 rounded-full object-cover">
                         {% else %}
                             <div class="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-base">
-                                {{ hilo.autor.username|make_list|first }}
+                                {{ respuesta.autor.username|make_list|first }}
                             </div>
                         {% endif %}
                     </a>
                     <div class="flex flex-col">
-                        <a href="{% url 'perfil_usuario' hilo.autor.username %}" class="font-bold text-gray-900 text-base leading-tight hover:underline">{{ hilo.autor.username }}</a>
-                        <span class="text-gray-500 text-sm">@{{ hilo.autor.username|lower }}</span>
+                        <a href="{% url 'perfil_usuario' respuesta.autor.username %}" class="font-bold text-gray-900 text-base leading-tight hover:underline">{{ respuesta.autor.username }}</a>
+                        <span class="text-gray-500 text-sm">@{{ respuesta.autor.username|lower }}</span>
                     </div>
                 </div>
-                <span class="bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                    {{ hilo.universidad.nombre|default:"Global" }}
-                </span>
             </div>
 
-            <p class="text-gray-900 text-lg leading-relaxed font-normal mb-4">{{ hilo.contenido }}</p>
+            <p class="text-gray-900 text-lg leading-relaxed font-normal mb-4">{{ respuesta.contenido }}</p>
 
-            {% if hilo.imagen %}
-                <img src="{{ hilo.imagen.url }}" class="mb-4 rounded-2xl max-h-[500px] w-full object-cover border border-gray-100">
+            {% if respuesta.imagen %}
+                <img src="{{ respuesta.imagen.url }}" class="mb-4 rounded-2xl max-h-[500px] w-full object-cover border border-gray-100">
             {% endif %}
 
             <div class="py-3 border-y border-gray-100 text-gray-500 text-sm flex gap-4">
-                <span>{{ hilo.fecha_creacion|date:"g:i A · M j, Y" }}</span>
-                <span>·</span>
-                <span class="font-bold text-gray-900"></span>
+                <span>{{ respuesta.fecha_creacion|date:"g:i A · M j, Y" }}</span>
             </div>
 
             <div class="flex items-center justify-around py-3 border-b border-gray-100 text-gray-500">
@@ -65,7 +60,7 @@
                     <span class="text-xs font-semibold">{{ respuestas.count }}</span>
                 </div>
                 
-                {% include 'foro/partials/boton_like.html' with hilo=hilo %}
+                {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
             </div>
         </div>
 
@@ -93,16 +88,16 @@
         </form>
 
         <div id="lista-respuestas">
-            {% for respuesta in respuestas %}
-                <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta.pk %}'" class="bg-white p-4 hover:bg-gray-50/50 transition-colors cursor-pointer border-b border-gray-100">
+            {% for respuesta_hija in respuestas %}
+                <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta_hija.pk %}'" class="bg-white p-4 hover:bg-gray-50/50 transition-colors cursor-pointer border-b border-gray-100">
                     <div class="flex items-start gap-3">
                         <div class="flex-shrink-0">
-                            <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();">
-                                {% if respuesta.autor.avatar %}
-                                    <img src="{{ respuesta.autor.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
+                            <a href="{% url 'perfil_usuario' respuesta_hija.autor.username %}" onclick="event.stopPropagation();">
+                                {% if respuesta_hija.autor.avatar %}
+                                    <img src="{{ respuesta_hija.autor.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
                                 {% else %}
                                     <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-sm">
-                                        {{ respuesta.autor.username|make_list|first }}
+                                        {{ respuesta_hija.autor.username|make_list|first }}
                                     </div>
                                 {% endif %}
                             </a>
@@ -110,22 +105,21 @@
                         
                         <div class="flex-grow min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="font-bold text-gray-900 text-sm truncate hover:underline">{{ respuesta.autor.username }}</a>
-                                <span class="text-gray-500 text-xs whitespace-nowrap">· {{ respuesta.fecha_creacion|timesince }}</span>
+                                <a href="{% url 'perfil_usuario' respuesta_hija.autor.username %}" onclick="event.stopPropagation();" class="font-bold text-gray-900 text-sm truncate hover:underline">{{ respuesta_hija.autor.username }}</a>
+                                <span class="text-gray-500 text-xs whitespace-nowrap">· {{ respuesta_hija.fecha_creacion|timesince }}</span>
                             </div>
 
-                            <p class="text-gray-900 text-sm md:text-base leading-relaxed font-normal mb-3">{{ respuesta.contenido }}</p>
+                            <p class="text-gray-900 text-sm md:text-base leading-relaxed font-normal mb-3">{{ respuesta_hija.contenido }}</p>
 
                             <div class="flex items-center justify-between text-gray-500 max-w-xs pr-4">
                                 <div class="flex items-center gap-2 group hover:text-blue-500 transition-colors">
                                     <div class="p-2 -ml-2 rounded-full group-hover:bg-blue-50 transition-colors">
                                         <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
                                     </div>
-                                    <span class="text-xs font-medium">{{ respuesta.respuestas_hijas.count }}</span>
+                                    <span class="text-xs font-medium">{{ respuesta_hija.respuestas_hijas.count }}</span>
                                 </div>
                                 
-                                {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
-                                
+                                {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta_hija %}
                             </div>
                         </div>
                     </div>
@@ -147,6 +141,5 @@
             <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </a>
     </nav>
-
 </div>
 {% endblock %}

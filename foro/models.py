@@ -30,8 +30,10 @@ class Respuesta(models.Model):
     video = models.FileField(upload_to='respuestas/videos/', blank=True, null=True)
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     hilo = models.ForeignKey(Hilo, on_delete=models.CASCADE, related_name='respuestas')
+    respuesta_padre = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='respuestas_hijas')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    activo = models.BooleanField(default=True)    
+    activo = models.BooleanField(default=True) 
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='respuestas_likeadas', blank=True)  
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

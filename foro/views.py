@@ -1,8 +1,8 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from foro.models import Hilo, Universidad
-from django.shortcuts import redirect, render
+from foro.models import Hilo, Respuesta, Universidad
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 class InicioView(LoginRequiredMixin, TemplateView):
@@ -40,7 +40,6 @@ class InicioView(LoginRequiredMixin, TemplateView):
             if imagen.size > limite_tamano:
                 return redirect(request.META.get('HTTP_REFERER', '/'))
 
-
         if contenido:
             nuevo_hilo = Hilo.objects.create(
                 titulo=titulo,
@@ -62,7 +61,7 @@ class detalleHilo(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['respuestas'] = self.object.respuestas.filter(activo=True).select_related('autor')
+        context['respuestas'] = self.object.respuestas.filter(activo=True, respuesta_padre__isnull=True).select_related('autor')
         return context   
 
     def post(self, request, *args, **kwargs):
@@ -77,6 +76,28 @@ class detalleHilo(LoginRequiredMixin, DetailView):
 
         return redirect('detalle_hilo', pk=self.object.pk)    
 
+@login_required
+def detalle_respuesta(request, pk):
+    respuesta_actual = get_object_or_404(Respuesta, pk=pk)
+    hilo_original = respuesta_actual.hilo
+    
+    if request.method == 'POST':
+        contenido = request.POST.get('contenido')
+        if contenido:
+            Respuesta.objects.create(
+                autor=request.user,
+                hilo=hilo_original,
+                respuesta_padre=respuesta_actual,
+                contenido=contenido
+            )
+            return redirect('detalle_respuesta', pk=respuesta_actual.pk)
+
+    respuestas_hijas = respuesta_actual.respuestas_hijas.filter(activo=True).order_by('fecha_creacion')
+
+    return render(request, 'foro/detalle_respuesta.html', {
+        'respuesta': respuesta_actual,
+        'respuestas': respuestas_hijas,
+    })
 
 @login_required
 def boton_like(request, hilo_id):
@@ -88,3 +109,14 @@ def boton_like(request, hilo_id):
         hilo.likes.add(request.user)
         
     return render(request, 'foro/partials/boton_like.html', {'hilo': hilo})
+
+@login_required
+def Like_respuesta(request, respuesta_id):
+    respuesta = get_object_or_404(Respuesta, id=respuesta_id)
+    
+    if request.user in respuesta.likes.all():
+        respuesta.likes.remove(request.user)
+    else:
+        respuesta.likes.add(request.user)
+        
+    return render(request, 'foro/partials/boton_like_respuesta.html', {'respuesta': respuesta})
