@@ -13,6 +13,8 @@ class UsuarioForo(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     seguidos = models.ManyToManyField('self', symmetrical=False, related_name='seguidores', blank=True)
     email = None
+    descripcion = models.TextField(blank=True, null=True)
+    banner = models.ImageField(upload_to='banners/', null=True, blank=True)
 
     def __str__(self):
         return self.username

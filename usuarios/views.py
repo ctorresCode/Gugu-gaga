@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, TemplateView
+from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -127,3 +127,16 @@ class ChatView(LoginRequiredMixin, TemplateView):
                 contenido=contenido
             )
         return redirect('chat_usuario', username=otro_usuario.username)
+
+class EditarPerfilView(LoginRequiredMixin, UpdateView):
+    model = UsuarioForo
+    fields = ['banner', 'avatar', 'username', 'descripcion']
+    template_name = 'usuarios/editar_perfil.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_success_url(self):
+        return reverse_lazy('perfil_usuario', kwargs={'username': self.request.user.username})
+
+

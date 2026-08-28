@@ -2,6 +2,7 @@ from django.urls import include, path
 from django.contrib.auth.views import LoginView, LogoutView
 
 from usuarios.views import (
+    EditarPerfilView,
     PerfilView, 
     RegistroUsuarioView, 
     actualizar_avatar, 
@@ -20,6 +21,7 @@ urlpatterns = [
     path('perfil/actualizar-avatar/', actualizar_avatar, name='actualizar_avatar'),
     path('perfil/<str:username>/', PerfilView.as_view(), name='perfil_usuario'),
     path('perfil/<str:username>/seguir/', seguir_usuario, name='seguir_usuario'),
+    path('editar-perfil/<str:username>/', EditarPerfilView.as_view(), name='editar_perfil'),
 
     #urls para el lanzamiento y recibimiento de mensajes
     path('mensajes/', BandejaMensajesView.as_view(), name='bandeja_mensajes'),

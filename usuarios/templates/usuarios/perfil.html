@@ -27,6 +27,9 @@
         </div>
 
         <div class="h-32 md:h-48 bg-gray-200 w-full relative">
+            {% if perfil_usuario.banner %}
+                <img src="{{ perfil_usuario.banner.url }}" alt="Banner" class="w-full h-full object-cover">
+            {% endif %}
         </div>
 
         <div class="px-4 pb-4 border-b border-gray-100 relative">
@@ -53,9 +56,11 @@
 
                 <div class="pt-3">
                     {% if request.user == perfil_usuario %}
-                        <button class="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-sm text-gray-900 hover:bg-gray-50 transition-colors">
-                            Edit profile
-                        </button>
+                        <form action="{% url 'editar_perfil' request.user.username %}" method="get" class="inline">
+                            <button type="submit" class="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-sm text-gray-900 hover:bg-gray-50 transition-colors">
+                                Edit profile
+                            </button>
+                        </form>
                     {% else %}
                         <form method="post" action="{% url 'seguir_usuario' perfil_usuario.username %}">
                             {% csrf_token %}
@@ -78,6 +83,10 @@
                 <h2 class="text-xl font-extrabold text-gray-900">{{ perfil_usuario.username }}</h2>
                 <span class="text-gray-500 text-sm">@{{ perfil_usuario.username|lower }}</span>
             </div>
+
+            {% if perfil_usuario.descripcion %}
+            <div class="text-gray-900 text-sm mb-3 whitespace-pre-wrap">{{ perfil_usuario.descripcion }}</div>
+            {% endif %}
 
             <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-3">
                 <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.11 21 3 19.88 3 18.5v-12C3 5.12 4.11 4 5.5 4H7zm0 2H5.5c-.28 0-.5.22-.5.5v3h14v-3c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm12 6H5v6.5c0 .28.22.5.5.5h13c.28 0 .5-.22.5-.5V12z"></path></svg>

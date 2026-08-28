@@ -5,6 +5,8 @@ from foro.models import Hilo, Respuesta, Universidad
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
+from usuarios.models import UsuarioForo
+
 class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
 
@@ -49,7 +51,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 universidad=getattr(request.user, 'universidad', None)
             )
 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
                 return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
 
         return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -120,3 +122,24 @@ def Like_respuesta(request, respuesta_id):
         respuesta.likes.add(request.user)
         
     return render(request, 'foro/partials/boton_like_respuesta.html', {'respuesta': respuesta})
+
+
+@login_required
+def explorar_usuarios(request):
+    query = request.GET.get('q_usuarios', '')
+    usuarios = []
+    
+    if query:
+        usuarios = UsuarioForo.objects.filter(username__icontains=query, is_active=True).exclude(id=request.user.id)
+        
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
+        return render(request, 'foro/partials/resultados_usuarios.html', {
+            'usuarios': usuarios,
+            'query': query
+        })
+        
+    return render(request, 'foro/explorar.html', {
+        'usuarios': usuarios,
+        'query': query
+    })
+

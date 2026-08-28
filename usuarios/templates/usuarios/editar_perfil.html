@@ -1,0 +1,152 @@
+{% extends 'base.html' %} 
+{% block title %} Editar Perfil / X {% endblock %} 
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff; }
+    
+    .image-upload-overlay {
+        background-color: rgba(0, 0, 0, 0.3);
+        transition: background-color 0.2s ease;
+    }
+    .image-upload-overlay:hover {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+</style>
+
+<div class="min-h-screen flex justify-center mx-auto max-w-5xl px-0 md:px-4">
+    {% include 'foro/partials/sidebar.html' %}
+
+    <main class="w-full md:max-w-2xl min-h-screen border-x border-gray-100 flex flex-col pb-16 md:pb-0 relative">
+        
+        <div class="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="{% url 'perfil_usuario' request.user.username %}" class="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 text-gray-900 fill-current">
+                        <g><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></g>
+                    </svg>
+                </a>
+                <h2 class="text-xl font-bold text-gray-900 tracking-tight">Editar perfil</h2>
+            </div>
+            <button type="submit" form="edit-profile-form" class="px-5 py-1.5 bg-gray-900 text-white rounded-full font-bold text-sm hover:bg-gray-800 transition-colors">
+                Guardar
+            </button>
+        </div>
+
+        <form id="edit-profile-form" method="POST" enctype="multipart/form-data" class="flex flex-col">
+            {% csrf_token %}
+
+            <div id="bannerContainer" class="relative w-full h-48 bg-gray-200 group z-10">
+                {% if request.user.banner %}
+                    <img src="{{ request.user.banner.url }}" alt="Banner" class="w-full h-full object-cover">
+                {% endif %}
+                <label class="absolute inset-0 flex items-center justify-center image-upload-overlay cursor-pointer">
+                    <div class="p-3 rounded-full bg-gray-900/60 hover:bg-gray-900/80 transition-colors">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" class="w-6 h-6 text-white fill-current">
+                            <g><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4zM17 2c0 1.657-1.343 3-3 3v1c1.657 0 3 1.343 3 3h1c0-1.657 1.343-3 3-3V5c-1.657 0-3-1.343-3-3h-1z"></path></g>
+                        </svg>
+                    </div>
+                    <input type="file" name="banner" id="id_banner" accept="image/*" class="hidden">
+                </label>
+            </div>
+
+            <div class="relative px-4 pb-4">
+                <div id="avatarContainer" class="relative -mt-16 mb-4 w-32 h-32 rounded-full border-4 border-white bg-gray-100 overflow-hidden group z-20">
+                    {% if request.user.avatar %}
+                        <img src="{{ request.user.avatar.url }}" alt="Avatar" class="w-full h-full object-cover">
+                    {% else %}
+                        <svg class="avatar-placeholder w-full h-full text-gray-400 p-4 bg-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    {% endif %}
+                    <label class="absolute inset-0 flex items-center justify-center image-upload-overlay cursor-pointer">
+                        <div class="p-3 rounded-full bg-gray-900/60 hover:bg-gray-900/80 transition-colors">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-6 h-6 text-white fill-current">
+                                <g><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4z"></path></g>
+                            </svg>
+                        </div>
+                        <input type="file" name="avatar" id="id_avatar" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
+                <div class="flex flex-col gap-6 mt-4">
+                    <div class="relative border border-gray-300 rounded-md focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all px-3 pt-6 pb-2">
+                        <label for="id_username" class="absolute top-2 left-3 text-sm text-gray-500 transition-all">Nombre</label>
+                        <input type="text" name="username" id="id_username" 
+                               value="{{ form.username.value|default_if_none:'' }}" 
+                               class="w-full bg-transparent text-gray-900 outline-none text-base" 
+                               required>
+                    </div>
+
+                    <div class="relative border border-gray-300 rounded-md focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all px-3 pt-6 pb-2">
+                        <label for="id_descripcion" class="absolute top-2 left-3 text-sm text-gray-500 transition-all">Biografía</label>
+                        <textarea name="descripcion" id="id_descripcion" rows="3" 
+                                  class="w-full bg-transparent text-gray-900 outline-none text-base resize-none">{{ form.descripcion.value|default_if_none:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            {% if form.errors %}
+                <div class="px-4 pb-4">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-sm mb-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p class="text-red-500 text-sm mb-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        </form>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function activarVistaPrevia(inputId, contenedorId, altText) {
+        const input = document.getElementById(inputId);
+        const contenedor = document.getElementById(contenedorId);
+        
+        if (!input || !contenedor) return;
+
+        input.addEventListener('change', function () {
+            const archivo = this.files && this.files[0];
+            
+            if (!archivo) return;
+
+            if (!archivo.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen válido.');
+                this.value = '';
+                return;
+            }
+
+            const lector = new FileReader();
+            lector.onload = function (e) {
+                let img = contenedor.querySelector('img'); 
+
+                if (!img) {
+                    img = document.createElement('img');
+                    img.className = 'w-full h-full object-cover'; 
+                    img.alt = altText;
+                    contenedor.insertBefore(img, contenedor.firstChild);
+                }
+
+                img.src = e.target.result;
+
+                const placeholder = contenedor.querySelector('.avatar-placeholder');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+            };
+            lector.readAsDataURL(archivo);
+        });
+    }
+
+    activarVistaPrevia('id_banner', 'bannerContainer', 'Banner de perfil');
+    activarVistaPrevia('id_avatar', 'avatarContainer', 'Avatar de usuario');
+});
+</script>
+{% endblock %}
