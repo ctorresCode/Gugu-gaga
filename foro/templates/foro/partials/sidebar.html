@@ -1,6 +1,6 @@
-<div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden transition-opacity opacity-0 duration-300 bg-white"></div>
+<div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden transition-opacity opacity-0 duration-300"></div>
 
-<header id="mobile-sidebar" class="fixed md:sticky top-0 left-0 z-50 md:z-0 h-screen w-72 md:w-64 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between py-4 px-2 border-r border-gray-100 shadow-2xl md:shadow-none overflow-y-auto">
+<header id="mobile-sidebar" class="fixed md:sticky top-0 left-0 z-50 md:z-0 h-screen w-72 md:w-64 bg-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between py-4 px-2 border-r border-gray-100 shadow-2xl md:shadow-none overflow-y-auto">
     
     <div class="flex flex-col gap-6">
         <div class="flex items-center justify-between px-4 md:hidden mb-2">
@@ -17,16 +17,12 @@
         </a>
         
         <nav class="flex flex-col gap-1">
-            <a href="{% url 'inicio' %}" 
-            class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 text-lg transition-colors 
-                    {% if request.resolver_match.url_name == 'inicio' %} font-bold text-gray-900 {% else %} font-medium text-gray-700 {% endif %}">
+            <a href="{% url 'inicio' %}" class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 text-lg transition-colors {% if request.resolver_match.url_name == 'inicio' %} font-bold text-gray-900 {% else %} font-medium text-gray-700 {% endif %}">
                 <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
                 Inicio
             </a>
     
-            <a href="{% url 'bandeja_mensajes' %}" 
-            class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 text-lg transition-colors w-full 
-                    {% if request.resolver_match.url_name == 'bandeja_mensajes' %} font-bold text-black {% else %} font-medium text-gray-700 {% endif %}">
+            <a href="{% url 'bandeja_mensajes' %}" class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-gray-100 text-lg transition-colors w-full {% if request.resolver_match.url_name == 'bandeja_mensajes' %} font-bold text-black {% else %} font-medium text-gray-700 {% endif %}">
                 <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
@@ -45,25 +41,25 @@
             </a>
         </div>
 
-        <a href="{% url 'perfil_usuario' request.user.username %}" class="flex items-center justify-between p-3 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group">
-    <div class="flex items-center gap-3">
-        {% if request.user.avatar %}
-            <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
-        {% else %}
-            <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none shadow-sm">
-                {{ request.user.username|make_list|first }}
-            </div>
-        {% endif %}
-        <div class="flex flex-col overflow-hidden group-hover:underline">
-            <span class="font-bold text-gray-900 text-sm truncate">{{ request.user.username }}</span>
-            <span class="text-gray-500 text-xs truncate">@{{ request.user.username|lower }}</span>
+        <div class="flex items-center justify-between p-3 rounded-full hover:bg-gray-100 transition-colors group">
+            <a href="{% url 'perfil_usuario' request.user.username %}" class="flex items-center gap-3 cursor-pointer">
+                {% if request.user.avatar %}
+                    <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
+                {% else %}
+                    <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm uppercase select-none shadow-sm">
+                        {{ request.user.username|make_list|first }}
+                    </div>
+                {% endif %}
+                <div class="flex flex-col overflow-hidden group-hover:underline">
+                    <span class="font-bold text-gray-900 text-sm truncate">{{ request.user.username }}</span>
+                    <span class="text-gray-500 text-xs truncate">@{{ request.user.username|lower }}</span>
+                </div>
+            </a>
+            
+            <button onclick="toggleLogoutMenu(event);" class="text-gray-500 font-bold px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+                ···
+            </button>
         </div>
-    </div>
-    
-    <button onclick="event.preventDefault(); event.stopPropagation(); toggleLogoutMenu(event);" class="text-gray-500 font-bold px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
-        ···
-    </button>
-</a>
     </div>
 </header>
 
