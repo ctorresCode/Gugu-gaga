@@ -1,0 +1,46 @@
+{% extends 'base.html' %} 
+{% block title %} {{ perfil_usuario.username }} / X {% endblock %} 
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #ffffff;
+    }
+</style>
+
+<div class="min-h-screen flex justify-center mx-auto max-w-4xl px-0 md:px-4">
+    
+    {% include 'foro/partials/sidebar.html' %}
+
+    <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="flex items-center mb-6 gap-4">
+        <a href="{% url 'perfil_usuario' view.kwargs.username %}" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <svg class="w-6 h-6 stroke-current stroke-2 text-gray-900" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">Imágenes de @{{ view.kwargs.username }}</h1>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {% for hilo in imagenes_subidas %}
+            <div class="aspect-square overflow-hidden rounded-xl bg-gray-100 group">
+                <img src="{{ hilo.imagen.url }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            </div>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <p class="text-gray-500 font-medium text-lg">Este usuario no ha subido imágenes en sus hilos.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+        
+    </main>
+
+    {% include 'foro/partials/nav_mobile.html' %}
+
+</div>
+
+
+{% endblock %}

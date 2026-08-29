@@ -104,14 +104,17 @@
         </div>
 
         <div class="flex border-b border-gray-100 text-sm font-medium text-gray-500 overflow-x-auto scrollbar-none">
-            <div class="flex-1 min-w-[80px] text-center py-4 text-gray-900 font-bold relative hover:bg-gray-50 transition-colors cursor-pointer">
+            <div id="tab-btn-posts" onclick="switchTab('posts')" class="flex-1 min-w-[80px] text-center py-4 text-gray-900 font-bold relative hover:bg-gray-50 transition-colors cursor-pointer">
                 Posts
-                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-1 bg-blue-500 rounded-t-full"></div>
+                <div id="indicator-posts" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-1 bg-blue-500 rounded-t-full"></div>
             </div>
-            <div class="flex-1 min-w-[80px] text-center py-4 hover:bg-gray-50 transition-colors cursor-pointer">Media</div>
+            <div id="tab-btn-media" onclick="switchTab('media')" class="flex-1 min-w-[80px] text-center py-4 hover:bg-gray-50 transition-colors cursor-pointer relative">
+                Media
+                <div id="indicator-media" class="hidden absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-1 bg-blue-500 rounded-t-full"></div>
+            </div>
         </div>
 
-        <div id="lista-hilos">
+        <div id="content-posts" class="block">
             {% for hilo in hilos_usuario %}
                 {% include 'foro/partials/tarjeta_hilo.html' %}
             {% empty %}
@@ -121,10 +124,35 @@
             {% endfor %}
         </div>
 
+        <div id="content-media" class="hidden">
+            <div class="grid grid-cols-3 gap-1 sm:gap-2 p-1 sm:p-2">
+                {% for hilo in hilos_usuario %}
+                    {% if hilo.imagen %}
+                        <button onclick="openImageModal('{{ hilo.imagen.url }}')" type="button" class="aspect-square bg-gray-100 block overflow-hidden group w-full p-0 border-none cursor-pointer">
+                            <img src="{{ hilo.imagen.url }}" alt="Media de {{ perfil_usuario.username }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        </button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            {% if not hilos_usuario %}
+                <div class="col-span-3 text-center py-16 bg-white">
+                    <p class="text-gray-500 font-bold text-base">Este usuario no ha subido imágenes.</p>
+                </div>
+            {% endif %}
+        </div>
+
     </main>
 
     {% include 'foro/partials/nav_mobile.html' %}
 
+</div>
+
+<div id="image-modal" class="fixed inset-0 z-[100] hidden bg-black/90 flex-col justify-center items-center opacity-0 transition-opacity duration-300" onclick="closeImageModal()">
+    <button type="button" class="absolute top-4 right-4 text-white hover:text-gray-300 p-2 focus:outline-none" onclick="closeImageModal()">
+        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+    </button>
+    <img id="modal-image" src="" alt="Imagen ampliada" class="max-h-[90vh] max-w-[90vw] object-contain rounded-md" onclick="event.stopPropagation()">
 </div>
 
 <script>
@@ -156,6 +184,60 @@
             });
         }
     })();
+
+    function switchTab(tabName) {
+        const btnPosts = document.getElementById('tab-btn-posts');
+        const indicatorPosts = document.getElementById('indicator-posts');
+        const contentPosts = document.getElementById('content-posts');
+        
+        const btnMedia = document.getElementById('tab-btn-media');
+        const indicatorMedia = document.getElementById('indicator-media');
+        const contentMedia = document.getElementById('content-media');
+
+        if (tabName === 'posts') {
+            contentPosts.classList.remove('hidden');
+            contentPosts.classList.add('block');
+            btnPosts.classList.add('text-gray-900', 'font-bold');
+            indicatorPosts.classList.remove('hidden');
+            
+            contentMedia.classList.add('hidden');
+            contentMedia.classList.remove('block');
+            btnMedia.classList.remove('text-gray-900', 'font-bold');
+            indicatorMedia.classList.add('hidden');
+            
+        } else if (tabName === 'media') {
+            contentMedia.classList.remove('hidden');
+            contentMedia.classList.add('block');
+            btnMedia.classList.add('text-gray-900', 'font-bold');
+            indicatorMedia.classList.remove('hidden');
+            
+            contentPosts.classList.add('hidden');
+            contentPosts.classList.remove('block');
+            btnPosts.classList.remove('text-gray-900', 'font-bold');
+            indicatorPosts.classList.add('hidden');
+        }
+    }
+
+    function openImageModal(imageUrl) {
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-image');
+        modalImg.src = imageUrl;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById('image-modal');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('modal-image').src = '';
+            document.body.style.overflow = '';
+        }, 300);
+    }
 </script>
 
 {% endblock %}

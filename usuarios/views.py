@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, TemplateView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -139,4 +139,19 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('perfil_usuario', kwargs={'username': self.request.user.username})
 
+
+class VerTodasLasImagenesSubidasPorUsuario(LoginRequiredMixin, ListView):
+    model = Hilo
+    template_name = 'usuarios/imagenes_subidas.html'
+    context_object_name = 'imagenes_subidas'
+
+    def get_queryset(self):
+        usuario_visitado = self.kwargs.get('username')
+        return Hilo.objects.filter(
+            autor__username=usuario_visitado
+        ).exclude(imagen='').exclude(imagen__isnull=True)
+
+
+
+    
 
