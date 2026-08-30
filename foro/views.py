@@ -1,13 +1,28 @@
+from PIL import Image, UnidentifiedImageError
+from django.contrib import messages
 from django.core.cache import cache
 from django.db.models import Q, Count
+from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from foro.models import Hilo, Respuesta, Universidad
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 from usuarios.models import UsuarioForo
+
+
+def es_imagen_valida(archivo):
+    try:
+        img = Image.open(archivo)
+        img.verify()
+    except (UnidentifiedImageError, OSError):
+        return False
+    finally:
+        archivo.seek(0)
+    return True
 
 class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
@@ -45,12 +60,21 @@ class InicioView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         contenido = request.POST.get('contenido')
-        titulo = request.POST.get('titulo')
+        titulo = request.POST.get('titulo') or f'Publicación de {request.user.username}'
         imagen = request.FILES.get('imagen')
+        es_htmx = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request')
 
         if imagen:
             limite_tamano = 5 * 1024 * 1024
             if imagen.size > limite_tamano:
+                if es_htmx:
+                    return HttpResponse('La imagen excede el límite de 5 MB.', status=400)
+                messages.error(request, 'La imagen excede el límite de 5 MB.')
+                return redirect(request.META.get('HTTP_REFERER', '/'))
+            if not es_imagen_valida(imagen):
+                if es_htmx:
+                    return HttpResponse('El archivo no es una imagen válida.', status=400)
+                messages.error(request, 'El archivo no es una imagen válida.')
                 return redirect(request.META.get('HTTP_REFERER', '/'))
 
         if contenido:
@@ -62,7 +86,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 universidad=getattr(request.user, 'universidad', None)
             )
 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
+            if es_htmx:
                 return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
 
         return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -120,6 +144,7 @@ def detalle_respuesta(request, pk):
     })
 
 @login_required
+@require_POST
 def boton_like(request, hilo_id):
     hilo = get_object_or_404(Hilo, pk=hilo_id)
 
@@ -131,6 +156,7 @@ def boton_like(request, hilo_id):
     return render(request, 'foro/partials/boton_like.html', {'hilo': hilo})
 
 @login_required
+@require_POST
 def Like_respuesta(request, respuesta_id):
     respuesta = get_object_or_404(Respuesta, id=respuesta_id)
     

@@ -1,4 +1,5 @@
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -9,12 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--8%o6#fj@q@du@(mf=i0hk#42_gqt2xb$g1vez_5n+hmc-qt5q'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure--8%o6#fj@q@du@(mf=i0hk#42_gqt2xb$g1vez_5n+hmc-qt5q')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h]
 
 
 # Application definition
@@ -66,11 +67,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'vozUni',
-        'HOST':'DESKTOP-737K9UP',
-        'PORT':'',
+        'NAME': os.environ.get('DB_NAME', 'vozUni'),
+        'HOST': os.environ.get('DB_HOST', 'DESKTOP-737K9UP'),
+        'PORT': os.environ.get('DB_PORT', ''),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
         'OPTIONS':{
-            'driver': 'ODBC Driver 17 for SQL Server',
+            'driver': os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server'),
         }
     }
 }

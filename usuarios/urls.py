@@ -22,7 +22,7 @@ urlpatterns = [
     path('perfil/actualizar-avatar/', actualizar_avatar, name='actualizar_avatar'),
     path('perfil/<str:username>/', PerfilView.as_view(), name='perfil_usuario'),
     path('perfil/<str:username>/seguir/', seguir_usuario, name='seguir_usuario'),
-    path('editar-perfil/<str:username>/', EditarPerfilView.as_view(), name='editar_perfil'),
+    path('editar-perfil/', EditarPerfilView.as_view(), name='editar_perfil'),
     path('imagenes-subidas/<str:username>/', VerTodasLasImagenesSubidasPorUsuario.as_view(), name='imagenes_subidas_usuario'),
 
     #urls para el lanzamiento y recibimiento de mensajes
