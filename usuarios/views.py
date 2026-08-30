@@ -8,7 +8,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.core.cache import cache
 
+from django.views.decorators.http import require_POST
+
 from foro.models import Hilo
+from foro.views import es_imagen_valida
 from usuarios.forms import RegistroForm
 from usuarios.models import Mensaje, Universidad, UsuarioForo
 
@@ -31,9 +34,10 @@ class RegistroUsuarioView(CreateView):
         login(self.request, usuario)
         return super().form_valid(form)
 
+@require_POST
 def logout_view(request):
     logout(request)
-    return render(request, 'usuarios/login.html')   
+    return redirect('login')
 
 class PerfilView(LoginRequiredMixin, DetailView):
     model = UsuarioForo
@@ -56,6 +60,7 @@ class PerfilView(LoginRequiredMixin, DetailView):
         return context
 
 @login_required
+@require_POST
 def seguir_usuario(request, username):
     usuario_a_seguir = get_object_or_404(UsuarioForo, username=username)
     if request.user != usuario_a_seguir:
@@ -71,6 +76,8 @@ def actualizar_avatar(request):
         avatar = request.FILES['avatar']
         if avatar.size > 2 * 1024 * 1024:
             return JsonResponse({'status': 'error', 'message': 'La imagen excede el límite de 2 MB.'}, status=400)
+        if not es_imagen_valida(avatar):
+            return JsonResponse({'status': 'error', 'message': 'El archivo no es una imagen válida.'}, status=400)
         user = request.user
         user.avatar = avatar
         user.save()
@@ -119,8 +126,11 @@ class ChatView(LoginRequiredMixin, TemplateView):
         contenido = request.POST.get('contenido')
         imagen = request.FILES.get('imagen') 
         
-        if imagen and imagen.size > 5 * 1024 * 1024:
-            return JsonResponse({'error': 'La imagen excede el límite de 5MB.'}, status=400)
+        if imagen:
+            if imagen.size > 5 * 1024 * 1024:
+                return JsonResponse({'error': 'La imagen excede el límite de 5MB.'}, status=400)
+            if not es_imagen_valida(imagen):
+                return JsonResponse({'error': 'El archivo no es una imagen válida.'}, status=400)
             
         if contenido or (imagen and imagen.size > 0):
             Mensaje.objects.create(
@@ -154,5 +164,5 @@ class VerTodasLasImagenesSubidasPorUsuario(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Hilo.objects.filter(
-            autor__username=self.kwargs.get('username')
+            autor__username=self.kwargs.get('username'), activo=True
         ).select_related('autor', 'universidad').exclude(imagen='').exclude(imagen__isnull=True).order_by('-fecha_creacion')

@@ -1,5 +1,6 @@
 from io import BytesIO
 from PIL import Image
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -7,6 +8,14 @@ from django.conf import settings
 
 class Universidad(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        cache.delete('universidades_list')
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        cache.delete('universidades_list')
 
     def __str__(self):
         return self.nombre

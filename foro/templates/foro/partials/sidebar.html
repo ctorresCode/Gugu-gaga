@@ -34,9 +34,12 @@
 
     <div class="relative mb-4 md:mb-0 mt-auto">
         <div id="logout-menu" class="hidden absolute bottom-full left-0 mb-3 w-full bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-2xl py-2 z-50">
-            <a href="{% url 'logout' %}" class="block px-4 py-3 text-[#2B2B2B] font-bold text-sm hover:bg-[#F8F9FA] hover:text-[#093D77] transition-colors">
-                Cerrar sesión de @{{ request.user.username|lower }}
-            </a>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="block w-full text-left px-4 py-3 text-[#2B2B2B] font-bold text-sm hover:bg-[#F8F9FA] hover:text-[#093D77] transition-colors">
+                    Cerrar sesión de @{{ request.user.username|lower }}
+                </button>
+            </form>
         </div>
 
         <div class="flex items-center justify-between p-3 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-all group cursor-pointer">

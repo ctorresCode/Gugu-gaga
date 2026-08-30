@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from config import settings
+from django.conf import settings
 from usuarios.models import Universidad
 
 # Create your models here.
@@ -36,9 +36,10 @@ class Respuesta(models.Model):
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='respuestas_likeadas', blank=True)  
 
     def save(self, *args, **kwargs):
+        es_nueva = self._state.adding
         super().save(*args, **kwargs)
-        self.hilo.ultima_actividad = self.fecha_creacion
-        self.hilo.save()
+        if es_nueva:
+            Hilo.objects.filter(pk=self.hilo_id).update(ultima_actividad=self.fecha_creacion)
 
 
 

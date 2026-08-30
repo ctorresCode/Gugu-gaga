@@ -55,7 +55,7 @@
 
                         <div class="pt-4">
                             {% if request.user == perfil_usuario %}
-                                <form action="{% url 'editar_perfil' request.user.username %}" method="get">
+                                <form action="{% url 'editar_perfil' %}" method="get">
                                     <button type="submit" class="px-5 py-2 border-2 border-gray-200 rounded-full font-extrabold text-sm text-[#2B2B2B] hover:bg-gray-50 hover:border-gray-300 transition-all">
                                         Editar perfil
                                     </button>
