@@ -6,12 +6,12 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
+from django.core.cache import cache
 
 from foro.models import Hilo
 from usuarios.forms import RegistroForm
 from usuarios.models import Mensaje, Universidad, UsuarioForo
 
-# Create your views here.
 class RegistroUsuarioView(CreateView):
     template_name = 'usuarios/registro.html'
     form_class = RegistroForm
@@ -19,7 +19,11 @@ class RegistroUsuarioView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['universidades'] = Universidad.objects.all()
+        universidades = cache.get('universidades_list')
+        if not universidades:
+            universidades = Universidad.objects.all()
+            cache.set('universidades_list', universidades, 86400)
+        context['universidades'] = universidades
         return context
 
     def form_valid(self, form):
@@ -31,7 +35,6 @@ def logout_view(request):
     logout(request)
     return render(request, 'usuarios/login.html')   
 
-
 class PerfilView(LoginRequiredMixin, DetailView):
     model = UsuarioForo
     template_name = 'usuarios/perfil.html'
@@ -41,41 +44,37 @@ class PerfilView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['hilos_usuario'] = Hilo.objects.filter(autor=self.object, activo=True).select_related('universidad', 'autor')
-
+        context['hilos_usuario'] = Hilo.objects.filter(
+            autor=self.object, activo=True
+        ).select_related('universidad', 'autor').annotate(
+            conteo_likes=Count('likes', distinct=True),
+            conteo_respuestas=Count('respuestas', filter=Q(respuestas__activo=True), distinct=True)
+        )[:50]
+        
         if self.request.user.is_authenticated:
             context['lo_sigo'] = self.request.user.seguidos.filter(id=self.object.id).exists()
-
         return context
-
 
 @login_required
 def seguir_usuario(request, username):
     usuario_a_seguir = get_object_or_404(UsuarioForo, username=username)
-    
     if request.user != usuario_a_seguir:
         if request.user.seguidos.filter(id=usuario_a_seguir.id).exists():
             request.user.seguidos.remove(usuario_a_seguir)
         else:
             request.user.seguidos.add(usuario_a_seguir)
-            
     return redirect('perfil_usuario', username=username)
-
 
 @login_required
 def actualizar_avatar(request):
     if request.method == 'POST' and request.FILES.get('avatar'):
         avatar = request.FILES['avatar']
-        
-        limite_avatar = 2 * 1024 * 1024
-        if avatar.size > limite_avatar:
+        if avatar.size > 2 * 1024 * 1024:
             return JsonResponse({'status': 'error', 'message': 'La imagen excede el límite de 2 MB.'}, status=400)
-
         user = request.user
         user.avatar = avatar
         user.save()
         return JsonResponse({'status': 'success'})
-     
     return JsonResponse({'status': 'error'}, status=400)
 
 class BandejaMensajesView(LoginRequiredMixin, TemplateView):
@@ -102,30 +101,38 @@ class ChatView(LoginRequiredMixin, TemplateView):
         )
         context['chat_activo'] = otro_usuario
         
-        mensajes = Mensaje.objects.filter(
-            (Q(remitente=self.request.user) & Q(destinatario=otro_usuario)) |
-            (Q(remitente=otro_usuario) & Q(destinatario=self.request.user))
-        ).order_by('fecha_envio')
+        mensajes_query = Mensaje.objects.filter(
+            (Q(remitente=self.request.user, destinatario=otro_usuario)) |
+            (Q(remitente=otro_usuario, destinatario=self.request.user))
+        ).select_related('remitente').order_by('-fecha_envio')[:50]
         
-        context['mensajes'] = mensajes
+        context['mensajes'] = reversed(list(mensajes_query))
         return context
 
     def post(self, request, *args, **kwargs):
         otro_usuario = get_object_or_404(UsuarioForo, username=self.kwargs['username'])
-        
         son_amigos = request.user.seguidos.filter(id=otro_usuario.id).exists() and otro_usuario.seguidos.filter(id=request.user.id).exists()
         
         if not son_amigos:
-            return redirect('bandeja_mensajes')
+            return JsonResponse({'error': 'No tienen permisos para chatear.'}, status=403)
             
         contenido = request.POST.get('contenido')
+        imagen = request.FILES.get('imagen') 
         
-        if contenido:
+        if imagen and imagen.size > 5 * 1024 * 1024:
+            return JsonResponse({'error': 'La imagen excede el límite de 5MB.'}, status=400)
+            
+        if contenido or (imagen and imagen.size > 0):
             Mensaje.objects.create(
                 remitente=request.user,
                 destinatario=otro_usuario,
-                contenido=contenido
+                contenido=contenido,
+                imagen=imagen 
             )
+            
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success'})
+            
         return redirect('chat_usuario', username=otro_usuario.username)
 
 class EditarPerfilView(LoginRequiredMixin, UpdateView):
@@ -139,19 +146,13 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('perfil_usuario', kwargs={'username': self.request.user.username})
 
-
 class VerTodasLasImagenesSubidasPorUsuario(LoginRequiredMixin, ListView):
     model = Hilo
     template_name = 'usuarios/imagenes_subidas.html'
     context_object_name = 'imagenes_subidas'
+    paginate_by = 20
 
     def get_queryset(self):
-        usuario_visitado = self.kwargs.get('username')
         return Hilo.objects.filter(
-            autor__username=usuario_visitado
-        ).exclude(imagen='').exclude(imagen__isnull=True)
-
-
-
-    
-
+            autor__username=self.kwargs.get('username')
+        ).select_related('autor', 'universidad').exclude(imagen='').exclude(imagen__isnull=True).order_by('-fecha_creacion')

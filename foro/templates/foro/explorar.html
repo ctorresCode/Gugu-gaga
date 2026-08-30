@@ -1,28 +1,24 @@
 {% extends 'base.html' %} 
-{% block title %} Explorar {% endblock %} 
+{% block title %} Directorio {% endblock %} 
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    body {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #ffffff;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
 <div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
     
     {% include 'foro/partials/sidebar.html' %}
 
-    <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
+    <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8">
         
-        <div class="px-4 py-2 sticky top-0 bg-white/80 backdrop-blur-md z-20 border-b border-gray-100 flex items-center justify-between gap-4">
-            
+        <div class="px-4 py-4 md:pt-8 sticky top-0 bg-[#F8F9FA]/90 backdrop-blur-md z-20 flex items-center justify-between gap-4">
             <div onclick="toggleSidebar()" class="cursor-pointer transition-transform active:scale-95 flex-shrink-0 md:hidden">
                 {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-8 h-8 rounded-full object-cover">
+                    <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
                 {% else %}
-                    <div class="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase select-none">
+                    <div class="w-10 h-10 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                         {{ request.user.username|make_list|first }}
                     </div>
                 {% endif %}
@@ -30,34 +26,27 @@
             
             <form action="{% url 'explorar' %}" method="get" class="relative group flex-grow">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg viewBox="0 0 24 24" class="w-5 h-5 text-gray-500 group-focus-within:text-[#0000fe] transition-colors fill-current"><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path></svg>
+                    <svg viewBox="0 0 24 24" class="w-5 h-5 text-[#3A7CA5] group-focus-within:text-[#093D77] transition-colors fill-current"><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path></svg>
                 </div>
                 <input type="text" 
                        name="q_usuarios" 
                        value="{{ query }}" 
-                       placeholder="Buscar personas" 
+                       placeholder="Buscar estudiantes o profesores" 
                        autocomplete="off"
                        hx-get="{% url 'explorar' %}" 
                        hx-trigger="keyup changed delay:300ms, search" 
                        hx-target="#resultados-busqueda" 
-                       class="w-full bg-gray-100 text-gray-900 rounded-full py-2 pl-12 pr-4 outline-none focus:bg-white focus:ring-1 focus:ring-[#0000fe] border border-transparent focus:border-[#0000fe] transition-all text-sm" 
+                       class="w-full bg-white text-[#2B2B2B] rounded-2xl py-3.5 pl-12 pr-4 outline-none focus:ring-2 focus:ring-[#093D77] border-none shadow-sm transition-all font-semibold placeholder-[#3A7CA5]/60" 
                        autofocus>
             </form>
-            <!--
-            <a href="#" class="flex-shrink-0 text-gray-900 hover:bg-gray-100 p-2 rounded-full transition-colors">
-                <svg viewBox="0 0 24 24" class="w-6 h-6 fill-none stroke-current stroke-2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            </a>
-            -->
-            
         </div>
 
-        <div id="resultados-busqueda" class="flex flex-col">
+        <div id="resultados-busqueda" class="flex flex-col gap-3 px-4 pt-2">
             {% include 'foro/partials/resultados_usuarios.html' %}
         </div>
     </main>
 
-    <aside class="hidden lg:block w-80 pl-8 py-3 sticky top-0 h-screen">
-    </aside>
+    <aside class="hidden lg:block w-80 pl-8 py-3 sticky top-0 h-screen"></aside>
 
    {% include 'foro/partials/nav_mobile.html' %}
 </div>

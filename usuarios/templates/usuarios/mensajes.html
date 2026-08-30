@@ -1,110 +1,153 @@
 {% extends 'base.html' %} 
-{% block title %} Mensajes / X {% endblock %} 
+{% block title %} Mensajes / VozUni {% endblock %} 
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
-<div class="min-h-screen flex justify-center mx-auto max-w-5xl px-0 md:px-4">
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
     {% include 'foro/partials/sidebar.html' %}
 
-    <main class="w-full md:flex-1 min-h-screen border-r border-gray-100 flex pb-16 md:pb-0">
+    <main class="w-full md:flex-1 min-h-screen flex pb-24 md:pb-8 md:pt-8 md:px-6 gap-6">
         
-        <div class="w-full md:w-2/5 border-r border-gray-100 flex flex-col {% if chat_activo %}hidden md:flex{% endif %} h-screen sticky top-0">
-            <div class="flex items-center gap-4 px-4 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md z-20">
+        <div class="w-full md:w-2/5 flex flex-col {% if chat_activo %}hidden md:flex{% endif %} h-screen md:h-[calc(100vh-4rem)] bg-white md:rounded-3xl shadow-sm border border-gray-100 overflow-hidden sticky top-0 md:top-8">
+            <div class="flex items-center gap-4 px-5 py-4 border-b border-gray-50 bg-white z-20">
                 <div onclick="toggleSidebar()" class="cursor-pointer transition-transform active:scale-95 md:hidden">
                     {% if request.user.avatar %}
-                        <img src="{{ request.user.avatar.url }}" class="w-8 h-8 rounded-full object-cover">
+                        <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
                     {% else %}
-                        <div class="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase select-none">
+                        <div class="w-10 h-10 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                             {{ request.user.username|make_list|first }}
                         </div>
                     {% endif %}
                 </div>
-                <h1 class="text-xl font-bold text-gray-900">Mensajes</h1>
+                <h1 class="text-xl font-black text-[#2B2B2B]">Chats</h1>
             </div>
-            <div class="overflow-y-auto flex-1">
+            <div class="overflow-y-auto flex-1 bg-[#F8F9FA]/30">
                 {% for amigo in amigos %}
-                <a href="{% url 'chat_usuario' amigo.username %}" class="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-50 {% if chat_activo.username == amigo.username %}bg-gray-50 border-r-4 border-r-blue-500{% endif %}">
+                <a href="{% url 'chat_usuario' amigo.username %}" class="flex items-center gap-4 p-4 hover:bg-white transition-all border-b border-gray-100 {% if chat_activo.username == amigo.username %}bg-white shadow-sm border-l-4 border-l-[#093D77]{% endif %}">
                     <div class="relative">
                         {% if amigo.avatar %}
-                            <img src="{{ amigo.avatar.url }}" class="w-12 h-12 rounded-full object-cover">
+                            <img src="{{ amigo.avatar.url }}" class="w-14 h-14 rounded-full object-cover shadow-sm">
                         {% else %}
-                            <div class="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase">
+                            <div class="w-14 h-14 rounded-full bg-[#093D77] text-white flex items-center justify-center font-extrabold uppercase text-xl shadow-sm">
                                 {{ amigo.username|make_list|first }}
                             </div>
                         {% endif %}
                         
                         {% if amigo.mensajes_sin_leer > 0 %}
-                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+                            <div class="absolute -top-1 -right-1 bg-[#DAA520] text-white text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                                 {{ amigo.mensajes_sin_leer }}
                             </div>
                         {% endif %}
                     </div>
                     <div class="flex flex-col overflow-hidden">
-                        <span class="font-bold text-gray-900 text-sm truncate {% if amigo.mensajes_sin_leer > 0 %}text-black{% endif %}">{{ amigo.username }}</span>
-                        <span class="text-gray-500 text-xs truncate">@{{ amigo.username|lower }}</span>
+                        <span class="font-bold text-[15px] truncate {% if amigo.mensajes_sin_leer > 0 %}text-[#093D77]{% else %}text-[#2B2B2B]{% endif %}">{{ amigo.username }}</span>
+                        <span class="text-[#3A7CA5] text-sm font-semibold truncate">@{{ amigo.username|lower }}</span>
                     </div>
                 </a>
                 {% empty %}
-                    <div class="p-8 text-center text-gray-500 font-medium">Aún no sigues a nadie. ¡Sigue a otros para chatear!</div>
+                    <div class="p-8 text-center text-[#3A7CA5] font-bold">No hay conversaciones activas.</div>
                 {% endfor %}
             </div>
         </div>
 
-        <div class="w-full md:w-3/5 flex flex-col {% if not chat_activo %}hidden md:flex{% endif %} h-screen">
+        <div class="w-full md:w-3/5 flex flex-col {% if not chat_activo %}hidden md:flex{% endif %} h-screen md:h-[calc(100vh-4rem)] bg-white md:rounded-3xl shadow-sm border border-gray-100 overflow-hidden relative">
             {% if chat_activo %}
-                <div class="flex items-center gap-4 px-4 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-                    <a href="{% url 'bandeja_mensajes' %}" class="md:hidden p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-900">
+                <div class="flex items-center gap-4 px-5 py-4 border-b border-gray-50 bg-white z-20 shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
+                    <a href="{% url 'bandeja_mensajes' %}" class="md:hidden p-2 -ml-2 rounded-full bg-[#F8F9FA] hover:bg-gray-200 text-[#2B2B2B]">
                         <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></svg>
                     </a>
-                    <a href="{% url 'perfil_usuario' chat_activo.username %}" class="flex items-center gap-3">
+                    <a href="{% url 'perfil_usuario' chat_activo.username %}" class="flex items-center gap-3 group">
                         {% if chat_activo.avatar %}
-                            <img src="{{ chat_activo.avatar.url }}" class="w-8 h-8 rounded-full object-cover">
+                            <img src="{{ chat_activo.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
                         {% else %}
-                            <div class="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase">
+                            <div class="w-10 h-10 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                                 {{ chat_activo.username|make_list|first }}
                             </div>
                         {% endif %}
-                        <span class="font-bold text-lg text-gray-900">{{ chat_activo.username }}</span>
+                        <span class="font-extrabold text-lg text-[#2B2B2B] group-hover:text-[#093D77] transition-colors">{{ chat_activo.username }}</span>
                     </a>
                 </div>
                 
-                <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-white" id="chat-container">
+                <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-3 bg-[#e5ddd5]/30 scroll-smooth" id="chat-container">
                     {% for msj in mensajes %}
+                        {% ifchanged msj.fecha_envio|date:"Y-m-d" %}
+                        <div class="flex justify-center my-3">
+                            <div class="bg-white/80 backdrop-blur-sm border border-gray-100 text-[#3A7CA5] text-[11px] font-extrabold px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-sm">
+                                {{ msj.fecha_envio|date:"j F, Y" }}
+                            </div>
+                        </div>
+                        {% endifchanged %}
+
                         {% if msj.remitente == request.user %}
-                            <div class="flex justify-end">
-                                <div class="bg-[#0000fe] text-white px-4 py-2 rounded-2xl rounded-br-sm max-w-[75%] text-base shadow-sm">
-                                    {{ msj.contenido }}
+                            <div class="flex justify-end relative">
+                                <div class="bg-[#093D77] text-white px-3 py-2 rounded-2xl rounded-br-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[80px]">
+                                    <div class="text-[15px] font-medium leading-relaxed break-words pl-1 pr-2 flex flex-col">
+                                        {% if msj.imagen %}
+                                            <img src="{{ msj.imagen.url }}" class="rounded-xl max-w-full my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                        {% endif %}
+                                        {% if msj.contenido %}
+                                            <span>{{ msj.contenido }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center justify-end gap-1 mt-1 -mb-0.5 ml-4">
+                                        <span class="text-[10px] font-semibold text-white/80">{{ msj.fecha_envio|time:"g:i A" }}</span>
+                                        {% if msj.leido %}
+                                            <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-current text-[#34B7F1]"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"></path></svg>
+                                        {% else %}
+                                            <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-current text-white/60"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"></path></svg>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         {% else %}
-                            <div class="flex justify-start">
-                                <div class="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl rounded-bl-sm max-w-[75%] text-base shadow-sm">
-                                    {{ msj.contenido }}
+                            <div class="flex justify-start relative">
+                                <div class="bg-white border border-gray-100 text-[#2B2B2B] px-3 py-2 rounded-2xl rounded-bl-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[80px]">
+                                    <div class="text-[15px] font-medium leading-relaxed break-words pl-1 pr-4 flex flex-col">
+                                        {% if msj.imagen %}
+                                            <img src="{{ msj.imagen.url }}" class="rounded-xl max-w-full my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                        {% endif %}
+                                        {% if msj.contenido %}
+                                            <span>{{ msj.contenido }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center justify-end gap-1 mt-1 -mb-0.5 ml-4">
+                                        <span class="text-[10px] font-semibold text-[#3A7CA5]/70">{{ msj.fecha_envio|time:"g:i A" }}</span>
+                                    </div>
                                 </div>
                             </div>
                         {% endif %}
                     {% empty %}
-                        <div class="text-center text-gray-500 mt-10 font-medium">Envía un mensaje para iniciar la conversación.</div>
+                        <div class="text-center text-[#3A7CA5] mt-10 font-bold bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mx-auto max-w-sm">Saluda a tu compañero de campus.</div>
                     {% endfor %}
                 </div>
 
-                <form method="post" class="p-3 border-t border-gray-100 bg-white sticky bottom-0">
+                <form id="chat-form" data-hx-disable="true" method="post" action="{% url 'chat_usuario' chat_activo.username %}" enctype="multipart/form-data" class="p-3 md:p-4 bg-white border-t border-gray-50 z-20">
                     {% csrf_token %}
-                    <div class="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
-                        <input type="text" name="contenido" placeholder="Start a new message" class="flex-1 bg-transparent outline-none border-none focus:ring-0 text-gray-900 placeholder-gray-500 text-base" required autocomplete="off">
-                        <button type="submit" class="p-1.5 rounded-full hover:bg-gray-200 text-[#0000fe] transition-colors">
-                            <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current"><path d="M2.504 21.866l.526-2.108C3.04 19.719 4 15.823 4 12s-.96-7.719-.97-7.757l-.527-2.109L22.236 12 2.504 21.866zM5.981 13c-.072 1.962-.34 3.833-.583 5.183L17.764 12 5.398 5.818c.242 1.349.51 3.221.583 5.182H12v2H5.981z"></path></svg>
+                    <div class="flex items-center gap-2 bg-[#F8F9FA] border border-gray-200 focus-within:border-[#3A7CA5] focus-within:ring-1 focus-within:ring-[#3A7CA5] transition-all rounded-full px-4 py-2 shadow-inner">
+                        
+                        <label class="cursor-pointer p-2 rounded-full hover:bg-gray-200 text-[#3A7CA5] transition-all flex-shrink-0">
+                            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-3.31-2.69-6-6-6S3 1.69 3 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"></path></svg>
+                            <input type="file" id="chat-file" name="imagen" accept="image/*" class="hidden">
+                        </label>
+
+                        <input type="text" id="chat-input" name="contenido" placeholder="Escribe un mensaje o pega una imagen..." class="flex-1 bg-transparent outline-none border-none focus:ring-0 text-[#2B2B2B] placeholder-[#3A7CA5]/60 text-[15px] font-medium" autocomplete="off" autofocus>
+                        
+                        <button type="submit" class="p-2 rounded-full hover:bg-[#093D77] text-[#093D77] hover:text-white transition-all active:scale-95 flex-shrink-0">
+                            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M2.504 21.866l.526-2.108C3.04 19.719 4 15.823 4 12s-.96-7.719-.97-7.757l-.527-2.109L22.236 12 2.504 21.866zM5.981 13c-.072 1.962-.34 3.833-.583 5.183L17.764 12 5.398 5.818c.242 1.349.51 3.221.583 5.182H12v2H5.981z"></path></svg>
                         </button>
                     </div>
                 </form>
             {% else %}
-                <div class="flex-1 flex flex-col items-center justify-center p-8 text-center hidden md:flex">
-                    <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Selecciona un chat</h2>
-                    <p class="text-gray-500 text-base mb-6">Elige entre tus conversaciones existentes o inicia una nueva.</p>
+                <div class="flex-1 flex flex-col items-center justify-center p-8 text-center hidden md:flex bg-[#F8F9FA]/50">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-sm flex items-center justify-center mb-6">
+                        <svg viewBox="0 0 24 24" class="w-10 h-10 fill-current text-[#093D77]"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-black text-[#2B2B2B] mb-2">Campus Connect</h2>
+                    <p class="text-[#3A7CA5] font-semibold text-[15px]">Selecciona una conversación a la izquierda para empezar.</p>
                 </div>
             {% endif %}
         </div>
@@ -117,8 +160,99 @@
 
 {% if chat_activo %}
 <script>
-    const chatContainer = document.getElementById('chat-container');
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    (function() {
+        function scrollToBottom() {
+            var chatContainer = document.getElementById('chat-container');
+            if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        scrollToBottom();
+
+        if (!window.chatHtmxListenerAdded) {
+            document.body.addEventListener('htmx:afterSettle', function(evt) {
+                scrollToBottom();
+            });
+            window.chatHtmxListenerAdded = true;
+        }
+
+        var chatForm = document.getElementById('chat-form');
+        var chatInput = document.getElementById('chat-input');
+        var chatFile = document.getElementById('chat-file');
+        var MAX_SIZE = 5 * 1024 * 1024;
+
+        if (chatFile) {
+            chatFile.onchange = function() {
+                if(this.files[0] && this.files[0].size > MAX_SIZE) {
+                    alert("La imagen excede el límite de 5MB.");
+                    this.value = '';
+                }
+            };
+        }
+
+        if (chatInput) {
+            chatInput.onpaste = function(e) {
+                var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (var index in items) {
+                    var item = items[index];
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        var blob = item.getAsFile();
+                        if (blob.size > MAX_SIZE) {
+                            alert("La imagen pegada excede el límite de 5MB.");
+                            return;
+                        }
+                        var dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(blob);
+                        chatFile.files = dataTransfer.files;
+                        chatInput.placeholder = "Imagen adjunta. Escribe algo o dale a enviar...";
+                        e.preventDefault(); 
+                    }
+                }
+            };
+        }
+
+        if (chatForm) {
+            chatForm.onsubmit = async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var formData = new FormData(this);
+                if(!formData.get('contenido') && !chatFile.files.length) return;
+
+                chatInput.disabled = true;
+                
+                try {
+                    var response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if(response.ok) {
+                        this.reset();
+                        chatInput.placeholder = "Escribe un mensaje o pega una imagen...";
+                        chatInput.disabled = false;
+                        chatInput.focus();
+
+                        var htmlResponse = await fetch(window.location.href);
+                        var htmlText = await htmlResponse.text();
+                        var parser = new DOMParser();
+                        var doc = parser.parseFromString(htmlText, 'text/html');
+                        
+                        var newContainer = doc.getElementById('chat-container');
+                        if (newContainer) {
+                            document.getElementById('chat-container').innerHTML = newContainer.innerHTML;
+                            scrollToBottom();
+                        }
+                    } else {
+                        var data = await response.json();
+                        alert(data.error || "Error al enviar mensaje.");
+                        chatInput.disabled = false;
+                    }
+                } catch (error) {
+                    chatInput.disabled = false;
+                }
+            };
+        }
+    })();
 </script>
 {% endif %}
 {% endblock %}

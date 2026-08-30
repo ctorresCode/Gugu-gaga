@@ -3,159 +3,141 @@
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    body {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #ffffff;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
 <div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
     
     {% include 'foro/partials/sidebar.html'%}
 
-    <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
+    <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8">
         
-        <div class="flex md:hidden items-center justify-between px-4 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
+        <div class="flex md:hidden items-center justify-between px-4 py-3 bg-[#F8F9FA]/90 backdrop-blur-md sticky top-0 z-20">
             <div onclick="toggleSidebar()" class="cursor-pointer transition-transform active:scale-95">
                 {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-8 h-8 rounded-full object-cover">
+                    <img src="{{ request.user.avatar.url }}" class="w-9 h-9 rounded-full object-cover shadow-sm">
                 {% else %}
-                    <div class="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xs uppercase select-none">
+                    <div class="w-9 h-9 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                         {{ request.user.username|make_list|first }}
                     </div>
                 {% endif %}
             </div>
-            <div class="text-xl font-black tracking-wider text-gray-900">
+            <div class="text-xl font-black tracking-wider text-[#2B2B2B]">
                 <img src="/hilos/imagenes/UniVoz.png" alt="VozUni Logo" class="h-10 w-auto object-contain">
             </div>
-            <div class="w-8"></div>
+            <div class="w-9"></div>
         </div>
 
-        <div class="p-4 sticky top-[53px] md:top-0 bg-white/80 backdrop-blur-md z-10 border-b border-gray-100">
-            <form method="get">
-                <input type="text" name="q" value="{{ busqueda_actual }}" placeholder="Buscar por universidad" class="w-full px-5 py-2.5 text-base border-2 border-gray-900 rounded-full bg-white outline-none focus:border-blue-600 transition-colors font-bold text-gray-800 placeholder-gray-500 shadow-sm">
+        <div class="px-4 py-4 md:pt-8 sticky top-[60px] md:top-0 bg-[#F8F9FA]/90 backdrop-blur-md z-10">
+            <form method="get" class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="w-5 h-5 text-[#3A7CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" name="q" value="{{ busqueda_actual }}" placeholder="Buscar en el campus" class="w-full pl-11 pr-5 py-3.5 text-sm md:text-base border-none rounded-2xl bg-white shadow-sm outline-none focus:ring-2 focus:ring-[#093D77] transition-all font-semibold text-[#2B2B2B] placeholder-[#3A7CA5]/60">
                 {% if uni_actual %}
                     <input type="hidden" name="uni" value="{{ uni_actual }}">
                 {% endif %}
             </form>
         </div>
 
-        <div class="flex flex-nowrap gap-2 px-4 py-3 border-b border-gray-100 items-center overflow-x-auto whitespace-nowrap scrollbar-none">
-            <a href="?q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm flex-shrink-0 {% if not uni_actual %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
-                TODAS
+        <div class="flex flex-nowrap gap-2.5 px-4 pb-4 pt-1 items-center overflow-x-auto whitespace-nowrap scrollbar-none relative z-0">
+            <a href="?q={{ busqueda_actual }}" class="px-5 py-2 rounded-xl font-bold transition-all text-sm flex-shrink-0 shadow-sm {% if not uni_actual %}bg-[#093D77] text-white{% else %}bg-white text-[#3A7CA5] hover:bg-gray-50 border border-gray-100{% endif %}">
+                Campus Global
             </a>
             
             {% for uni in universidades %}
-                <a href="?uni={{ uni.id }}&q={{ busqueda_actual }}" class="px-4 py-1.5 rounded-full font-bold border-2 border-gray-900 transition-colors text-sm flex-shrink-0 {% if uni_actual == uni.id %}bg-gray-900 text-white{% else %}bg-white text-gray-900 hover:bg-gray-100{% endif %}">
+                <a href="?uni={{ uni.id }}&q={{ busqueda_actual }}" class="px-5 py-2 rounded-xl font-bold transition-all text-sm flex-shrink-0 shadow-sm {% if uni_actual == uni.id %}bg-[#093D77] text-white{% else %}bg-white text-[#3A7CA5] hover:bg-gray-50 border border-gray-100{% endif %}">
                     {{ uni.nombre }}
                 </a>
             {% endfor %}
         </div>
 
-        <form id="form-post" method="post" 
-      hx-post="{% url 'inicio' %}" 
-      hx-encoding="multipart/form-data"
-      hx-target="#lista-hilos" 
-      hx-swap="afterbegin"
-      hx-on::after-request="if(event.detail.successful) this.reset()"
-      class="bg-white border-b border-gray-100 p-4 flex gap-3">
-            {% csrf_token %}
-            <div class="flex-shrink-0">
-                {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
-                {% else %}
-                    <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-sm">
-                        {{ request.user.username|make_list|first }}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="flex-grow flex flex-col pt-1">
-                <input type="hidden" name="titulo" value="Publicación de {{ request.user.username }}">
-                
-                <textarea name="contenido" rows="2" placeholder="¿Que estás pensando?" class="w-full resize-none outline-none text-lg text-gray-900 placeholder-gray-500 bg-transparent font-normal border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
-                
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
-                    <label class="cursor-pointer text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors inline-flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
-                            <path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path>
-                        </svg>
-                        <input type="file" name="imagen" accept="image/*" class="hidden">
-                    </label>
-
-                    <button type="submit" class="bg-[#0000fe] text-white font-bold py-1.5 px-5 rounded-full hover:bg-[#00006e] transition-colors text-sm">
-                        Post
-                    </button>
+        <div class="px-4 mb-6">
+            <form id="form-post" method="post" 
+                  hx-post="{% url 'inicio' %}" 
+                  hx-encoding="multipart/form-data"
+                  hx-target="#lista-hilos" 
+                  hx-swap="afterbegin"
+                  hx-on::after-request="if(event.detail.successful) this.reset()"
+                  class="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-5 flex gap-4 transition-all focus-within:shadow-md focus-within:border-[#3A7CA5]/30">
+                {% csrf_token %}
+                <div class="flex-shrink-0">
+                    {% if request.user.avatar %}
+                        <img src="{{ request.user.avatar.url }}" class="w-11 h-11 rounded-full object-cover shadow-sm">
+                    {% else %}
+                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase shadow-sm text-sm">
+                            {{ request.user.username|make_list|first }}
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
-        </form>
 
-        <div id="lista-hilos">
+                <div class="flex-grow flex flex-col pt-1">
+                    <input type="hidden" name="titulo" value="Publicación de {{ request.user.username }}">
+                    
+                    <textarea name="contenido" rows="2" placeholder="¿Qué está pasando en la U?" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+                    
+                    <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-50">
+                        <label class="cursor-pointer text-[#3A7CA5] hover:bg-[#F8F9FA] hover:text-[#093D77] p-2 rounded-full transition-colors inline-flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
+                                <path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path>
+                            </svg>
+                            <input type="file" name="imagen" accept="image/*" class="hidden">
+                        </label>
+
+                        <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] active:scale-95 transition-all text-sm shadow-md shadow-[#093D77]/20">
+                            Publicar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="lista-hilos" class="px-4 flex flex-col gap-4">
             {% for hilo in hilos %}
                 {% include 'foro/partials/tarjeta_hilo.html' %}
             {% empty %}
-                <div class="text-center py-16 bg-white">
-                    <p class="text-gray-500 font-bold text-base">Aún no hay publicaciones aquí.</p>
+                <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mx-4">
+                    <p class="text-[#3A7CA5] font-bold text-lg">El campus está silencioso.</p>
+                    <p class="text-gray-400 text-sm mt-1">Sé el primero en publicar algo.</p>
                 </div>
             {% endfor %}
         </div>
 
     </main>
 
-    <aside class="hidden lg:block w-80 pl-8 py-3 sticky top-0 h-screen z-30">
-        <div class="relative group">
-            
+    <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30">
+    <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 relative group">
+        <h3 class="font-extrabold text-[#2B2B2B] text-lg mb-4">Directorio</h3>
+        <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
-                <svg viewBox="0 0 24 24" class="w-5 h-5 text-gray-500 group-focus-within:text-[#0000fe] transition-colors fill-current"><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path></svg>
+                <svg viewBox="0 0 24 24" class="w-4 h-4 text-[#3A7CA5] group-focus-within:text-[#093D77] transition-colors fill-current">
+                    <path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path>
+                </svg>
             </div>
             
             <input type="text" 
                    name="q_usuarios" 
-                   placeholder="Buscar personas" 
+                   placeholder="Buscar estudiantes..." 
                    autocomplete="off"
                    hx-get="{% url 'explorar' %}" 
                    hx-trigger="keyup changed delay:300ms, search" 
                    hx-target="#resultados-sidebar" 
-                   class="peer w-full bg-gray-100 text-gray-900 rounded-full py-3 pl-12 pr-4 outline-none focus:bg-white focus:ring-1 focus:ring-[#0000fe] border border-transparent focus:border-[#0000fe] transition-all relative z-10"
+                   class="w-full bg-[#F8F9FA] text-[#2B2B2B] font-medium rounded-xl py-2.5 pl-11 pr-4 outline-none focus:bg-white focus:ring-2 focus:ring-[#3A7CA5]/30 border border-transparent transition-all relative z-10 text-sm placeholder-[#3A7CA5]/60"
                    onkeydown="if(event.key === 'Enter') event.preventDefault();">
-            
-            <div class="absolute left-0 right-0 top-14 bg-white rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden peer-focus:block hover:block z-50">
-                <div id="resultados-sidebar" class="max-h-[70vh] overflow-y-auto">
-                    <div class="p-6 text-center">
-                        <p class="text-gray-500 text-sm font-bold">Intenta buscar personas</p>
-                    </div>
+        </div>
+        
+        <div class="mt-4 hidden group-focus-within:block hover:block z-50">
+            <div id="resultados-sidebar" class="max-h-[50vh] overflow-y-auto scrollbar-none pr-1">
+                <div class="py-4 text-center">
+                    <p class="text-[#3A7CA5]/70 text-xs font-bold uppercase tracking-wider">Comienza a escribir</p>
                 </div>
             </div>
-
         </div>
-    </aside>
+    </div>
+</aside>
 
     {% include 'foro/partials/nav_mobile.html' %}
     
 </div>
-
-<!--
-<script>
-    document.getElementById('form-post').addEventListener('submit', function(e) {
-        e.preventDefault();
-        let formData = new FormData(this);
-        
-        fetch('.', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('lista-hilos').insertAdjacentHTML('afterbegin', html);
-            this.reset();
-        })
-        .catch(error => console.error('Error:', error));
-    });
-</script>
--->
 {% endblock %}

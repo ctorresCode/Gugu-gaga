@@ -28,4 +28,7 @@ urlpatterns = [
     #urls para el lanzamiento y recibimiento de mensajes
     path('mensajes/', BandejaMensajesView.as_view(), name='bandeja_mensajes'),
     path('mensajes/<str:username>/', ChatView.as_view(), name='chat_usuario'),
+
+    #urls para poder editar y eliminar hilos
+
 ]

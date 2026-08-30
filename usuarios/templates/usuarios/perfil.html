@@ -1,158 +1,160 @@
 {% extends 'base.html' %} 
-{% block title %} {{ perfil_usuario.username }} / X {% endblock %} 
+{% block title %} Perfil / VozUni {% endblock %} 
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    body {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #ffffff;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
-<div class="min-h-screen flex justify-center mx-auto max-w-4xl px-0 md:px-4">
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
     
     {% include 'foro/partials/sidebar.html' %}
 
-    <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
+    <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8">
         
-        <div class="flex items-center gap-6 px-4 py-1 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-30">
-            <a href="{% url 'inicio' %}" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-900">
+        <div class="flex items-center gap-6 px-4 py-4 md:pt-8 bg-[#F8F9FA]/90 backdrop-blur-md sticky top-0 z-30">
+            <a href="{% url 'inicio' %}" class="p-2.5 rounded-full bg-white shadow-sm hover:bg-[#093D77] hover:text-white text-[#2B2B2B] transition-all">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></svg>
             </a>
-            <div class="flex flex-col py-1">
-                <h1 class="text-xl font-bold text-gray-900 leading-tight">{{ perfil_usuario.username }}</h1>
-                <span class="text-xs text-gray-500 font-medium">{{ hilos_usuario.count }} posts</span>
+            <div class="flex flex-col">
+                <h1 class="text-xl font-black text-[#2B2B2B] leading-tight">{{ perfil_usuario.username }}</h1>
+                <span class="text-xs text-[#3A7CA5] font-bold">{{ hilos_usuario.count }} publicaciones</span>
             </div>
         </div>
 
-        <div class="h-32 md:h-48 bg-gray-200 w-full relative">
-            {% if perfil_usuario.banner %}
-                <img src="{{ perfil_usuario.banner.url }}" alt="Banner" class="w-full h-full object-cover">
-            {% endif %}
-        </div>
-
-        <div class="px-4 pb-4 border-b border-gray-100 relative">
-            <div class="flex justify-between items-start mb-3">
-                <div class="relative group -mt-12 md:-mt-16">
-                    <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-gray-900 text-white flex items-center justify-center font-bold text-4xl uppercase overflow-hidden shadow-sm">
-                        {% if perfil_usuario.avatar %}
-                            <img src="{{ perfil_usuario.avatar.url }}" class="w-full h-full object-cover">
-                        {% else %}
-                            <span>{{ perfil_usuario.username|make_list|first }}</span>
-                        {% endif %}
-                    </div>
-                    
-                    {% if request.user == perfil_usuario %}
-                    <form id="form-avatar" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <label for="input-avatar" class="absolute inset-0 rounded-full border-4 border-white bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer font-bold text-xs md:text-sm">
-                            <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current"><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4zM21 4h-2.5V1.5h-2V4H14v2h2.5v2.5h2V6H21V4z"></path></svg>
-                        </label>
-                        <input type="file" id="input-avatar" name="avatar" accept="image/*" class="hidden">
-                    </form>
+        <div class="px-0 md:px-4">
+            <div class="bg-white rounded-b-3xl md:rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                <div class="h-32 md:h-48 w-full bg-[#093D77]/10 relative">
+                    {% if perfil_usuario.banner %}
+                        <img src="{{ perfil_usuario.banner.url }}" alt="Banner" class="w-full h-full object-cover">
                     {% endif %}
                 </div>
 
-                <div class="pt-3">
-                    {% if request.user == perfil_usuario %}
-                        <form action="{% url 'editar_perfil' request.user.username %}" method="get" class="inline">
-                            <button type="submit" class="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-sm text-gray-900 hover:bg-gray-50 transition-colors">
-                                Edit profile
-                            </button>
-                        </form>
-                    {% else %}
-                        <form method="post" action="{% url 'seguir_usuario' perfil_usuario.username %}">
-                            {% csrf_token %}
-                            {% if lo_sigo %}
-                                <button type="submit" class="px-4 py-1.5 bg-white text-gray-900 border border-gray-300 rounded-full font-bold text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-600 transition-colors group w-32">
-                                    <span class="group-hover:hidden">Seguido</span>
-                                    <span class="hidden group-hover:inline">Dejar de seguir</span>
-                                </button>
-                            {% else %}
-                                <button type="submit" class="px-5 py-1.5 bg-gray-900 text-white rounded-full font-bold text-sm hover:bg-gray-800 transition-colors w-24">
-                                    Seguir
-                                </button>
+                <div class="px-5 pb-6 relative">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="relative group -mt-12 md:-mt-16 z-10">
+                            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-[#093D77] text-white flex items-center justify-center font-black text-4xl uppercase overflow-hidden shadow-md">
+                                {% if perfil_usuario.avatar %}
+                                    <img src="{{ perfil_usuario.avatar.url }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <span>{{ perfil_usuario.username|make_list|first }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if request.user == perfil_usuario %}
+                            <form id="form-avatar" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <label for="input-avatar" class="absolute inset-0 rounded-full border-4 border-white bg-[#2B2B2B]/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer font-bold backdrop-blur-sm">
+                                    <svg viewBox="0 0 24 24" class="w-7 h-7 fill-current"><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4zM21 4h-2.5V1.5h-2V4H14v2h2.5v2.5h2V6H21V4z"></path></svg>
+                                </label>
+                                <input type="file" id="input-avatar" name="avatar" accept="image/*" class="hidden">
+                            </form>
                             {% endif %}
-                        </form>
+                        </div>
+
+                        <div class="pt-4">
+                            {% if request.user == perfil_usuario %}
+                                <form action="{% url 'editar_perfil' request.user.username %}" method="get">
+                                    <button type="submit" class="px-5 py-2 border-2 border-gray-200 rounded-full font-extrabold text-sm text-[#2B2B2B] hover:bg-gray-50 hover:border-gray-300 transition-all">
+                                        Editar perfil
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'seguir_usuario' perfil_usuario.username %}">
+                                    {% csrf_token %}
+                                    {% if lo_sigo %}
+                                        <button type="submit" class="px-5 py-2 bg-white text-[#2B2B2B] border-2 border-gray-200 rounded-full font-extrabold text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-600 transition-all group w-36">
+                                            <span class="group-hover:hidden">Siguiendo</span>
+                                            <span class="hidden group-hover:inline">Dejar de seguir</span>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="px-6 py-2 bg-[#093D77] text-white rounded-full font-extrabold text-sm hover:bg-[#3A7CA5] shadow-md shadow-[#093D77]/20 transition-all">
+                                            Seguir
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col mb-4">
+                        <h2 class="text-2xl font-black text-[#2B2B2B]">{{ perfil_usuario.username }}</h2>
+                        <span class="text-[#3A7CA5] text-[15px] font-semibold">@{{ perfil_usuario.username|lower }}</span>
+                    </div>
+
+                    {% if perfil_usuario.descripcion %}
+                    <div class="text-[#2B2B2B] text-[15px] mb-4 whitespace-pre-wrap font-medium leading-relaxed">{{ perfil_usuario.descripcion }}</div>
                     {% endif %}
+
+                    <div class="flex flex-wrap items-center gap-4 text-[#3A7CA5] text-sm font-semibold mb-4">
+                        <div class="flex items-center gap-1.5">
+                            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.11 21 3 19.88 3 18.5v-12C3 5.12 4.11 4 5.5 4H7zm0 2H5.5c-.28 0-.5.22-.5.5v3h14v-3c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm12 6H5v6.5c0 .28.22.5.5.5h13c.28 0 .5-.22.5-.5V12z"></path></svg>
+                            <span>Se unió en {{ perfil_usuario.date_joined|date:"F Y" }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="bg-[#DAA520]/10 text-[#DAA520] px-2 py-0.5 rounded-md border border-[#DAA520]/20 text-xs font-black uppercase">{{ perfil_usuario.universidad.nombre }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-5 text-[15px]">
+                        <span class="text-[#2B2B2B] font-black">{{ perfil_usuario.seguidos.count }} <span class="text-[#3A7CA5] font-semibold">Siguiendo</span></span>
+                        <span class="text-[#2B2B2B] font-black">{{ perfil_usuario.seguidores.count }} <span class="text-[#3A7CA5] font-semibold">Seguidores</span></span>
+                    </div>
+                </div>
+
+                <div class="flex border-t border-gray-100 text-[15px] font-bold text-[#3A7CA5] bg-white">
+                    <div id="tab-btn-posts" onclick="switchTab('posts')" class="flex-1 text-center py-4 text-[#093D77] relative hover:bg-gray-50 transition-colors cursor-pointer">
+                        Publicaciones
+                        <div id="indicator-posts" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1.5 bg-[#093D77] rounded-t-full"></div>
+                    </div>
+                    <div id="tab-btn-media" onclick="switchTab('media')" class="flex-1 text-center py-4 hover:bg-gray-50 transition-colors cursor-pointer relative">
+                        Galería
+                        <div id="indicator-media" class="hidden absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1.5 bg-[#093D77] rounded-t-full"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-col mb-3">
-                <h2 class="text-xl font-extrabold text-gray-900">{{ perfil_usuario.username }}</h2>
-                <span class="text-gray-500 text-sm">@{{ perfil_usuario.username|lower }}</span>
-            </div>
-
-            {% if perfil_usuario.descripcion %}
-            <div class="text-gray-900 text-sm mb-3 whitespace-pre-wrap">{{ perfil_usuario.descripcion }}</div>
-            {% endif %}
-
-            <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-3">
-                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.11 21 3 19.88 3 18.5v-12C3 5.12 4.11 4 5.5 4H7zm0 2H5.5c-.28 0-.5.22-.5.5v3h14v-3c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm12 6H5v6.5c0 .28.22.5.5.5h13c.28 0 .5-.22.5-.5V12z"></path></svg>
-                <span>Joined {{ perfil_usuario.date_joined|date:"F Y" }}</span>
-            </div>
-
-            <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-3">
-                <span>University: {{ perfil_usuario.universidad.nombre }}</span>
-            </div>
-
-            <div class="flex gap-4 text-sm">
-                <span class="text-gray-900 font-bold">{{ perfil_usuario.seguidos.count }} <span class="text-gray-500 font-normal">Following</span></span>
-                <span class="text-gray-900 font-bold">{{ perfil_usuario.seguidores.count }} <span class="text-gray-500 font-normal">Followers</span></span>
-            </div>
-        </div>
-
-        <div class="flex border-b border-gray-100 text-sm font-medium text-gray-500 overflow-x-auto scrollbar-none">
-            <div id="tab-btn-posts" onclick="switchTab('posts')" class="flex-1 min-w-[80px] text-center py-4 text-gray-900 font-bold relative hover:bg-gray-50 transition-colors cursor-pointer">
-                Posts
-                <div id="indicator-posts" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-1 bg-blue-500 rounded-t-full"></div>
-            </div>
-            <div id="tab-btn-media" onclick="switchTab('media')" class="flex-1 min-w-[80px] text-center py-4 hover:bg-gray-50 transition-colors cursor-pointer relative">
-                Media
-                <div id="indicator-media" class="hidden absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-1 bg-blue-500 rounded-t-full"></div>
-            </div>
-        </div>
-
-        <div id="content-posts" class="block">
-            {% for hilo in hilos_usuario %}
-                {% include 'foro/partials/tarjeta_hilo.html' %}
-            {% empty %}
-                <div class="text-center py-16 bg-white">
-                    <p class="text-gray-500 font-bold text-base">Aún no hay publicaciones aquí.</p>
-                </div>
-            {% endfor %}
-        </div>
-
-        <div id="content-media" class="hidden">
-            <div class="grid grid-cols-3 gap-1 sm:gap-2 p-1 sm:p-2">
+            <div id="content-posts" class="block flex flex-col gap-4">
                 {% for hilo in hilos_usuario %}
-                    {% if hilo.imagen %}
-                        <button onclick="openImageModal('{{ hilo.imagen.url }}')" type="button" class="aspect-square bg-gray-100 block overflow-hidden group w-full p-0 border-none cursor-pointer">
-                            <img src="{{ hilo.imagen.url }}" alt="Media de {{ perfil_usuario.username }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        </button>
-                    {% endif %}
+                    {% include 'foro/partials/tarjeta_hilo.html' %}
+                {% empty %}
+                    <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                        <p class="text-[#3A7CA5] font-bold text-lg">Este espacio está vacío.</p>
+                    </div>
                 {% endfor %}
             </div>
-            
-            {% if not hilos_usuario %}
-                <div class="col-span-3 text-center py-16 bg-white">
-                    <p class="text-gray-500 font-bold text-base">Este usuario no ha subido imágenes.</p>
-                </div>
-            {% endif %}
-        </div>
 
+            <div id="content-media" class="hidden bg-white p-2 rounded-3xl border border-gray-100 shadow-sm">
+                <div class="grid grid-cols-3 gap-2">
+                    {% for hilo in hilos_usuario %}
+                        {% if hilo.imagen %}
+                            <button onclick="openImageModal('{{ hilo.imagen.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
+                                <img src="{{ hilo.imagen.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            </button>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                {% if not hilos_usuario %}
+                    <div class="text-center py-16">
+                        <p class="text-[#3A7CA5] font-bold text-lg">No hay fotos en el campus.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </main>
 
-    {% include 'foro/partials/nav_mobile.html' %}
+    <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30"></aside>
 
+    {% include 'foro/partials/nav_mobile.html' %}
 </div>
 
-<div id="image-modal" class="fixed inset-0 z-[100] hidden bg-black/90 flex-col justify-center items-center opacity-0 transition-opacity duration-300" onclick="closeImageModal()">
-    <button type="button" class="absolute top-4 right-4 text-white hover:text-gray-300 p-2 focus:outline-none" onclick="closeImageModal()">
-        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+<div id="image-modal" class="fixed inset-0 z-[100] hidden bg-[#2B2B2B]/95 backdrop-blur-md flex-col justify-center items-center opacity-0 transition-opacity duration-300" onclick="closeImageModal()">
+    <button type="button" class="absolute top-6 right-6 bg-white/10 text-white rounded-full p-3 hover:bg-white/20 transition-colors focus:outline-none" onclick="closeImageModal()">
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
     </button>
-    <img id="modal-image" src="" alt="Imagen ampliada" class="max-h-[90vh] max-w-[90vw] object-contain rounded-md" onclick="event.stopPropagation()">
+    <img id="modal-image" src="" alt="Imagen ampliada" class="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
 </div>
 
 <script>
@@ -196,24 +198,24 @@
 
         if (tabName === 'posts') {
             contentPosts.classList.remove('hidden');
-            contentPosts.classList.add('block');
-            btnPosts.classList.add('text-gray-900', 'font-bold');
+            contentPosts.classList.add('flex');
+            btnPosts.classList.add('text-[#093D77]');
             indicatorPosts.classList.remove('hidden');
             
             contentMedia.classList.add('hidden');
             contentMedia.classList.remove('block');
-            btnMedia.classList.remove('text-gray-900', 'font-bold');
+            btnMedia.classList.remove('text-[#093D77]');
             indicatorMedia.classList.add('hidden');
             
         } else if (tabName === 'media') {
             contentMedia.classList.remove('hidden');
             contentMedia.classList.add('block');
-            btnMedia.classList.add('text-gray-900', 'font-bold');
+            btnMedia.classList.add('text-[#093D77]');
             indicatorMedia.classList.remove('hidden');
             
             contentPosts.classList.add('hidden');
-            contentPosts.classList.remove('block');
-            btnPosts.classList.remove('text-gray-900', 'font-bold');
+            contentPosts.classList.remove('flex');
+            btnPosts.classList.remove('text-[#093D77]');
             indicatorPosts.classList.add('hidden');
         }
     }
@@ -238,6 +240,6 @@
             document.body.style.overflow = '';
         }, 300);
     }
-</script>
 
+</script>
 {% endblock %}

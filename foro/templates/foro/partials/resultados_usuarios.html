@@ -1,26 +1,26 @@
 {% if query %}
     {% for usuario in usuarios %}
-        <a href="{% url 'perfil_usuario' usuario.username %}" class="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 cursor-pointer">
+        <a href="{% url 'perfil_usuario' usuario.username %}" class="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
             {% if usuario.avatar %}
-                <img src="{{ usuario.avatar.url }}" class="w-12 h-12 rounded-full object-cover">
+                <img src="{{ usuario.avatar.url }}" class="w-14 h-14 rounded-full object-cover ring-2 ring-transparent group-hover:ring-[#093D77]/20 transition-all">
             {% else %}
-                <div class="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-lg uppercase select-none">
+                <div class="w-14 h-14 rounded-full bg-[#093D77] text-white flex items-center justify-center font-extrabold text-xl uppercase shadow-sm">
                     {{ usuario.username|make_list|first }}
                 </div>
             {% endif %}
             <div class="flex flex-col">
-                <span class="font-bold text-gray-900 text-base">{{ usuario.username }}</span>
-                <span class="text-gray-500 text-sm">@{{ usuario.username|lower }}</span>
+                <span class="font-extrabold text-[#2B2B2B] text-lg group-hover:text-[#093D77] transition-colors">{{ usuario.username }}</span>
+                <span class="text-[#3A7CA5] text-sm font-semibold">@{{ usuario.username|lower }}</span>
             </div>
         </a>
     {% empty %}
-        <div class="p-8 text-center">
-            <p class="text-gray-900 font-bold text-xl mb-2">No hay resultados para "{{ query }}"</p>
-            <p class="text-gray-500 text-sm">Intenta buscar con otro término o verifica la ortografía.</p>
+        <div class="py-16 text-center bg-white rounded-3xl border border-gray-100 shadow-sm mt-4">
+            <p class="text-[#2B2B2B] font-extrabold text-xl mb-2">Campus vacío para "{{ query }}"</p>
+            <p class="text-[#3A7CA5] text-sm font-medium">Revisa la ortografía o intenta otro nombre.</p>
         </div>
     {% endfor %}
 {% else %}
-    <div class="p-8 text-center">
-        <p class="text-gray-500 font-bold text-base">Escribe el nombre de un usuario para buscar.</p>
+    <div class="py-20 text-center">
+        <p class="text-[#3A7CA5] font-bold text-lg">Busca a un compañero para ver su perfil.</p>
     </div>
 {% endif %}

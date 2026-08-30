@@ -1,145 +1,142 @@
 {% extends 'base.html' %} 
-{% block title %} detalle {{ hilo.autor.username }} {% endblock %} 
+{% block title %} Discusión / VozUni {% endblock %} 
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    body {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #ffffff;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
-<div class="min-h-screen flex justify-center mx-auto max-w-4xl px-0 md:px-4">
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
     
     {% include 'foro/partials/sidebar.html' %}
     
-    <main class="w-full md:flex-1 md:max-w-xl min-h-screen border-r border-gray-100 pb-24 md:pb-20">
+    <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8">
         
-        <div class="flex items-center gap-6 px-4 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-            <a href="{% url 'inicio' %}" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-900">
+        <div class="flex items-center gap-6 px-4 py-4 md:pt-8 bg-[#F8F9FA]/90 backdrop-blur-md sticky top-0 z-20">
+            <a href="{% url 'inicio' %}" class="p-2.5 rounded-full bg-white shadow-sm hover:bg-[#093D77] hover:text-white text-[#2B2B2B] transition-all">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></svg>
             </a>
-            <h1 class="text-xl font-bold text-gray-900">Post</h1>
+            <h1 class="text-2xl font-black text-[#2B2B2B]">Hilo</h1>
         </div>
 
-        <div class="bg-white p-4 border-b border-gray-100">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-3">
-                    <a href="{% url 'perfil_usuario' hilo.autor.username %}">
-                        {% if hilo.autor.avatar %}
-                            <img src="{{ hilo.autor.avatar.url }}" class="w-12 h-12 rounded-full object-cover">
-                        {% else %}
-                            <div class="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-base">
-                                {{ hilo.autor.username|make_list|first }}
-                            </div>
-                        {% endif %}
-                    </a>
-                    <div class="flex flex-col">
-                        <a href="{% url 'perfil_usuario' hilo.autor.username %}" class="font-bold text-gray-900 text-base leading-tight hover:underline">{{ hilo.autor.username }}</a>
-                        <span class="text-gray-500 text-sm">@{{ hilo.autor.username|lower }}</span>
+        <div class="px-4">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'perfil_usuario' hilo.autor.username %}" class="block hover:opacity-80 transition-opacity">
+                            {% if hilo.autor.avatar %}
+                                <img src="{{ hilo.autor.avatar.url }}" class="w-14 h-14 rounded-full object-cover shadow-sm">
+                            {% else %}
+                                <div class="w-14 h-14 rounded-full bg-[#093D77] text-white flex items-center justify-center font-extrabold uppercase text-xl shadow-sm">
+                                    {{ hilo.autor.username|make_list|first }}
+                                </div>
+                            {% endif %}
+                        </a>
+                        <div class="flex flex-col">
+                            <a href="{% url 'perfil_usuario' hilo.autor.username %}" class="font-black text-[#2B2B2B] text-lg hover:text-[#093D77] hover:underline decoration-2 underline-offset-2">{{ hilo.autor.username }}</a>
+                            <span class="text-[#3A7CA5] text-sm font-semibold">@{{ hilo.autor.username|lower }}</span>
+                        </div>
                     </div>
+                    <span class="bg-[#DAA520]/10 text-[#DAA520] border border-[#DAA520]/20 text-[11px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                        {{ hilo.universidad.nombre|default:"Global" }}
+                    </span>
                 </div>
-                <span class="bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                    {{ hilo.universidad.nombre|default:"Global" }}
-                </span>
-            </div>
 
-            <p class="text-gray-900 text-lg leading-relaxed font-normal mb-4">{{ hilo.contenido }}</p>
+                <p class="text-[#2B2B2B] text-xl leading-relaxed font-medium mb-5">{{ hilo.contenido }}</p>
 
-            {% if hilo.imagen %}
-                <img src="{{ hilo.imagen.url }}" class="mb-4 rounded-2xl max-h-[500px] w-full object-cover border border-gray-100">
-            {% endif %}
-
-            <div class="py-3 border-y border-gray-100 text-gray-500 text-sm flex gap-4">
-                <span>{{ hilo.fecha_creacion|date:"g:i A · M j, Y" }}</span>
-                <span>·</span>
-                <span class="font-bold text-gray-900"></span>
-            </div>
-
-            <div class="flex items-center justify-around py-3 border-b border-gray-100 text-gray-500">
-                <div class="flex items-center gap-2 group hover:text-blue-500 transition-colors cursor-pointer">
-                    <div class="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
-                        <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                    </div>
-                    <span class="text-xs font-semibold">{{ respuestas.count }}</span>
-                </div>
-                
-                {% include 'foro/partials/boton_like.html' with hilo=hilo %}
-            </div>
-        </div>
-
-        <form method="post" class="bg-white border-b border-gray-100 p-4 flex gap-3">
-            {% csrf_token %}
-            <div class="flex-shrink-0">
-                {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
-                {% else %}
-                    <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-sm">
-                        {{ request.user.username|make_list|first }}
+                {% if hilo.imagen %}
+                    <div class="rounded-2xl overflow-hidden mb-5 border border-gray-100 shadow-sm">
+                        <img src="{{ hilo.imagen.url }}" class="max-h-[500px] w-full object-cover">
                     </div>
                 {% endif %}
-            </div>
 
-            <div class="flex-grow flex flex-col pt-1">
-                <textarea name="contenido" rows="2" placeholder="Post your reply" class="w-full resize-none outline-none text-base text-gray-900 placeholder-gray-500 bg-transparent font-normal border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
-                
-                <div class="flex items-center justify-end pt-3 border-t border-gray-100 mt-2">
-                    <button type="submit" class="bg-[#0000fe] text-white font-bold py-1.5 px-5 rounded-full hover:bg-[#00006e] transition-colors text-sm">
-                        Reply
-                    </button>
+                <div class="py-4 border-y border-gray-50 text-[#3A7CA5] text-sm font-semibold flex gap-4">
+                    <span>{{ hilo.fecha_creacion|date:"g:i A · M j, Y" }}</span>
+                </div>
+
+                <div class="flex items-center justify-around pt-4 text-[#3A7CA5] font-bold">
+                    <div class="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current opacity-70"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
+                        <span class="text-sm">{{ respuestas.count }}</span>
+                    </div>
+                    
+                    {% include 'foro/partials/boton_like.html' with hilo=hilo %}
                 </div>
             </div>
-        </form>
 
-        <div id="lista-respuestas">
-            {% for respuesta in respuestas %}
-                <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta.pk %}'" class="bg-white p-4 hover:bg-gray-50/50 transition-colors cursor-pointer border-b border-gray-100">
-                    <div class="flex items-start gap-3">
-                        <div class="flex-shrink-0">
-                            <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();">
-                                {% if respuesta.autor.avatar %}
-                                    <img src="{{ respuesta.autor.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
-                                {% else %}
-                                    <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold uppercase select-none text-sm">
-                                        {{ respuesta.autor.username|make_list|first }}
-                                    </div>
-                                {% endif %}
-                            </a>
+            <form method="post" class="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex gap-4 mb-6 focus-within:shadow-md transition-all">
+                {% csrf_token %}
+                <div class="flex-shrink-0">
+                    {% if request.user.avatar %}
+                        <img src="{{ request.user.avatar.url }}" class="w-11 h-11 rounded-full object-cover shadow-sm">
+                    {% else %}
+                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase text-sm shadow-sm">
+                            {{ request.user.username|make_list|first }}
                         </div>
-                        
-                        <div class="flex-grow min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="font-bold text-gray-900 text-sm truncate hover:underline">{{ respuesta.autor.username }}</a>
-                                <span class="text-gray-500 text-xs whitespace-nowrap">· {{ respuesta.fecha_creacion|timesince }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="flex-grow flex flex-col pt-1">
+                    <textarea name="contenido" rows="2" placeholder="Suma tu voz a la discusión" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+                    
+                    <div class="flex items-center justify-end pt-3 mt-2 border-t border-gray-50">
+                        <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] transition-all text-sm shadow-md shadow-[#093D77]/20 active:scale-95">
+                            Responder
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="lista-respuestas" class="flex flex-col gap-4">
+                {% for respuesta in respuestas %}
+                    <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta.pk %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0">
+                                <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="block hover:opacity-80 transition-opacity">
+                                    {% if respuesta.autor.avatar %}
+                                        <img src="{{ respuesta.autor.avatar.url }}" class="w-11 h-11 rounded-full object-cover shadow-sm">
+                                    {% else %}
+                                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase text-sm shadow-sm">
+                                            {{ respuesta.autor.username|make_list|first }}
+                                        </div>
+                                    {% endif %}
+                                </a>
                             </div>
-
-                            <p class="text-gray-900 text-sm md:text-base leading-relaxed font-normal mb-3">{{ respuesta.contenido }}</p>
-
-                            <div class="flex items-center justify-between text-gray-500 max-w-xs pr-4">
-                                <div class="flex items-center gap-2 group hover:text-blue-500 transition-colors">
-                                    <div class="p-2 -ml-2 rounded-full group-hover:bg-blue-50 transition-colors">
-                                        <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                                    </div>
-                                    <span class="text-xs font-medium">{{ respuesta.respuestas_hijas.count }}</span>
+                            
+                            <div class="flex-grow min-w-0 pt-0.5">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="font-extrabold text-[#2B2B2B] text-[15px] truncate hover:text-[#093D77] hover:underline decoration-2 underline-offset-2">{{ respuesta.autor.username }}</a>
+                                    <span class="text-[#3A7CA5] text-xs font-semibold whitespace-nowrap opacity-80">· {{ respuesta.fecha_creacion|timesince }}</span>
                                 </div>
-                                
-                                {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
-                                
+
+                                <p class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90">{{ respuesta.contenido }}</p>
+
+                                <div class="flex items-center gap-8 text-[#3A7CA5] font-semibold mt-1">
+                                    <div class="flex items-center gap-1.5 group/reply hover:text-[#093D77] transition-colors">
+                                        <div class="p-2 -ml-2 rounded-full group-hover/reply:bg-[#093D77]/10 transition-colors">
+                                            <svg viewBox="0 0 24 24" class="w-[22px] h-[22px] fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
+                                        </div>
+                                        <span class="text-xs">{{ respuesta.respuestas_hijas.count }}</span>
+                                    </div>
+                                    
+                                    {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
+                                    
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            {% empty %}
-                <div class="text-center py-16 bg-white">
-                    <p class="text-gray-500 font-bold text-base">Aún no hay respuestas en este hilo.</p>
-                </div>
-            {% endfor %}
+                {% empty %}
+                    <div class="text-center py-12">
+                        <p class="text-[#3A7CA5] font-bold text-lg">Nadie ha respondido aún.</p>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-
     </main>
 
-    {% include 'foro/partials/nav_mobile.html' %}
+    <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30"></aside>
 
+    {% include 'foro/partials/nav_mobile.html' %}
 </div>
 {% endblock %}

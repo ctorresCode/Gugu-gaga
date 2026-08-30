@@ -1,3 +1,5 @@
+from django.core.cache import cache
+from django.db.models import Q, Count
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -16,7 +18,11 @@ class InicioView(LoginRequiredMixin, TemplateView):
         busqueda = self.request.GET.get('q', '')
         universidad_id = self.request.GET.get('uni', '')
 
-        universidades = Universidad.objects.all()
+        universidades = cache.get('universidades_list')
+        if not universidades:
+            universidades = Universidad.objects.all()
+            cache.set('universidades_list', universidades, 86400)
+            
         if busqueda:
             universidades = universidades.filter(nombre__icontains=busqueda)
 
@@ -24,6 +30,11 @@ class InicioView(LoginRequiredMixin, TemplateView):
         
         if universidad_id and universidad_id.isdigit():
             hilos = hilos.filter(universidad_id=universidad_id)
+
+        hilos = hilos.annotate(
+            conteo_likes=Count('likes', distinct=True),
+            conteo_respuestas=Count('respuestas', filter=Q(respuestas__activo=True), distinct=True)
+        ).order_by('-fecha_creacion')[:50]
 
         context['universidades'] = universidades
         context['hilos'] = hilos
@@ -63,7 +74,12 @@ class detalleHilo(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['respuestas'] = self.object.respuestas.filter(activo=True, respuesta_padre__isnull=True).select_related('autor')
+        context['respuestas'] = self.object.respuestas.filter(
+            activo=True, respuesta_padre__isnull=True
+        ).select_related('autor').annotate(
+            conteo_likes=Count('likes', distinct=True),
+            conteo_respuestas_hijas=Count('respuestas_hijas', filter=Q(respuestas_hijas__activo=True), distinct=True)
+        ).order_by('fecha_creacion')
         return context   
 
     def post(self, request, *args, **kwargs):
@@ -94,7 +110,9 @@ def detalle_respuesta(request, pk):
             )
             return redirect('detalle_respuesta', pk=respuesta_actual.pk)
 
-    respuestas_hijas = respuesta_actual.respuestas_hijas.filter(activo=True).order_by('fecha_creacion')
+    respuestas_hijas = respuesta_actual.respuestas_hijas.filter(activo=True).select_related('autor').annotate(
+        conteo_likes=Count('likes', distinct=True)
+    ).order_by('fecha_creacion')
 
     return render(request, 'foro/detalle_respuesta.html', {
         'respuesta': respuesta_actual,
@@ -103,9 +121,9 @@ def detalle_respuesta(request, pk):
 
 @login_required
 def boton_like(request, hilo_id):
-    hilo = Hilo.objects.get(pk=hilo_id)
+    hilo = get_object_or_404(Hilo, pk=hilo_id)
 
-    if request.user in hilo.likes.all():
+    if hilo.likes.filter(id=request.user.id).exists():
         hilo.likes.remove(request.user)
     else:
         hilo.likes.add(request.user)
@@ -116,13 +134,12 @@ def boton_like(request, hilo_id):
 def Like_respuesta(request, respuesta_id):
     respuesta = get_object_or_404(Respuesta, id=respuesta_id)
     
-    if request.user in respuesta.likes.all():
+    if respuesta.likes.filter(id=request.user.id).exists():
         respuesta.likes.remove(request.user)
     else:
         respuesta.likes.add(request.user)
         
     return render(request, 'foro/partials/boton_like_respuesta.html', {'respuesta': respuesta})
-
 
 @login_required
 def explorar_usuarios(request):
@@ -130,7 +147,9 @@ def explorar_usuarios(request):
     usuarios = []
     
     if query:
-        usuarios = UsuarioForo.objects.filter(username__icontains=query, is_active=True).exclude(id=request.user.id)
+        usuarios = UsuarioForo.objects.filter(
+            username__icontains=query, is_active=True
+        ).exclude(id=request.user.id)[:50]
         
     if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'foro/partials/resultados_usuarios.html', {

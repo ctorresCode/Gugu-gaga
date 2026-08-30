@@ -1,49 +1,51 @@
 {% extends 'base.html' %} 
-{% block title %} Editar Perfil / X {% endblock %} 
+{% block title %} Editar Perfil / VozUni {% endblock %} 
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
     
     .image-upload-overlay {
-        background-color: rgba(0, 0, 0, 0.3);
-        transition: background-color 0.2s ease;
+        background-color: rgba(9, 61, 119, 0.4);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(2px);
     }
     .image-upload-overlay:hover {
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(9, 61, 119, 0.6);
+        backdrop-filter: blur(4px);
     }
 </style>
 
-<div class="min-h-screen flex justify-center mx-auto max-w-5xl px-0 md:px-4">
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
     {% include 'foro/partials/sidebar.html' %}
 
-    <main class="w-full md:max-w-2xl min-h-screen border-x border-gray-100 flex flex-col pb-16 md:pb-0 relative">
+    <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8 flex flex-col relative">
         
-        <div class="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <a href="{% url 'perfil_usuario' request.user.username %}" class="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 text-gray-900 fill-current">
+        <div class="sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="{% url 'perfil_usuario' request.user.username %}" class="p-2.5 rounded-full bg-white shadow-sm hover:bg-[#093D77] hover:text-white text-[#2B2B2B] transition-all cursor-pointer">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
                         <g><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></g>
                     </svg>
                 </a>
-                <h2 class="text-xl font-bold text-gray-900 tracking-tight">Editar perfil</h2>
+                <h2 class="text-2xl font-black text-[#2B2B2B] tracking-tight">Editar perfil</h2>
             </div>
-            <button type="submit" form="edit-profile-form" class="px-5 py-1.5 bg-gray-900 text-white rounded-full font-bold text-sm hover:bg-gray-800 transition-colors">
+            <button type="submit" form="edit-profile-form" class="px-6 py-2 bg-[#093D77] text-white rounded-full font-bold text-sm hover:bg-[#3A7CA5] shadow-md shadow-[#093D77]/20 transition-all active:scale-95">
                 Guardar
             </button>
         </div>
 
-        <form id="edit-profile-form" method="POST" enctype="multipart/form-data" class="flex flex-col">
+        <form id="edit-profile-form" method="POST" enctype="multipart/form-data" class="bg-white md:mt-2 md:rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden mb-6">
             {% csrf_token %}
 
-            <div id="bannerContainer" class="relative w-full h-48 bg-gray-200 group z-10">
+            <div id="bannerContainer" class="relative w-full h-40 bg-[#093D77]/10 group z-10">
                 {% if request.user.banner %}
                     <img src="{{ request.user.banner.url }}" alt="Banner" class="w-full h-full object-cover">
                 {% endif %}
-                <label class="absolute inset-0 flex items-center justify-center image-upload-overlay cursor-pointer">
-                    <div class="p-3 rounded-full bg-gray-900/60 hover:bg-gray-900/80 transition-colors">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="w-6 h-6 text-white fill-current">
+                <label class="absolute inset-0 flex items-center justify-center image-upload-overlay opacity-0 group-hover:opacity-100 cursor-pointer">
+                    <div class="p-3 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors shadow-sm">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" class="w-7 h-7 fill-current">
                             <g><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4zM17 2c0 1.657-1.343 3-3 3v1c1.657 0 3 1.343 3 3h1c0-1.657 1.343-3 3-3V5c-1.657 0-3-1.343-3-3h-1z"></path></g>
                         </svg>
                     </div>
@@ -51,18 +53,18 @@
                 </label>
             </div>
 
-            <div class="relative px-4 pb-4">
-                <div id="avatarContainer" class="relative -mt-16 mb-4 w-32 h-32 rounded-full border-4 border-white bg-gray-100 overflow-hidden group z-20">
+            <div class="relative px-6 pb-8">
+                <div id="avatarContainer" class="relative -mt-16 mb-6 w-32 h-32 rounded-full border-4 border-white bg-[#093D77] overflow-hidden group z-20 shadow-md">
                     {% if request.user.avatar %}
                         <img src="{{ request.user.avatar.url }}" alt="Avatar" class="w-full h-full object-cover">
                     {% else %}
-                        <svg class="avatar-placeholder w-full h-full text-gray-400 p-4 bg-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
+                        <div class="avatar-placeholder w-full h-full flex items-center justify-center text-white font-black text-4xl uppercase">
+                            {{ request.user.username|make_list|first }}
+                        </div>
                     {% endif %}
-                    <label class="absolute inset-0 flex items-center justify-center image-upload-overlay cursor-pointer">
-                        <div class="p-3 rounded-full bg-gray-900/60 hover:bg-gray-900/80 transition-colors">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-6 h-6 text-white fill-current">
+                    <label class="absolute inset-0 flex items-center justify-center image-upload-overlay opacity-0 group-hover:opacity-100 cursor-pointer">
+                        <div class="p-3 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors shadow-sm">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-6 h-6 fill-current">
                                 <g><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4z"></path></g>
                             </svg>
                         </div>
@@ -70,38 +72,49 @@
                     </label>
                 </div>
 
-                <div class="flex flex-col gap-6 mt-4">
-                    <div class="relative border border-gray-300 rounded-md focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all px-3 pt-6 pb-2">
-                        <label for="id_username" class="absolute top-2 left-3 text-sm text-gray-500 transition-all">Nombre</label>
+                <div class="flex flex-col gap-5">
+                    <div class="relative bg-[#F8F9FA] border border-gray-200 rounded-2xl focus-within:border-[#3A7CA5] focus-within:ring-1 focus-within:ring-[#3A7CA5] transition-all px-4 pt-6 pb-2 shadow-inner">
+                        <label for="id_username" class="absolute top-2 left-4 text-[11px] font-bold text-[#3A7CA5] uppercase tracking-wider transition-all">Nombre</label>
                         <input type="text" name="username" id="id_username" 
                                value="{{ form.username.value|default_if_none:'' }}" 
-                               class="w-full bg-transparent text-gray-900 outline-none text-base" 
+                               class="w-full bg-transparent text-[#2B2B2B] outline-none text-[15px] font-medium" 
                                required>
                     </div>
 
-                    <div class="relative border border-gray-300 rounded-md focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all px-3 pt-6 pb-2">
-                        <label for="id_descripcion" class="absolute top-2 left-3 text-sm text-gray-500 transition-all">Biografía</label>
+                    <div class="relative bg-[#F8F9FA] border border-gray-200 rounded-2xl focus-within:border-[#3A7CA5] focus-within:ring-1 focus-within:ring-[#3A7CA5] transition-all px-4 pt-6 pb-2 shadow-inner">
+                        <label for="id_descripcion" class="absolute top-2 left-4 text-[11px] font-bold text-[#3A7CA5] uppercase tracking-wider transition-all">Biografía</label>
                         <textarea name="descripcion" id="id_descripcion" rows="3" 
-                                  class="w-full bg-transparent text-gray-900 outline-none text-base resize-none">{{ form.descripcion.value|default_if_none:'' }}</textarea>
+                                  class="w-full bg-transparent text-[#2B2B2B] outline-none text-[15px] font-medium resize-none leading-relaxed">{{ form.descripcion.value|default_if_none:'' }}</textarea>
                     </div>
                 </div>
             </div>
 
             {% if form.errors %}
-                <div class="px-4 pb-4">
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                            <p class="text-red-500 text-sm mb-1">{{ error }}</p>
+                <div class="px-6 pb-6">
+                    <div class="bg-red-50 border border-red-100 rounded-2xl p-4">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <p class="text-red-600 text-sm font-semibold mb-1 flex items-center gap-2">
+                                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    {{ error }}
+                                </p>
+                            {% endfor %}
                         {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                        <p class="text-red-500 text-sm mb-1">{{ error }}</p>
-                    {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <p class="text-red-600 text-sm font-semibold mb-1 flex items-center gap-2">
+                                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                {{ error }}
+                            </p>
+                        {% endfor %}
+                    </div>
                 </div>
             {% endif %}
 
         </form>
     </main>
+
+    <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30"></aside>
+
 </div>
 
 <script>
