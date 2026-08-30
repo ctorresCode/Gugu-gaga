@@ -41,5 +41,61 @@ class Respuesta(models.Model):
         self.hilo.save()
 
 
+class Notificacion(models.Model):
+    TIPO_LIKE_HILO = 'like_hilo'
+    TIPO_COMENTARIO = 'comentario'
+    TIPO_LIKE_RESPUESTA = 'like_respuesta'
+    TIPO_SEGUIDOR = 'seguidor'
+    TIPO_CHOICES = [
+        (TIPO_LIKE_HILO, 'Like a hilo'),
+        (TIPO_COMENTARIO, 'Comentario'),
+        (TIPO_LIKE_RESPUESTA, 'Like a respuesta'),
+        (TIPO_SEGUIDOR, 'Nuevo seguidor'),
+    ]
+
+    destinatario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='notificaciones', db_index=True
+    )
+    actores = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name='notificaciones_generadas', blank=True
+    )
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    hilo = models.ForeignKey(Hilo, null=True, blank=True, on_delete=models.CASCADE)
+    respuesta = models.ForeignKey(Respuesta, null=True, blank=True, on_delete=models.CASCADE)
+    leido = models.BooleanField(default=False, db_index=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    ultima_actividad = models.DateTimeField(auto_now=True, db_index=True)
+
+    class Meta:
+        ordering = ['-ultima_actividad']
+        indexes = [models.Index(fields=['destinatario', 'leido'])]
+
+    def texto_nombres(self):
+        actores = list(self.actores.all()[:2])
+        total = self.actores.count()
+        if total == 0:
+            return ''
+        if total == 1:
+            return actores[0].username
+        if total == 2:
+            return f"{actores[0].username} y {actores[1].username}"
+        return f"{actores[0].username}, {actores[1].username} y {total - 2} más"
+
+    def texto_accion(self):
+        total = self.actores.count()
+        plural = total != 1
+        textos = {
+            self.TIPO_LIKE_HILO: 'les ha gustado tu hilo' if plural else 'le ha gustado tu hilo',
+            self.TIPO_LIKE_RESPUESTA: 'les ha gustado tu comentario' if plural else 'le ha gustado tu comentario',
+            self.TIPO_COMENTARIO: 'comentaron en tu hilo' if plural else 'comentó en tu hilo',
+            self.TIPO_SEGUIDOR: 'empezaron a seguirte' if plural else 'empezó a seguirte',
+        }
+        return textos.get(self.tipo, '')
+
+    def __str__(self):
+        return f"Notificación para {self.destinatario} ({self.tipo})"
+
+
 
 

@@ -1,0 +1,49 @@
+{% for clave, lista in grupos.items %}
+    {% if lista %}
+    <div class="grupo-notif mb-6">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#3A7CA5]/70 px-2 mb-2">
+            {% if clave == 'semana' %}Esta semana{% elif clave == 'mes' %}Este mes{% else %}Anteriores{% endif %}
+        </h4>
+        <div class="flex flex-col gap-1">
+            {% for notif in lista %}
+            <a href="{% if notif.hilo %}{% url 'detalle_hilo' notif.hilo.pk %}{% else %}#{% endif %}"
+               data-tipo="{{ notif.tipo }}"
+               class="item-notif relative flex items-center gap-3 p-3 rounded-2xl transition-colors {% if notif.id in ids_no_leidas %}bg-[#093D77]/[0.05]{% else %}hover:bg-[#F8F9FA]{% endif %}">
+                {% if notif.id in ids_no_leidas %}
+                    <span class="w-2 h-2 rounded-full bg-[#DAA520] flex-shrink-0"></span>
+                {% endif %}
+                {% with actor=notif.actores.first %}
+                    {% if actor.avatar %}
+                        <img src="{{ actor.avatar.url }}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 shadow-sm">
+                    {% else %}
+                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0 shadow-sm">
+                            {{ actor.username|make_list|first }}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm text-[#2B2B2B] leading-snug">
+                        <span class="font-bold">{{ notif.texto_nombres }}</span>
+                        {{ notif.texto_accion }}
+                        <span class="text-[#3A7CA5]/60 font-medium"> · {{ notif.ultima_actividad|timesince }}</span>
+                    </p>
+                    {% if notif.tipo == 'comentario' and notif.respuesta %}
+                        <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta.contenido|truncatechars:60 }}"</p>
+                    {% endif %}
+                </div>
+                {% if notif.hilo.imagen %}
+                    <img src="{{ notif.hilo.imagen.url }}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+{% if not grupos.semana and not grupos.mes and not grupos.anteriores %}
+    <div class="text-center py-16">
+        <p class="text-[#3A7CA5] font-bold text-lg">Todo tranquilo por aquí.</p>
+        <p class="text-gray-400 text-sm mt-1">Cuando alguien interactúe contigo, lo verás en este panel.</p>
+    </div>
+{% endif %}

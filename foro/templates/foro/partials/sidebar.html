@@ -30,12 +30,21 @@
                 {% endif %}
             </a>
 
-            <button data-toggle="notifications" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-lg transition-all w-full text-[#2B2B2B] font-medium hover:bg-white hover:shadow-sm">
-                <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                </svg>
-                Notificaciones
-            </button>
+            <button type="button" 
+        onclick="toggleNotifications()"
+        hx-get="{% url 'notificaciones' %}"
+        hx-target="#notificaciones-lista"
+        hx-trigger="click"
+        class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-lg transition-all w-full text-[#2B2B2B] font-medium hover:bg-white hover:shadow-sm cursor-pointer ">
+    <svg class="w-6 h-6 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+    </svg>
+    Notificaciones
+    {% if total_notificaciones_sin_leer > 0 %}
+        <span class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm">{{ total_notificaciones_sin_leer }}</span>
+    {% endif %}
+</button>
+     
         </nav>
     </div>
 
@@ -68,6 +77,30 @@
     </div>
 </header>
 
+<div id="notificaciones-overlay-bg" onclick="toggleNotifications()" class="fixed inset-0 bg-[#2B2B2B]/60 z-[60] hidden opacity-0 transition-opacity duration-150"></div>
+
+<aside id="notificaciones-panel" class="fixed top-0 right-0 z-[70] h-screen w-full md:w-[420px] bg-white transform translate-x-full transition-transform duration-150 ease-out shadow-2xl flex flex-col">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
+        <h2 class="text-2xl font-extrabold text-[#2B2B2B]">Notificaciones</h2>
+        <button onclick="toggleNotifications()" class="p-2 rounded-full hover:bg-[#F8F9FA] text-[#2B2B2B] transition-colors">
+            <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+
+    <div class="flex gap-2 px-6 py-3 overflow-x-auto whitespace-nowrap scrollbar-none border-b border-gray-100 flex-shrink-0">
+        <button data-filtro="todas" onclick="filtrarNotificaciones('todas')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-[#093D77] text-white shadow-sm">Todas</button>
+        <button data-filtro="comentario" onclick="filtrarNotificaciones('comentario')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100">Comentarios</button>
+        <button data-filtro="like_hilo" onclick="filtrarNotificaciones('like_hilo')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100">Me gusta</button>
+        <button data-filtro="seguidor" onclick="filtrarNotificaciones('seguidor')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100">Seguidores</button>
+    </div>
+
+    <div id="notificaciones-lista" class="flex-1 overflow-y-auto px-3 py-4">
+        <div class="text-center py-16">
+            <p class="text-[#3A7CA5]/50 font-bold text-sm animate-pulse">Cargando notificaciones...</p>
+        </div>
+    </div>
+</aside>
+
 <script>
     function toggleSidebar() {
         const sidebar = document.getElementById('mobile-sidebar');
@@ -95,4 +128,43 @@
             menu.classList.add('hidden');
         }
     });
+
+    function toggleNotifications() {
+    const panel = document.getElementById('notificaciones-panel');
+    const bg = document.getElementById('notificaciones-overlay-bg');
+    
+    if (!panel || !bg) return;
+
+    if (panel.classList.contains('translate-x-full')) {
+        panel.classList.remove('translate-x-full');
+        bg.classList.remove('hidden');
+        setTimeout(() => bg.classList.remove('opacity-0'), 10);
+        document.body.style.overflow = 'hidden';
+    } else {
+        panel.classList.add('translate-x-full');
+        bg.classList.add('opacity-0');
+        setTimeout(() => bg.classList.add('hidden'), 150);
+        document.body.style.overflow = '';
+    }
+}
+
+function filtrarNotificaciones(tipo) {
+    document.querySelectorAll('.filtro-notif').forEach(btn => {
+        const activo = btn.dataset.filtro === tipo;
+        btn.classList.toggle('bg-[#093D77]', activo);
+        btn.classList.toggle('text-white', activo);
+        btn.classList.toggle('shadow-sm', activo);
+        btn.classList.toggle('bg-white', !activo);
+        btn.classList.toggle('text-[#3A7CA5]', !activo);
+        btn.classList.toggle('border', !activo);
+        btn.classList.toggle('border-gray-100', !activo);
+    });
+    document.querySelectorAll('.item-notif').forEach(item => {
+        item.classList.toggle('hidden', !(tipo === 'todas' || item.dataset.tipo === tipo));
+    });
+    document.querySelectorAll('.grupo-notif').forEach(grupo => {
+        const hayVisibles = grupo.querySelectorAll('.item-notif:not(.hidden)').length > 0;
+        grupo.classList.toggle('hidden', !hayVisibles);
+    });
+}
 </script>

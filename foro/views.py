@@ -3,9 +3,11 @@ from django.db.models import Q, Count
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from foro.models import Hilo, Respuesta, Universidad
+from foro.models import Hilo, Notificacion, Respuesta, Universidad
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
 
 from usuarios.models import UsuarioForo
 
@@ -162,3 +164,26 @@ def explorar_usuarios(request):
         'query': query
     })
 
+@login_required
+def notificaciones(request):
+    todas = (Notificacion.objects.filter(destinatario=request.user)
+             .select_related('hilo', 'respuesta').prefetch_related('actores'))
+
+    ids_no_leidas = set(todas.filter(leido=False).values_list('id', flat=True))
+
+    ahora = timezone.now()
+    grupos = {
+        'semana': todas.filter(ultima_actividad__gte=ahora - timedelta(days=7)),
+        'mes': todas.filter(ultima_actividad__lt=ahora - timedelta(days=7),
+                             ultima_actividad__gte=ahora - timedelta(days=30)),
+        'anteriores': todas.filter(ultima_actividad__lt=ahora - timedelta(days=30)),
+    }
+
+    # se marcan como leídas al abrir el panel, igual que Instagram
+    Notificacion.objects.filter(destinatario=request.user, leido=False).update(leido=True)
+
+    contexto = {'grupos': grupos, 'ids_no_leidas': ids_no_leidas}
+
+    if request.headers.get('HX-Request') == 'true':
+        return render(request, 'foro/partials/notificaciones_lista.html', contexto)
+    return render(request, 'foro/notificaciones_lista.html', contexto)
