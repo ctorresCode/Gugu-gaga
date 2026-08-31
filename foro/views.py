@@ -3,7 +3,7 @@ from django.db.models import Q, Count
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from foro.models import Hilo, Notificacion, Respuesta, Universidad
+from foro.models import Hilo, Notificacion, Respuesta, Sugerencia, Universidad, RespuestaSugerencia
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -179,7 +179,6 @@ def notificaciones(request):
         'anteriores': todas.filter(ultima_actividad__lt=ahora - timedelta(days=30)),
     }
 
-    # se marcan como leídas al abrir el panel, igual que Instagram
     Notificacion.objects.filter(destinatario=request.user, leido=False).update(leido=True)
 
     contexto = {'grupos': grupos, 'ids_no_leidas': ids_no_leidas}
@@ -187,3 +186,151 @@ def notificaciones(request):
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'foro/partials/notificaciones_lista.html', contexto)
     return render(request, 'foro/notificaciones_lista.html', contexto)
+
+class SugerenciasCreateView(LoginRequiredMixin, CreateView):
+    model = Sugerencia
+    fields = ['contenido']
+    template_name = 'foro/sugerencias.html'
+    success_url = reverse_lazy('sugerencias')
+
+    def form_valid(self, form):
+        if self.request.user.is_authenticated:
+            form.instance.usuario = self.request.user
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sugerencias'] = Sugerencia.objects.select_related('usuario').prefetch_related(
+            'likes', 'dislikes'
+        ).annotate(
+            conteo_likes=Count('likes', distinct=True),
+            conteo_dislikes=Count('dislikes', distinct=True),
+            conteo_respuestas=Count('respuestas', distinct=True),
+        )[:50]
+        return context
+
+@login_required
+def detalle_sugerencia(request, pk):
+    sugerencia = get_object_or_404(Sugerencia, pk=pk)
+    
+    if request.method == 'POST':
+        contenido = request.POST.get('contenido')
+        respuesta_padre_id = request.POST.get('respuesta_padre_id')
+        
+        if contenido:
+            respuesta_padre = None
+            if respuesta_padre_id:
+                respuesta_padre = get_object_or_404(RespuestaSugerencia, pk=respuesta_padre_id, sugerencia=sugerencia)
+
+            nueva_respuesta = RespuestaSugerencia.objects.create(
+                sugerencia=sugerencia,
+                respuesta_padre=respuesta_padre,
+                autor=request.user,
+                contenido=contenido
+            )
+            
+            destinatario = respuesta_padre.autor if respuesta_padre else sugerencia.usuario
+            if destinatario and destinatario != request.user:
+                notif, created = Notificacion.objects.get_or_create(
+                    destinatario=destinatario,
+                    tipo=Notificacion.TIPO_COMENTARIO_SUGERENCIA,
+                    sugerencia=sugerencia,
+                    leido=False
+                )
+                notif.actores.add(request.user)
+                notif.save()
+                
+            return redirect('detalle_sugerencia', pk=sugerencia.pk)
+
+    respuestas_principales = sugerencia.respuestas.filter(respuesta_padre__isnull=True).select_related('autor').prefetch_related(
+        'likes',
+        'respuestas_hijas__autor',
+        'respuestas_hijas__likes',
+        'respuestas_hijas__respuestas_hijas'
+    )
+
+    return render(request, 'foro/detalle_sugerencia.html', {
+        'sugerencia': sugerencia,
+        'respuestas': respuestas_principales
+    })
+
+
+@login_required
+def interaccion_sugerencia(request, pk, accion):
+    sugerencia = get_object_or_404(Sugerencia, pk=pk)
+
+    if accion == 'like':
+        if sugerencia.likes.filter(id=request.user.id).exists():
+            sugerencia.likes.remove(request.user)
+        else:
+            sugerencia.likes.add(request.user)
+            sugerencia.dislikes.remove(request.user)
+
+            if sugerencia.usuario and sugerencia.usuario != request.user:
+                notif, created = Notificacion.objects.get_or_create(
+                    destinatario=sugerencia.usuario,
+                    tipo=Notificacion.TIPO_LIKE_SUGERENCIA,
+                    sugerencia=sugerencia,
+                    leido=False
+                )
+                notif.actores.add(request.user)
+                notif.save()
+
+    elif accion == 'dislike':
+        if sugerencia.dislikes.filter(id=request.user.id).exists():
+            sugerencia.dislikes.remove(request.user)
+        else:
+            sugerencia.dislikes.add(request.user)
+            sugerencia.likes.remove(request.user)
+
+    siguiente = request.META.get('HTTP_REFERER')
+    return redirect(siguiente) if siguiente else redirect('sugerencias')
+
+
+@login_required
+def like_respuesta_sugerencia(request, respuesta_id):
+    respuesta = get_object_or_404(RespuestaSugerencia, id=respuesta_id)
+    if respuesta.likes.filter(id=request.user.id).exists():
+        respuesta.likes.remove(request.user)
+    else:
+        respuesta.likes.add(request.user)
+    return redirect('detalle_sugerencia', pk=respuesta.sugerencia.pk)
+
+@login_required
+def detalle_respuesta_sugerencia(request, pk):
+    respuesta_actual = get_object_or_404(RespuestaSugerencia, pk=pk)
+    sugerencia = respuesta_actual.sugerencia
+    
+    if request.method == 'POST':
+        contenido = request.POST.get('contenido')
+        if contenido:
+            nueva_respuesta = RespuestaSugerencia.objects.create(
+                sugerencia=sugerencia,
+                respuesta_padre=respuesta_actual,
+                autor=request.user,
+                contenido=contenido
+            )
+            
+            destinatario = respuesta_actual.autor
+            if destinatario and destinatario != request.user:
+                notif, created = Notificacion.objects.get_or_create(
+                    destinatario=destinatario,
+                    tipo=Notificacion.TIPO_COMENTARIO_SUGERENCIA,
+                    sugerencia=sugerencia,
+                    leido=False
+                )
+                notif.actores.add(request.user)
+                notif.respuesta_sugerencia = nueva_respuesta
+                notif.save()
+                
+            return redirect('detalle_respuesta_sugerencia', pk=respuesta_actual.pk)
+
+    respuestas_hijas = respuesta_actual.respuestas_hijas.all().select_related('autor').annotate(
+        conteo_likes=Count('likes', distinct=True)
+    ).order_by('fecha_creacion')
+
+    return render(request, 'foro/detalle_respuesta_sugerencia.html', {
+        'respuesta_padre': respuesta_actual,
+        'sugerencia': sugerencia,
+        'respuestas': respuestas_hijas,
+    })

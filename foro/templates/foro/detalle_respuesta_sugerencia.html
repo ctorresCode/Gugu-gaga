@@ -1,0 +1,91 @@
+{% extends 'base.html' %} 
+{% block title %} Hilo de Respuesta {% endblock %} 
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
+    
+    {% include 'foro/partials/sidebar.html' %}
+
+    <main class="flex-1 max-w-2xl w-full mx-auto mt-6 md:mt-10 px-4 md:px-0 pb-20 md:pb-0">
+        
+        <div class="mb-6 flex items-center justify-between">
+            <a href="{% url 'detalle_sugerencia' sugerencia.pk %}" class="text-sm font-bold text-[#093D77] hover:underline flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Volver a la Sugerencia
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl border-2 border-blue-100 p-5 shadow-sm mb-6 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-[#093D77]"></div>
+            <div class="flex justify-between items-start mb-2 pl-2">
+                <div class="flex items-center gap-2">
+                    <div class="font-bold text-gray-900 text-lg">
+                        {% if respuesta_padre.autor %}{{ respuesta_padre.autor.username }}{% else %}Anónimo{% endif %}
+                    </div>
+                    <span class="text-gray-400 text-sm">· {{ respuesta_padre.fecha_creacion|timesince }}</span>
+                </div>
+            </div>
+            
+            <p class="text-gray-800 mt-2 text-lg pl-2">{{ respuesta_padre.contenido|linebreaksbr }}</p>
+
+            <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 pl-2">
+                <a href="{% url 'like_respuesta_sugerencia' respuesta_padre.pk %}" class="flex items-center gap-1.5 text-sm {% if request.user in respuesta_padre.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+                    {{ respuesta_padre.likes.count }}
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-8">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="flex items-start gap-3">
+                    <textarea 
+                        name="contenido" 
+                        rows="2" 
+                        class="flex-1 bg-transparent border-0 focus:ring-0 resize-none placeholder-gray-400 text-gray-900 text-sm p-0 outline-none" 
+                        placeholder="Responde a {% if respuesta_padre.autor %}{{ respuesta_padre.autor.username }}{% else %}este usuario{% endif %}..." 
+                        required></textarea>
+                </div>
+                <div class="flex justify-end mt-4 pt-3 border-t border-gray-100">
+                    <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white font-medium py-2 px-6 rounded-full transition-colors text-sm">
+                        Responder
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="space-y-4">
+            {% for hija in respuestas %}
+            <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm ml-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-gray-900 text-sm">
+                        {% if hija.autor %}{{ hija.autor.username }}{% else %}Usuario eliminado{% endif %}
+                    </span>
+                    <span class="text-gray-400 text-xs">{{ hija.fecha_creacion|timesince }}</span>
+                </div>
+                <p class="text-gray-700 text-sm">{{ hija.contenido|linebreaksbr }}</p>
+
+                <div class="flex items-center gap-4 mt-3 pt-2 border-t border-gray-50 text-xs">
+                    <a href="{% url 'like_respuesta_sugerencia' hija.pk %}" class="flex items-center gap-1.5 {% if request.user in hija.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+                        {{ hija.likes.count }}
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-6">
+                <p class="text-gray-400 text-sm">Nadie ha respondido a este comentario aún.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    {% include 'foro/partials/nav_mobile.html' %}
+</div>
+{% endblock %}

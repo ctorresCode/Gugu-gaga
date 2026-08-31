@@ -1,69 +1,70 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="htmx-config" content='{"historyCacheSize": 0}' />
+    <meta name="htmx-config" content='{"historyCacheSize": 10}' />
     <title>{% block title %} {% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <style>
       html {
         scrollbar-gutter: stable;
         overflow-y: scroll;
       }
     </style>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
   </head>
   <body hx-boost="true" class="bg-[#F8F9FA] text-[#2B2B2B]">
     {% block content %} {% endblock %}
-    
+
     <script>
-        function toggleMenuHilo(menuId) {
-            document.querySelectorAll('[id^="menu-hilo-"]').forEach(menu => {
-                if (menu.id !== menuId) menu.classList.add('hidden');
-            });
-            const menu = document.getElementById(menuId);
-            if (menu) {
-                menu.classList.toggle('hidden');
-            }
-        }
-
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('.relative-menu')) {
-                document.querySelectorAll('[id^="menu-hilo-"]').forEach(menu => {
-                    menu.classList.add('hidden');
-                });
-            }
+      function toggleMenuHilo(menuId) {
+        document.querySelectorAll('[id^="menu-hilo-"]').forEach((menu) => {
+          if (menu.id !== menuId) menu.classList.add("hidden");
         });
-
-        function openDeleteModal(hiloId) {
-            const menu = document.getElementById('menu-hilo-' + hiloId);
-            if (menu) menu.classList.add('hidden');
-            
-            const modal = document.getElementById('modal-borrar-' + hiloId);
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    modal.querySelector('div').classList.remove('scale-95');
-                }, 10);
-                document.body.style.overflow = 'hidden';
-            }
+        const menu = document.getElementById(menuId);
+        if (menu) {
+          menu.classList.toggle("hidden");
         }
+      }
 
-        function closeDeleteModal(hiloId) {
-            const modal = document.getElementById('modal-borrar-' + hiloId);
-            if (modal) {
-                modal.classList.add('opacity-0');
-                modal.querySelector('div').classList.add('scale-95');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                    document.body.style.overflow = '';
-                }, 300);
-            }
+      document.addEventListener("click", function (event) {
+        if (!event.target.closest(".relative-menu")) {
+          document.querySelectorAll('[id^="menu-hilo-"]').forEach((menu) => {
+            menu.classList.add("hidden");
+          });
         }
+      });
+
+      function openDeleteModal(hiloId) {
+        const menu = document.getElementById("menu-hilo-" + hiloId);
+        if (menu) menu.classList.add("hidden");
+
+        const modal = document.getElementById("modal-borrar-" + hiloId);
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
+          setTimeout(() => {
+            modal.classList.remove("opacity-0");
+            modal.querySelector("div").classList.remove("scale-95");
+          }, 10);
+          document.body.style.overflow = "hidden";
+        }
+      }
+
+      function closeDeleteModal(hiloId) {
+        const modal = document.getElementById("modal-borrar-" + hiloId);
+        if (modal) {
+          modal.classList.add("opacity-0");
+          modal.querySelector("div").classList.add("scale-95");
+          setTimeout(() => {
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+            document.body.style.overflow = "";
+          }, 300);
+        }
+      }
     </script>
   </body>
 </html>

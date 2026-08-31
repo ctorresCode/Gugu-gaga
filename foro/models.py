@@ -4,7 +4,6 @@ from django.utils import timezone
 from config import settings
 from usuarios.models import Universidad
 
-# Create your models here.
 class Hilo(models.Model):
     titulo = models.CharField(max_length=200)
     contenido = models.TextField()
@@ -40,17 +39,21 @@ class Respuesta(models.Model):
         self.hilo.ultima_actividad = self.fecha_creacion
         self.hilo.save()
 
-
 class Notificacion(models.Model):
     TIPO_LIKE_HILO = 'like_hilo'
     TIPO_COMENTARIO = 'comentario'
     TIPO_LIKE_RESPUESTA = 'like_respuesta'
     TIPO_SEGUIDOR = 'seguidor'
+    TIPO_LIKE_SUGERENCIA = 'like_sug'
+    TIPO_COMENTARIO_SUGERENCIA = 'coment_sug'
+    
     TIPO_CHOICES = [
         (TIPO_LIKE_HILO, 'Like a hilo'),
         (TIPO_COMENTARIO, 'Comentario'),
         (TIPO_LIKE_RESPUESTA, 'Like a respuesta'),
         (TIPO_SEGUIDOR, 'Nuevo seguidor'),
+        (TIPO_LIKE_SUGERENCIA, 'Like a sugerencia'),
+        (TIPO_COMENTARIO_SUGERENCIA, 'Comentario en sugerencia'),
     ]
 
     destinatario = models.ForeignKey(
@@ -60,9 +63,11 @@ class Notificacion(models.Model):
     actores = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name='notificaciones_generadas', blank=True
     )
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    tipo = models.CharField(max_length=25, choices=TIPO_CHOICES)
     hilo = models.ForeignKey(Hilo, null=True, blank=True, on_delete=models.CASCADE)
     respuesta = models.ForeignKey(Respuesta, null=True, blank=True, on_delete=models.CASCADE)
+    sugerencia = models.ForeignKey('Sugerencia', null=True, blank=True, on_delete=models.CASCADE)
+    respuesta_sugerencia = models.ForeignKey('RespuestaSugerencia', null=True, blank=True, on_delete=models.CASCADE) 
     leido = models.BooleanField(default=False, db_index=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     ultima_actividad = models.DateTimeField(auto_now=True, db_index=True)
@@ -90,12 +95,37 @@ class Notificacion(models.Model):
             self.TIPO_LIKE_RESPUESTA: 'les ha gustado tu comentario' if plural else 'le ha gustado tu comentario',
             self.TIPO_COMENTARIO: 'comentaron en tu hilo' if plural else 'comentó en tu hilo',
             self.TIPO_SEGUIDOR: 'empezaron a seguirte' if plural else 'empezó a seguirte',
+            self.TIPO_LIKE_SUGERENCIA: 'apoyaron tu sugerencia' if plural else 'apoyó tu sugerencia',
+            self.TIPO_COMENTARIO_SUGERENCIA: 'respondieron a tu sugerencia' if plural else 'respondió a tu sugerencia',
         }
         return textos.get(self.tipo, '')
 
     def __str__(self):
         return f"Notificación para {self.destinatario} ({self.tipo})"
 
+class Sugerencia(models.Model):
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    contenido = models.TextField(verbose_name="Contenido de la sugerencia")
+    created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_likes', blank=True)
+    dislikes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_dislikes', blank=True)
 
+    class Meta:
+        ordering = ["-created_at"]
 
+    def __str__(self):
+        return f"Sugerencia de {self.usuario} - {self.created_at.strftime('%d/%m/%Y')}"    
 
+class RespuestaSugerencia(models.Model):
+    sugerencia = models.ForeignKey(Sugerencia, on_delete=models.CASCADE, related_name='respuestas')
+    respuesta_padre = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='respuestas_hijas')
+    autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    contenido = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='respuestas_sugerencia_likes', blank=True)
+
+    class Meta:
+        ordering = ['fecha_creacion']
+
+    def __str__(self):
+        return f"Respuesta de {self.autor} en sugerencia {self.sugerencia.pk}"

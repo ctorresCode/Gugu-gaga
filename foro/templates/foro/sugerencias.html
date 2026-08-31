@@ -1,0 +1,97 @@
+{% extends 'base.html' %} 
+{% block title %} Sugerencias {% endblock %} 
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
+    
+    {% include 'foro/partials/sidebar.html' %}
+
+    <main class="flex-1 max-w-2xl w-full mx-auto mt-6 md:mt-10 px-4 md:px-0 pb-20 md:pb-0">
+        
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Buzón de Sugerencias</h1>
+            <p class="text-gray-500 text-sm mt-1">Ayúdanos a mejorar. Deja tus ideas o comentarios abajo.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-8">
+            <form method="POST" action="{% url 'sugerencias' %}">
+                {% csrf_token %}
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <textarea 
+                            name="contenido" 
+                            rows="3" 
+                            class="w-full bg-transparent border-0 focus:ring-0 resize-none placeholder-gray-400 text-gray-900 text-lg p-0 outline-none" 
+                            placeholder="¿Qué te gustaría sugerir para la plataforma?" 
+                            required></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-4 pt-3 border-t border-gray-100">
+                    <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white font-medium py-2 px-6 rounded-full transition-colors text-sm">
+                        Enviar sugerencia
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="space-y-4">
+            {% for sugerencia in sugerencias %}
+            <div data-url="{% url 'detalle_sugerencia' sugerencia.pk %}" onclick="window.location=this.getAttribute('data-url')" class="bg-white rounded-2xl border border-gray-100 p-5 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="font-bold text-gray-900">
+                            {% if sugerencia.usuario %}
+                                {{ sugerencia.usuario.username }}
+                            {% else %}
+                                Anónimo
+                            {% endif %}
+                        </div>
+                        <span class="text-gray-400 text-sm">· {{ sugerencia.created_at|timesince }}</span>
+                    </div>
+                    <span class="bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold px-2 py-1 rounded-md">
+                        Sugerencia
+                    </span>
+                </div>
+            
+                <p class="text-gray-800 mt-2">{{ sugerencia.contenido|linebreaksbr }}</p>
+
+                <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
+                    <a href="{% url 'interaccion_sugerencia' sugerencia.pk 'like' %}" onclick="event.stopPropagation();" class="flex items-center gap-1.5 text-sm {% if request.user in sugerencia.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+                        {{ sugerencia.conteo_likes }}
+                    </a>
+
+                    <a href="{% url 'interaccion_sugerencia' sugerencia.pk 'dislike' %}" onclick="event.stopPropagation();" class="flex items-center gap-1.5 text-sm {% if request.user in sugerencia.dislikes.all %}text-red-600 font-bold{% else %}text-gray-500 hover:text-red-600{% endif %}">
+                        <svg class="w-5 h-5 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+                        {{ sugerencia.conteo_dislikes }}
+                    </a>
+
+                    <a href="{% url 'detalle_sugerencia' sugerencia.pk %}" onclick="event.stopPropagation();" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#093D77] ml-auto">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        {{ sugerencia.conteo_respuestas }} Responder
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-10 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <p class="text-gray-500">Aún no hay sugerencias. ¡Sé el primero en aportar una idea!</p>
+            </div>
+            {% endfor %}
+        </div>
+
+    </main>
+
+    {% include 'foro/partials/nav_mobile.html' %}
+    
+</div>
+{% endblock %}
