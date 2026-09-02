@@ -77,7 +77,7 @@
                 </div>
             </a>
             
-            <button onclick="toggleLogoutMenu(event);" class="text-gray-400 font-bold p-2 rounded-full hover:bg-[#F8F9FA] hover:text-[#2B2B2B] transition-colors">
+            <button onclick="toggleLogoutMenu(event);" class="text-gray-400 font-bold p-2 rounded-full hover:bg-[#F8F9FA] hover:text-[#2B2B2B] transition-colors cursor-pointer">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 flex-shrink-0 fill-current"><path d="M12 14a2 2 0 100-4 2 2 0 000 4zm-6 0a2 2 0 100-4 2 2 0 000 4zm12 0a2 2 0 100-4 2 2 0 000 4z"></path></svg>
             </button>
         </div>
@@ -94,11 +94,11 @@
         </button>
     </div>
 
-    <div class="flex gap-2 px-6 py-3 overflow-x-auto whitespace-nowrap scrollbar-none border-b border-gray-100 flex-shrink-0">
-        <button data-filtro="todas" onclick="filtrarNotificaciones('todas')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-[#093D77] text-white shadow-sm">Todas</button>
-        <button data-filtro="comentario" onclick="filtrarNotificaciones('comentario')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100">Comentarios</button>
-        <button data-filtro="like_hilo" onclick="filtrarNotificaciones('like_hilo')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100">Me gusta</button>
-        <button data-filtro="seguidor" onclick="filtrarNotificaciones('seguidor')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100">Seguidores</button>
+    <div class="flex gap-2 px-6 py-3 overflow-x-auto whitespace-nowrap scrollbar-default border-b border-gray-100 flex-shrink-0">
+        <button data-filtro="todas" onclick="filtrarNotificaciones('todas')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-[#093D77] text-white shadow-sm cursor-pointer">Todas</button>
+        <button data-filtro="comentario" onclick="filtrarNotificaciones('comentario')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100 cursor-pointer">Comentarios</button>
+        <button data-filtro="like_hilo" onclick="filtrarNotificaciones('like_hilo')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100 cursor-pointer">Me gusta</button>
+        <button data-filtro="seguidor" onclick="filtrarNotificaciones('seguidor')" class="filtro-notif px-4 py-1.5 rounded-xl font-bold text-sm transition-all bg-white text-[#3A7CA5] border border-gray-100 cursor-pointer ">Seguidores</button>
     </div>
 
     <div id="notificaciones-lista" class="flex-1 overflow-y-auto px-3 py-4">
