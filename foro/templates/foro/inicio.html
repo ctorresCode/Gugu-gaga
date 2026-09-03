@@ -16,7 +16,7 @@
         <div class="flex md:hidden items-center justify-between px-4 py-3 bg-[#F8F9FA]/90 backdrop-blur-md sticky top-0 z-20">
             <div onclick="toggleSidebar()" class="cursor-pointer transition-transform active:scale-95">
                 {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-9 h-9 rounded-full object-cover shadow-sm">
+                    <img src="{{ request.user.avatar.url }}" loading="lazy" class="w-9 h-9 rounded-full object-cover shadow-sm">
                 {% else %}
                     <div class="w-9 h-9 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                         {{ request.user.username|make_list|first }}
@@ -64,7 +64,7 @@
                 {% csrf_token %}
                 <div class="flex-shrink-0">
                     {% if request.user.avatar %}
-                        <img src="{{ request.user.avatar.url }}" class="w-11 h-11 rounded-full object-cover shadow-sm">
+                        <img src="{{ request.user.avatar.url }}" loading="lazy" class="w-11 h-11 rounded-full object-cover shadow-sm">
                     {% else %}
                         <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase shadow-sm text-sm">
                             {{ request.user.username|make_list|first }}

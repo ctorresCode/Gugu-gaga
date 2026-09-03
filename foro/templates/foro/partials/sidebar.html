@@ -65,7 +65,7 @@
         <div class="flex items-center justify-between p-3 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-all group cursor-pointer">
             <a href="{% url 'perfil_usuario' request.user.username %}" class="flex items-center gap-3 flex-1 overflow-hidden">
                 {% if request.user.avatar %}
-                    <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover shadow-sm">
+                    <img src="{{ request.user.avatar.url }}" loading="lazy" class="w-10 h-10 rounded-full object-cover shadow-sm">
                 {% else %}
                     <div class="w-10 h-10 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-sm uppercase select-none shadow-sm">
                         {{ request.user.username|make_list|first }}

@@ -16,7 +16,7 @@
             <div class="flex items-center gap-4 px-5 py-4 border-b border-gray-50 bg-white z-20">
                 <div onclick="toggleSidebar()" class="cursor-pointer transition-transform active:scale-95 md:hidden">
                     {% if request.user.avatar %}
-                        <img src="{{ request.user.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
+                        <img src="{{ request.user.avatar.url }}" loading="lazy" class="w-10 h-10 rounded-full object-cover">
                     {% else %}
                         <div class="w-10 h-10 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                             {{ request.user.username|make_list|first }}

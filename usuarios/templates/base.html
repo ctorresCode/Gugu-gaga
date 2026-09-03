@@ -13,9 +13,9 @@
         overflow-y: scroll;
       }
     </style>
-    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <link rel="stylesheet" href="/static/css/output.css" hx-preserve="true" />
   </head>
-  <body hx-boost="true">
+  <body>
     {%block content%} {%endblock%}
   </body>
 </html>
