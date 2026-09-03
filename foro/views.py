@@ -8,17 +8,19 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
+from django.core.paginator import Paginator
+from django.template.response import TemplateResponse
 
 from usuarios.models import UsuarioForo
 
 class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
         
-        busqueda = self.request.GET.get('q', '')
-        universidad_id = self.request.GET.get('uni', '')
+        busqueda = request.GET.get('q', '')
+        universidad_id = request.GET.get('uni', '')
 
         universidades = cache.get('universidades_list')
         if not universidades:
@@ -36,33 +38,52 @@ class InicioView(LoginRequiredMixin, TemplateView):
         hilos = hilos.annotate(
             conteo_likes=Count('likes', distinct=True),
             conteo_respuestas=Count('respuestas', filter=Q(respuestas__activo=True), distinct=True)
-        ).order_by('-fecha_creacion')[:50]
+        ).order_by('-fecha_creacion')
+
+        paginator = Paginator(hilos, 15)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        if request.headers.get('HX-Request') and request.GET.get('page'):
+            return render(request, 'foro/partials/hilos_lista.html', {
+                'page_obj': page_obj,
+                'busqueda_actual': busqueda,
+                'uni_actual': universidad_id
+            })
 
         context['universidades'] = universidades
-        context['hilos'] = hilos
+        context['page_obj'] = page_obj
         context['busqueda_actual'] = busqueda
         context['uni_actual'] = int(universidad_id) if universidad_id.isdigit() else ''
 
-        return context
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         contenido = request.POST.get('contenido')
         titulo = request.POST.get('titulo')
-        imagen = request.FILES.get('imagen')
+        
+        archivos = request.FILES.getlist('imagen')[:4]
 
-        if imagen:
-            limite_tamano = 5 * 1024 * 1024
-            if imagen.size > limite_tamano:
+        limite_tamano = 5 * 1024 * 1024
+        for archivo in archivos:
+            if archivo.size > limite_tamano:
                 return redirect(request.META.get('HTTP_REFERER', '/'))
 
         if contenido:
             nuevo_hilo = Hilo.objects.create(
                 titulo=titulo,
                 contenido=contenido,
-                imagen=imagen if imagen else None,
                 autor=request.user,
                 universidad=getattr(request.user, 'universidad', None)
             )
+
+            if len(archivos) > 0: nuevo_hilo.imagen = archivos[0]
+            if len(archivos) > 1: nuevo_hilo.imagen2 = archivos[1]
+            if len(archivos) > 2: nuevo_hilo.imagen3 = archivos[2]
+            if len(archivos) > 3: nuevo_hilo.imagen4 = archivos[3]
+            
+            if archivos:
+                nuevo_hilo.save()
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
                 return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
@@ -166,26 +187,33 @@ def explorar_usuarios(request):
 
 @login_required
 def notificaciones(request):
-    todas = (Notificacion.objects.filter(destinatario=request.user)
-             .select_related('hilo', 'respuesta').prefetch_related('actores'))
-
-    ids_no_leidas = set(todas.filter(leido=False).values_list('id', flat=True))
+    todas = list(Notificacion.objects.filter(destinatario=request.user)
+                 .select_related('hilo', 'respuesta').prefetch_related('actores'))
 
     ahora = timezone.now()
-    grupos = {
-        'semana': todas.filter(ultima_actividad__gte=ahora - timedelta(days=7)),
-        'mes': todas.filter(ultima_actividad__lt=ahora - timedelta(days=7),
-                             ultima_actividad__gte=ahora - timedelta(days=30)),
-        'anteriores': todas.filter(ultima_actividad__lt=ahora - timedelta(days=30)),
-    }
+    grupos = {'semana': [], 'mes': [], 'anteriores': []}
+    ids_no_leidas = set()
 
-    Notificacion.objects.filter(destinatario=request.user, leido=False).update(leido=True)
+    for notif in todas:
+        if not notif.leido:
+            ids_no_leidas.add(notif.id)
+            
+        if notif.ultima_actividad >= ahora - timedelta(days=7):
+            grupos['semana'].append(notif)
+        elif notif.ultima_actividad >= ahora - timedelta(days=30):
+            grupos['mes'].append(notif)
+        else:
+            grupos['anteriores'].append(notif)
+
+    if ids_no_leidas:
+        Notificacion.objects.filter(id__in=ids_no_leidas).update(leido=True)
 
     contexto = {'grupos': grupos, 'ids_no_leidas': ids_no_leidas}
 
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'foro/partials/notificaciones_lista.html', contexto)
     return render(request, 'foro/notificaciones_lista.html', contexto)
+
 
 class SugerenciasCreateView(LoginRequiredMixin, CreateView):
     model = Sugerencia
@@ -200,9 +228,7 @@ class SugerenciasCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['sugerencias'] = Sugerencia.objects.select_related('usuario').prefetch_related(
-            'likes', 'dislikes'
-        ).annotate(
+        context['sugerencias'] = Sugerencia.objects.select_related('usuario').annotate(
             conteo_likes=Count('likes', distinct=True),
             conteo_dislikes=Count('dislikes', distinct=True),
             conteo_respuestas=Count('respuestas', distinct=True),

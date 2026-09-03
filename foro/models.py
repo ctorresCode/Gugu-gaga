@@ -7,11 +7,15 @@ from usuarios.models import Universidad
 class Hilo(models.Model):
     titulo = models.CharField(max_length=200)
     contenido = models.TextField()
-    imagen = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True) 
+    imagen = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
+    imagen2 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
+    imagen3 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
+    imagen4 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
+
     video = models.FileField(upload_to='hilos/videos/', blank=True, null=True)
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     universidad = models.ForeignKey(Universidad, on_delete=models.CASCADE, null=True, blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
     ultima_actividad = models.DateTimeField(default=timezone.now) 
     activo = models.BooleanField(default=True)
 
@@ -30,7 +34,7 @@ class Respuesta(models.Model):
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     hilo = models.ForeignKey(Hilo, on_delete=models.CASCADE, related_name='respuestas')
     respuesta_padre = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='respuestas_hijas')
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
     activo = models.BooleanField(default=True) 
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='respuestas_likeadas', blank=True)  
 
@@ -106,7 +110,7 @@ class Notificacion(models.Model):
 class Sugerencia(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     contenido = models.TextField(verbose_name="Contenido de la sugerencia")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_likes', blank=True)
     dislikes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_dislikes', blank=True)
 
@@ -121,7 +125,7 @@ class RespuestaSugerencia(models.Model):
     respuesta_padre = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='respuestas_hijas')
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     contenido = models.TextField()
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='respuestas_sugerencia_likes', blank=True)
 
     class Meta:

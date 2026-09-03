@@ -1,59 +1,137 @@
-<div class="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 hover:shadow-md hover:border-[#3A7CA5]/20 transition-all cursor-pointer group" 
-     data-url="{% url 'detalle_hilo' hilo.pk %}" 
-     onclick="window.location.href=this.getAttribute('data-url');">
-    <div class="flex items-start gap-4">
-        <div class="flex-shrink-0">
-            <a href="{% url 'perfil_usuario' hilo.autor.username %}" onclick="event.stopPropagation();" class="block relative hover:opacity-80 transition-opacity">
-                {% if hilo.autor.avatar %}
-                    <img src="{{ hilo.autor.avatar.url }}" class="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-transparent group-hover:ring-[#F8F9FA] transition-all">
-                {% else %}
-                    <div class="w-12 h-12 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-base uppercase select-none shadow-sm">
-                        {{ hilo.autor.username|make_list|first }}
-                    </div>
-                {% endif %}
-            </a>
+<div
+  class="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 hover:shadow-md hover:border-[#3A7CA5]/20 transition-all cursor-pointer group"
+  data-url="{% url 'detalle_hilo' hilo.pk %}"
+  onclick="window.location.href = this.getAttribute('data-url')"
+>
+  <div class="flex items-start gap-4">
+    <div class="flex-shrink-0">
+      <a
+        href="{% url 'perfil_usuario' hilo.autor.username %}"
+        onclick="event.stopPropagation()"
+        class="block relative hover:opacity-80 transition-opacity"
+      >
+        {% if hilo.autor.avatar %}
+        <img
+          src="{{ hilo.autor.avatar.url }}"
+          class="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-transparent group-hover:ring-[#F8F9FA] transition-all"
+        />
+        {% else %}
+        <div
+          class="w-12 h-12 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-base uppercase select-none shadow-sm"
+        >
+          {{ hilo.autor.username|make_list|first }}
         </div>
-        
-        <div class="flex-grow min-w-0 pt-0.5">
-            <div class="flex items-center justify-between mb-1.5">
-                <div class="flex items-center gap-2 min-w-0">
-                    <a href="{% url 'perfil_usuario' hilo.autor.username %}" onclick="event.stopPropagation();" class="font-extrabold text-[#2B2B2B] text-[15px] truncate hover:text-[#093D77] hover:underline decoration-2 underline-offset-2 transition-colors">
-                        {{ hilo.autor.username }}
-                    </a>
-                    <span class="text-[#3A7CA5] text-xs font-semibold whitespace-nowrap opacity-80">· {{ hilo.fecha_creacion|timesince }}</span>
-                </div>
-                <span class="bg-[#DAA520]/10 text-[#DAA520] border border-[#DAA520]/20 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider flex-shrink-0 ml-2">
-                    {{ hilo.universidad.nombre|default:"Global" }}
-                </span>
-            </div>
-
-            <p class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90">{{ hilo.contenido }}</p>
-
-            {% if hilo.imagen %}
-                <div class="rounded-2xl overflow-hidden mb-4 border border-gray-100 shadow-sm">
-                    <img src="{{ hilo.imagen.url }}" class="w-full max-h-[400px] object-cover hover:scale-105 transition-transform duration-500">
-                </div>
-            {% endif %}
-
-            <div class="flex items-center justify-between mt-1">
-                <div class="flex items-center gap-6">
-                    <button data-url="{% url 'detalle_hilo' hilo.pk %}" 
-                            onclick="event.stopPropagation(); window.location.href=this.getAttribute('data-url');" 
-                            class="flex items-center gap-1.5 group/reply hover:text-[#093D77] transition-colors cursor-pointer">
-                        <div class="p-2 -ml-2 rounded-full group-hover/reply:bg-[#093D77]/10 transition-colors">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-[22px] h-[22px] fill-current">
-                                <g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g>
-                            </svg>
-                        </div>
-                        <span class="text-xs font-semibold">{{ hilo.respuestas.count|default:"0" }}</span>
-                    </button>
-
-                    <div onclick="event.stopPropagation();" class="flex items-center mt-1">
-                        {% include 'foro/partials/boton_like.html' %}
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% endif %}
+      </a>
     </div>
-</div>
 
+    <div class="flex-grow min-w-0 pt-0.5">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2 min-w-0">
+          <a
+            href="{% url 'perfil_usuario' hilo.autor.username %}"
+            onclick="event.stopPropagation()"
+            class="font-extrabold text-[#2B2B2B] text-[15px] truncate hover:text-[#093D77] hover:underline decoration-2 underline-offset-2 transition-colors"
+          >
+            {{ hilo.autor.username }}
+          </a>
+          <span
+            class="text-[#3A7CA5] text-xs font-semibold whitespace-nowrap opacity-80"
+            >· {{ hilo.fecha_creacion|timesince }}</span
+          >
+        </div>
+        <span
+          class="bg-[#DAA520]/10 text-[#DAA520] border border-[#DAA520]/20 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider flex-shrink-0 ml-2"
+        >
+          {{ hilo.universidad.nombre|default:"Global" }}
+        </span>
+      </div>
+
+      <p
+        class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90"
+      >
+        {{ hilo.contenido }}
+      </p>
+
+      {% if hilo.imagen or hilo.imagen2 or hilo.imagen3 or hilo.imagen4 %}
+      <div
+        class="grid gap-2 mb-4 {% if hilo.imagen2 %}grid-cols-2{% else %}grid-cols-1{% endif %}"
+      >
+        {% if hilo.imagen %}
+        <div
+          class="relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full"
+        >
+          <img
+            src="{{ hilo.imagen.url }}"
+            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 {% if not hilo.imagen2 %}max-h-[400px]{% else %}max-h-[250px]{% endif %}"
+          />
+        </div>
+        {% endif %} {% if hilo.imagen2 %}
+        <div
+          class="relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full"
+        >
+          <img
+            src="{{ hilo.imagen2.url }}"
+            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 max-h-[250px]"
+          />
+        </div>
+        {% endif %} {% if hilo.imagen3 %}
+        <div
+          class="relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full"
+        >
+          <img
+            src="{{ hilo.imagen3.url }}"
+            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 max-h-[250px]"
+          />
+        </div>
+        {% endif %} {% if hilo.imagen4 %}
+        <div
+          class="relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full"
+        >
+          <img
+            src="{{ hilo.imagen4.url }}"
+            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 max-h-[250px]"
+          />
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="flex items-center justify-between mt-1">
+        <div class="flex items-center gap-6">
+          <button
+            data-url="{% url 'detalle_hilo' hilo.pk %}"
+            onclick="
+              event.stopPropagation();
+              window.location.href = this.getAttribute('data-url');
+            "
+            class="flex items-center gap-1.5 group/reply hover:text-[#093D77] transition-colors cursor-pointer"
+          >
+            <div
+              class="p-2 -ml-2 rounded-full group-hover/reply:bg-[#093D77]/10 transition-colors"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                class="w-[22px] h-[22px] fill-current"
+              >
+                <g>
+                  <path
+                    d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"
+                  ></path>
+                </g>
+              </svg>
+            </div>
+            <span class="text-xs font-semibold"
+              >{{ hilo.respuestas.count|default:"0" }}</span
+            >
+          </button>
+
+          <div onclick="event.stopPropagation()" class="flex items-center mt-1">
+            {% include 'foro/partials/boton_like.html' %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

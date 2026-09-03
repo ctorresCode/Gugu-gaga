@@ -55,54 +55,62 @@
 
         <div class="px-4 mb-6">
             <form id="form-post" method="post" 
-                  hx-post="{% url 'inicio' %}" 
-                  hx-encoding="multipart/form-data"
-                  hx-target="#lista-hilos" 
-                  hx-swap="afterbegin"
-                  hx-on::after-request="if(event.detail.successful) this.reset()"
-                  class="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-5 flex gap-4 transition-all focus-within:shadow-md focus-within:border-[#3A7CA5]/30">
-                {% csrf_token %}
-                <div class="flex-shrink-0">
-                    {% if request.user.avatar %}
-                        <img src="{{ request.user.avatar.url }}" loading="lazy" class="w-11 h-11 rounded-full object-cover shadow-sm">
-                    {% else %}
-                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase shadow-sm text-sm">
-                            {{ request.user.username|make_list|first }}
-                        </div>
-                    {% endif %}
-                </div>
+      hx-post="{% url 'inicio' %}" 
+      hx-encoding="multipart/form-data"
+      hx-target="#lista-hilos" 
+      hx-swap="afterbegin"
+      hx-on::after-request="if(event.detail.successful) this.reset()"
+      class="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-5 flex gap-4 transition-all focus-within:shadow-md focus-within:border-[#3A7CA5]/30">
+    {% csrf_token %}
+    <div class="flex-shrink-0">
+        {% if request.user.avatar %}
+            <img src="{{ request.user.avatar.url }}" loading="lazy" class="w-11 h-11 rounded-full object-cover shadow-sm">
+        {% else %}
+            <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase shadow-sm text-sm">
+                {{ request.user.username|make_list|first }}
+            </div>
+        {% endif %}
+    </div>
 
-                <div class="flex-grow flex flex-col pt-1">
-                    <input type="hidden" name="titulo" value="Publicación de {{ request.user.username }}">
-                    
-                    <textarea name="contenido" rows="2" placeholder="¿Qué está pasando en la U?" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
-                    
-                    <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-50">
-                        <label class="cursor-pointer text-[#3A7CA5] hover:bg-[#F8F9FA] hover:text-[#093D77] p-2 rounded-full transition-colors inline-flex items-center justify-center">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
-                                <path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path>
-                            </svg>
-                            <input type="file" name="imagen" accept="image/*" class="hidden">
-                        </label>
+    <div class="flex-grow flex flex-col pt-1">
+        <input type="hidden" name="titulo" value="Publicación de {{ request.user.username }}">
+        
+        <textarea name="contenido" rows="2" placeholder="¿Qué está pasando en la U?" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+        
+        <div id="preview-container" class="hidden relative mt-3 mb-2 border border-gray-100 rounded-2xl shadow-sm w-full p-3 bg-gray-50/50">
+            <button type="button" id="btn-remover" class="absolute top-2 right-2 bg-gray-800/70 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors z-10">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="imagenes-grid" class="flex flex-wrap gap-2 pr-8"></div>
+        </div>
 
-                        <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] active:scale-95 transition-all text-sm shadow-md shadow-[#093D77]/20 cursor-pointer">
-                            Publicar
-                        </button>
-                    </div>
-                </div>
-            </form>
+        <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-50">
+            <label class="cursor-pointer text-[#3A7CA5] hover:bg-[#F8F9FA] hover:text-[#093D77] p-2 rounded-full transition-colors inline-flex items-center justify-center">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="w-5 h-5 fill-current">
+                    <path d="M19.75 2H4.25C3.01 2 2 3.01 2 4.25v15.5C2 20.99 3.01 22 4.25 22h15.5c1.24 0 2.25-1.01 2.25-2.25V4.25C22 3.01 20.99 2 19.75 2zM4.25 3.5h15.5c.41 0 .75.34.75.75v10.67l-1.44-1.44c-.29-.29-.77-.29-1.06 0l-5.38 5.38-2.63-2.63c-.29-.29-.77-.29-1.06 0L3.5 20.73V4.25c0-.41.34-.75.75-.75zm15.5 17H5.62l3.44-3.44 2.63 2.63c.29.29.77.29 1.06 0l5.38-5.38 1.62 1.62V19.75c0 .41-.34.75-.75.75zM8.25 9.5c.97 0 1.75-.78 1.75-1.75S9.22 6 8.25 6 6.5 6.78 6.5 7.75 7.28 9.5 8.25 9.5zm0-2c.14 0 .25.11.25.25s-.11.25-.25.25-.25-.11-.25-.25.11-.25.25-.25z"></path>
+                </svg>
+                <input type="file" id="imagen-input" name="imagen" accept="image/*" multiple class="hidden">
+            </label>
+
+            <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] active:scale-95 transition-all text-sm shadow-md shadow-[#093D77]/20 cursor-pointer">
+                Publicar
+            </button>
+        </div>
+    </div>
+</form>
         </div>
 
         <div id="lista-hilos" class="px-4 flex flex-col gap-4">
-            {% for hilo in hilos %}
-                {% include 'foro/partials/tarjeta_hilo.html' %}
-            {% empty %}
-                <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mx-4">
-                    <p class="text-[#3A7CA5] font-bold text-lg">El campus está silencioso.</p>
-                    <p class="text-gray-400 text-sm mt-1">Sé el primero en publicar algo.</p>
-                </div>
-            {% endfor %}
+    {% if page_obj %}
+        {% include 'foro/partials/hilos_lista.html' %}
+    {% else %}
+        <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm mx-4">
+            <p class="text-[#3A7CA5] font-bold text-lg">El campus está silencioso.</p>
         </div>
+    {% endif %}
+</div>
+
+        
 
     </main>
 
@@ -140,4 +148,86 @@
     {% include 'foro/partials/nav_mobile.html' %}
     
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const inputImagen = document.getElementById('imagen-input');
+    const contenedorPreview = document.getElementById('preview-container');
+    const imagenesGrid = document.getElementById('imagenes-grid');
+    const formPost = document.getElementById('form-post');
+    const btnRemoverGeneral = document.getElementById('btn-remover');
+     
+    if(btnRemoverGeneral) btnRemoverGeneral.style.display = 'none';
+
+    let archivosAcumulados = [];
+
+    const actualizarPrevisualizacion = () => {
+        imagenesGrid.innerHTML = '';
+        
+        if (archivosAcumulados.length === 0) {
+            contenedorPreview.classList.add('hidden');
+            inputImagen.value = ''; 
+            return;
+        }
+
+        archivosAcumulados.forEach((archivo, index) => {
+            const divContenedor = document.createElement('div');
+            divContenedor.className = 'relative inline-block group';
+            
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(archivo);
+            img.className = 'h-20 w-20 md:h-24 md:w-24 object-cover rounded-xl border border-gray-200 shadow-sm';
+            
+            const btnEliminar = document.createElement('button');
+            btnEliminar.type = 'button';
+            btnEliminar.className = 'absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10';
+            btnEliminar.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            
+            btnEliminar.onclick = () => {
+                archivosAcumulados.splice(index, 1);
+                sincronizarInputFiles();
+                actualizarPrevisualizacion();
+            };
+
+            divContenedor.appendChild(img);
+            divContenedor.appendChild(btnEliminar);
+            imagenesGrid.appendChild(divContenedor);
+        });
+
+        contenedorPreview.classList.remove('hidden');
+    };
+
+    const sincronizarInputFiles = () => {
+        const dataTransfer = new DataTransfer();
+        archivosAcumulados.forEach(archivo => {
+            dataTransfer.items.add(archivo);
+        });
+        inputImagen.files = dataTransfer.files;
+    };
+
+    // Aquí está la validación de límite máximo de 4
+    inputImagen.addEventListener('change', (event) => {
+        const archivosNuevos = Array.from(event.target.files);
+        
+        if (archivosAcumulados.length + archivosNuevos.length > 4) {
+            alert('Solo puedes subir un máximo de 4 imágenes por publicación.');
+            const espacioLibre = 4 - archivosAcumulados.length;
+            archivosAcumulados = archivosAcumulados.concat(archivosNuevos.slice(0, espacioLibre));
+        } else {
+            archivosAcumulados = archivosAcumulados.concat(archivosNuevos);
+        }
+        
+        sincronizarInputFiles();
+        actualizarPrevisualizacion();
+    });
+
+    formPost.addEventListener('htmx:afterRequest', (event) => {
+        if (event.detail.successful) {
+            archivosAcumulados = [];
+            inputImagen.value = '';
+            actualizarPrevisualizacion();
+        }
+    });
+});
+</script>
 {% endblock %}
