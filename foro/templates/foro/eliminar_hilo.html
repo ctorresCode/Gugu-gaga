@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Publicación | VozUni{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex justify-center mx-auto max-w-7xl px-0 md:px-4">
+    
+    {% include 'foro/partials/sidebar.html' %}
+
+    <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8">
+        
+        <div class="flex items-center gap-6 px-4 py-4 md:pt-8 bg-[#F8F9FA]/90 backdrop-blur-md sticky top-0 z-30 mb-2">
+            <a href="javascript:history.back()" class="p-2.5 rounded-full bg-white shadow-sm hover:bg-gray-50 text-[#2B2B2B] transition-all border border-gray-100">
+                <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></svg>
+            </a>
+            <h1 class="text-xl font-black text-[#2B2B2B] leading-tight">Eliminar publicación</h1>
+        </div>
+
+        <div class="px-4 md:px-0 mt-4">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-red-100 text-center flex flex-col items-center">
+                
+                <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-5 border border-red-100">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </div>
+
+                <h2 class="text-2xl font-black text-[#2B2B2B] mb-2">¿Estás seguro?</h2>
+                <p class="text-gray-500 mb-8 font-medium text-sm md:text-base px-4">
+                    Esta acción eliminará la publicación de forma permanente, incluyendo todos los comentarios y likes asociados.
+                </p>
+                
+                <form method="POST" class="flex flex-col gap-3 w-full max-w-sm">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full py-3.5 bg-red-500 text-white rounded-full font-bold hover:bg-red-600 transition-colors shadow-sm text-sm">
+                        Sí, eliminar publicación
+                    </button>
+                    <a href="javascript:history.back()" class="w-full py-3.5 bg-[#F8F9FA] text-[#2B2B2B] rounded-full font-bold hover:bg-gray-200 transition-colors border border-gray-100 text-sm">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30"></aside>
+
+    {% include 'foro/partials/nav_mobile.html' %}
+</div>
+{% endblock %}

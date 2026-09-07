@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
 
@@ -5,6 +7,7 @@ from config import settings
 from usuarios.models import Universidad
 
 class Hilo(models.Model):
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     titulo = models.CharField(max_length=200)
     contenido = models.TextField()
     imagen = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
@@ -28,6 +31,7 @@ class Hilo(models.Model):
         return self.titulo
 
 class Respuesta(models.Model):
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     contenido = models.TextField()
     imagen = models.ImageField(upload_to='respuestas/imagenes/', blank=True, null=True)
     video = models.FileField(upload_to='respuestas/videos/', blank=True, null=True)
@@ -108,6 +112,7 @@ class Notificacion(models.Model):
         return f"Notificación para {self.destinatario} ({self.tipo})"
 
 class Sugerencia(models.Model):
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     contenido = models.TextField(verbose_name="Contenido de la sugerencia")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

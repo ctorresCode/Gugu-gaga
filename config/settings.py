@@ -1,5 +1,6 @@
 
 from pathlib import Path
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -9,12 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--8%o6#fj@q@du@(mf=i0hk#42_gqt2xb$g1vez_5n+hmc-qt5q'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 
 # Application definition
@@ -67,11 +68,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'vozUni',
-        'HOST':'DESKTOP-737K9UP',
-        'PORT':'',
+        'NAME': config('DB_NAME', default='vozUni'),
+        'HOST':config('DB_HOST', default='DESKTOP-737K9UP'),
+        'PORT':config('DB_PORT', default=''),
+        'USER': config('DB_USER', default=''),
+        'PASSWORD': config('DB_PASSWORD', default=''),
         'OPTIONS':{
-            'driver': 'ODBC Driver 17 for SQL Server',
+            'driver': config('DB_DRIVER', default='ODBC Driver 17 for SQL Server'),
         }
     }
 }

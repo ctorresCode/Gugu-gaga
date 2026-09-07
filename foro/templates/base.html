@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -25,12 +25,25 @@
       }
     </style>
     <link rel="stylesheet" href="/static/css/output.css" hx-preserve="true" />
-  </head>
-  <body class="bg-[#F8F9FA] text-[#2B2B2B]" hx-boost="true">
-    {% block content %} {% endblock %}
 
     <script>
-      function toggleMenuHilo(menuId) {
+      window.toggleDropdown = function(event, dropdownID) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const dropdown = document.getElementById(dropdownID);
+        if (!dropdown) return; 
+        
+        document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
+            if (el.id !== dropdownID) {
+                el.classList.add('hidden');
+            }
+        });
+        
+        dropdown.classList.toggle('hidden');
+      };
+
+      window.toggleMenuHilo = function(menuId) {
         document.querySelectorAll('[id^="menu-hilo-"]').forEach((menu) => {
           if (menu.id !== menuId) menu.classList.add("hidden");
         });
@@ -38,17 +51,9 @@
         if (menu) {
           menu.classList.toggle("hidden");
         }
-      }
+      };
 
-      document.addEventListener("click", function (event) {
-        if (!event.target.closest(".relative-menu")) {
-          document.querySelectorAll('[id^="menu-hilo-"]').forEach((menu) => {
-            menu.classList.add("hidden");
-          });
-        }
-      });
-
-      function openDeleteModal(hiloId) {
+      window.openDeleteModal = function(hiloId) {
         const menu = document.getElementById("menu-hilo-" + hiloId);
         if (menu) menu.classList.add("hidden");
 
@@ -62,9 +67,9 @@
           }, 10);
           document.body.style.overflow = "hidden";
         }
-      }
+      };
 
-      function closeDeleteModal(hiloId) {
+      window.closeDeleteModal = function(hiloId) {
         const modal = document.getElementById("modal-borrar-" + hiloId);
         if (modal) {
           modal.classList.add("opacity-0");
@@ -75,7 +80,23 @@
             document.body.style.overflow = "";
           }, 300);
         }
-      }
+      };
+
+      window.addEventListener('click', function (event) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
+        
+        if (!event.target.closest(".relative-menu")) {
+          document.querySelectorAll('[id^="menu-hilo-"]').forEach((menu) => {
+            menu.classList.add("hidden");
+          });
+        }
+      });
     </script>
+  </head>
+
+  <body class="bg-[#F8F9FA] text-[#2B2B2B]" hx-boost="true">
+    
+    {% block content %} {% endblock %}
+
   </body>
 </html>

@@ -1,8 +1,9 @@
 from django.core.cache import cache
 from django.db.models import Q, Count
+from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import CreateView, DeleteView, DetailView, TemplateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from foro.models import Hilo, Notificacion, Respuesta, Sugerencia, Universidad, RespuestaSugerencia
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -10,9 +11,12 @@ from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
 from django.template.response import TemplateResponse
-
+from django.contrib import messages
 from usuarios.models import UsuarioForo
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
+@method_decorator(ratelimit(key='user', rate='5/m', block=False), name='post')
 class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
 
@@ -59,6 +63,17 @@ class InicioView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
+
+        if getattr(request, 'limited', False):
+            messages.error(request, "Estás publicando hilos muy rápido. Por favor, espera un minuto.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+
+        idem_token = request.POST.get('idem_token')
+        if idem_token:
+            if cache.get(f'idem_{idem_token}'):
+                return redirect(request.META.get('HTTP_REFERER', '/'))
+            cache.set(f'idem_{idem_token}', True, 60)
+
         contenido = request.POST.get('contenido')
         titulo = request.POST.get('titulo')
         
@@ -94,6 +109,9 @@ class detalleHilo(LoginRequiredMixin, DetailView):
     model = Hilo
     template_name = 'foro/detalle_hilo.html'
     context_object_name = 'hilo'
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
+    queryset = Hilo.objects.filter(activo=True)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -109,17 +127,29 @@ class detalleHilo(LoginRequiredMixin, DetailView):
         self.object = self.get_object()
         contenido = request.POST.get('contenido')
 
+        ultimo_comentario = Respuesta.objects.filter(autor=request.user).order_by('-fecha_creacion').first()
+        if ultimo_comentario:
+            tiempo_transcurrido = timezone.now() - ultimo_comentario.fecha_creacion
+            if tiempo_transcurrido < timedelta(seconds=4):
+                messages.error(request, "Espera unos segundos antes de publicar otro comentario.")
+                return redirect('detalle_hilo', public_id=self.object.public_id)
+
         if contenido:
             self.object.respuestas.create(
                 contenido=contenido,
                 autor=request.user
             ) 
 
-        return redirect('detalle_hilo', pk=self.object.pk)    
+        return redirect('detalle_hilo', public_id=self.object.public_id)    
 
 @login_required
-def detalle_respuesta(request, pk):
-    respuesta_actual = get_object_or_404(Respuesta, pk=pk)
+@ratelimit(key='user', rate='10/m', block=False)
+def detalle_respuesta(request, public_id):
+    if getattr(request, 'limited', False):
+        messages.error(request, "Estás comentando muy rápido. Espera un momento.")
+        return redirect('detalle_respuesta', public_id=public_id) 
+
+    respuesta_actual = get_object_or_404(Respuesta, public_id=public_id, activo=True) 
     hilo_original = respuesta_actual.hilo
     
     if request.method == 'POST':
@@ -131,7 +161,7 @@ def detalle_respuesta(request, pk):
                 respuesta_padre=respuesta_actual,
                 contenido=contenido
             )
-            return redirect('detalle_respuesta', pk=respuesta_actual.pk)
+            return redirect('detalle_respuesta', public_id=respuesta_actual.public_id) 
 
     respuestas_hijas = respuesta_actual.respuestas_hijas.filter(activo=True).select_related('autor').annotate(
         conteo_likes=Count('likes', distinct=True)
@@ -142,8 +172,14 @@ def detalle_respuesta(request, pk):
         'respuestas': respuestas_hijas,
     })
 
+
+
 @login_required
+@ratelimit(key='user', rate='15/m', block=False)
 def boton_like(request, hilo_id):
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'Rate limit excedido'}, status=429)
+    
     hilo = get_object_or_404(Hilo, pk=hilo_id)
 
     if hilo.likes.filter(id=request.user.id).exists():
@@ -236,8 +272,8 @@ class SugerenciasCreateView(LoginRequiredMixin, CreateView):
         return context
 
 @login_required
-def detalle_sugerencia(request, pk):
-    sugerencia = get_object_or_404(Sugerencia, pk=pk)
+def detalle_sugerencia(request, public_id):
+    sugerencia = get_object_or_404(Sugerencia, public_id=public_id)
     
     if request.method == 'POST':
         contenido = request.POST.get('contenido')
@@ -266,7 +302,7 @@ def detalle_sugerencia(request, pk):
                 notif.actores.add(request.user)
                 notif.save()
                 
-            return redirect('detalle_sugerencia', pk=sugerencia.pk)
+            return redirect('detalle_sugerencia', public_id=sugerencia.public_id)
 
     respuestas_principales = sugerencia.respuestas.filter(respuesta_padre__isnull=True).select_related('autor').prefetch_related(
         'likes',
@@ -282,8 +318,8 @@ def detalle_sugerencia(request, pk):
 
 
 @login_required
-def interaccion_sugerencia(request, pk, accion):
-    sugerencia = get_object_or_404(Sugerencia, pk=pk)
+def interaccion_sugerencia(request, public_id, accion):
+    sugerencia = get_object_or_404(Sugerencia, public_id=public_id)
 
     if accion == 'like':
         if sugerencia.likes.filter(id=request.user.id).exists():
@@ -320,7 +356,7 @@ def like_respuesta_sugerencia(request, respuesta_id):
         respuesta.likes.remove(request.user)
     else:
         respuesta.likes.add(request.user)
-    return redirect('detalle_sugerencia', pk=respuesta.sugerencia.pk)
+    return redirect('detalle_sugerencia', public_id=respuesta.sugerencia.public_id)
 
 @login_required
 def detalle_respuesta_sugerencia(request, pk):
@@ -360,3 +396,25 @@ def detalle_respuesta_sugerencia(request, pk):
         'sugerencia': sugerencia,
         'respuestas': respuestas_hijas,
     })
+
+
+class EditarHilos(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
+    model = Hilo
+    fields = ['contenido', 'imagen', 'imagen2', 'imagen3', 'imagen4'] 
+    template_name = 'foro/editar_hilo.html'
+    success_url = reverse_lazy('inicio')
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
+
+    def test_func(self):
+        return self.get_object().autor == self.request.user
+
+class EliminarHilos(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Hilo
+    template_name = 'foro/eliminar_hilo.html'
+    success_url = reverse_lazy('inicio')
+    slug_field = 'public_id'
+    slug_url_kwarg = 'public_id'
+
+    def test_func(self):
+        return self.get_object().autor == self.request.user

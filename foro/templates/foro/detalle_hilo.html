@@ -87,6 +87,19 @@
                 </div>
             </div>
 
+            {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+            <div class="flex items-center gap-3 px-6 py-4 rounded-3xl text-sm font-bold bg-red-50 text-red-600 border border-red-100 shadow-sm">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
             <form method="post" class="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex gap-4 mb-6 focus-within:shadow-md transition-all">
                 {% csrf_token %}
                 <div class="flex-shrink-0">
@@ -112,7 +125,7 @@
 
             <div id="lista-respuestas" class="flex flex-col gap-4">
                 {% for respuesta in respuestas %}
-                    <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta.pk %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
+                    <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta.public_id %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
                         <div class="flex items-start gap-4">
                             <div class="flex-shrink-0">
                                 <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="block hover:opacity-80 transition-opacity">
@@ -143,7 +156,6 @@
                                     </div>
                                     
                                     {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
-                                    
                                 </div>
                             </div>
                         </div>

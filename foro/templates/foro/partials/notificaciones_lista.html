@@ -6,12 +6,14 @@
         </h4>
         <div class="flex flex-col gap-1">
             {% for notif in lista %}
-            <a href="{% if notif.sugerencia %}{% url 'detalle_sugerencia' notif.sugerencia.pk %}{% elif notif.hilo %}{% url 'detalle_hilo' notif.hilo.pk %}{% else %}#{% endif %}"
+            <a href="{% if notif.sugerencia %}{% url 'detalle_sugerencia' notif.sugerencia.public_id %}{% elif notif.hilo %}{% url 'detalle_hilo' notif.hilo.public_id %}{% else %}#{% endif %}"
                data-tipo="{{ notif.tipo }}"
                class="item-notif relative flex items-center gap-3 p-3 rounded-2xl transition-colors {% if notif.id in ids_no_leidas %}bg-[#093D77]/[0.05]{% else %}hover:bg-[#F8F9FA]{% endif %}">
+                
                 {% if notif.id in ids_no_leidas %}
                     <span class="w-2 h-2 rounded-full bg-[#DAA520] flex-shrink-0"></span>
                 {% endif %}
+                
                 {% with actor=notif.actores.first %}
                     {% if actor.avatar %}
                         <img src="{{ actor.avatar.url }}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 shadow-sm">
@@ -21,19 +23,22 @@
                         </div>
                     {% endif %}
                 {% endwith %}
+                
                 <div class="flex-1 min-w-0">
                     <p class="text-sm text-[#2B2B2B] leading-snug">
                         <span class="font-bold">{{ notif.texto_nombres }}</span>
                         {{ notif.texto_accion }}
                         <span class="text-[#3A7CA5]/60 font-medium"> · {{ notif.ultima_actividad|timesince }}</span>
                     </p>
+                    
                     {% if notif.tipo == 'comentario' and notif.respuesta %}
-    <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta.contenido|truncatechars:60 }}"</p>
-{% elif notif.tipo == 'coment_sug' and notif.respuesta_sugerencia %}
-    <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta_sugerencia.contenido|truncatechars:60 }}"</p>
-{% endif %}
+                        <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta.contenido|truncatechars:60 }}"</p>
+                    {% elif notif.tipo == 'coment_sug' and notif.respuesta_sugerencia %}
+                        <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta_sugerencia.contenido|truncatechars:60 }}"</p>
+                    {% endif %}
                 </div>
-                {% if notif.hilo.imagen %}
+                
+                {% if notif.hilo and notif.hilo.imagen %}
                     <img src="{{ notif.hilo.imagen.url }}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
                 {% endif %}
             </a>

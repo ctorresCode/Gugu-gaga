@@ -17,5 +17,32 @@
   </head>
   <body>
     {%block content%} {%endblock%}
+
+    <div id="visor-global" onclick="cerrarVisorGlobal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.92); z-index:99999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; backdrop-filter: blur(4px);">
+        <button onclick="cerrarVisorGlobal()" style="position:absolute; top:24px; right:24px; background:rgba(255,255,255,0.1); border:none; border-radius:9999px; padding:12px; cursor:pointer; color:#fff; display:flex; transition: background 0.2s;">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.36 5.64L12 12l6.36 6.36-1.42 1.42L10.59 13.4 4.22 19.78 2.8 18.36 9.18 12 2.8 5.64 4.22 4.22l6.37 6.36 6.36-6.36z"></path></svg>
+        </button>
+        <img id="img-visor-global" src="" alt="Vista ampliada" onclick="event.stopPropagation()" style="max-width:100%; max-height:90vh; object-fit:contain; border-radius:12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+    </div>
+
+    <script>
+        function abrirVisorGlobal(src) {
+            document.getElementById('img-visor-global').src = src;
+            document.getElementById('visor-global').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrarVisorGlobal() {
+            document.getElementById('visor-global').style.display = 'none';
+            document.body.style.overflow = '';
+            document.getElementById('img-visor-global').src = ''; 
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && document.getElementById('visor-global').style.display === 'flex') {
+                cerrarVisorGlobal();
+            }
+        });
+    </script>
   </body>
 </html>
