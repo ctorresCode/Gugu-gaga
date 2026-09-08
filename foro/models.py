@@ -45,7 +45,8 @@ class Respuesta(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.hilo.ultima_actividad = self.fecha_creacion
-        self.hilo.save()
+        # CORRECCIÓN: Solo actualizamos la fecha, no reescribimos toda la fila
+        self.hilo.save(update_fields=['ultima_actividad'])
 
 class Notificacion(models.Model):
     TIPO_LIKE_HILO = 'like_hilo'

@@ -143,7 +143,7 @@ class detalleHilo(LoginRequiredMixin, DetailView):
         return redirect('detalle_hilo', public_id=self.object.public_id)    
 
 @login_required
-@ratelimit(key='user', rate='10/m', block=False)
+@ratelimit(key='user', rate='10/m', method='POST', block=False)
 def detalle_respuesta(request, public_id):
     if getattr(request, 'limited', False):
         messages.error(request, "Estás comentando muy rápido. Espera un momento.")
@@ -171,7 +171,6 @@ def detalle_respuesta(request, public_id):
         'respuesta': respuesta_actual,
         'respuestas': respuestas_hijas,
     })
-
 
 
 @login_required

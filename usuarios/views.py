@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.core.cache import cache
+from django.views.decorators.http import require_POST # NUEVO IMPORT PARA SEGURIDAD
 
 from foro.models import Hilo
 from usuarios.forms import RegistroForm
@@ -56,6 +57,7 @@ class PerfilView(LoginRequiredMixin, DetailView):
         return context
 
 @login_required
+@require_POST 
 def seguir_usuario(request, username):
     usuario_a_seguir = get_object_or_404(UsuarioForo, username=username)
     if request.user != usuario_a_seguir:
@@ -142,6 +144,21 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user
+
+    def form_valid(self, form):
+        avatar = self.request.FILES.get('avatar')
+        banner = self.request.FILES.get('banner')
+        limite_mb = 2 * 1024 * 1024 
+
+        if avatar and avatar.size > limite_mb:
+            form.add_error('avatar', 'El avatar no puede superar los 2MB.')
+            return self.form_invalid(form)
+        
+        if banner and banner.size > limite_mb:
+            form.add_error('banner', 'El banner no puede superar los 2MB.')
+            return self.form_invalid(form)
+            
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('perfil_usuario', kwargs={'username': self.request.user.username})

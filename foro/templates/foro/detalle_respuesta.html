@@ -21,6 +21,16 @@
         </div>
 
         <div class="px-4">
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-xl text-sm font-bold shadow-sm {% if message.tags == 'error' %}bg-red-50 text-red-600 border border-red-100{% else %}bg-green-50 text-green-600 border border-green-100{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-4">
@@ -58,7 +68,7 @@
                 <div class="flex items-center justify-around pt-4 text-[#3A7CA5] font-bold">
                     <div class="flex items-center gap-2">
                         <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current opacity-70"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                        <span class="text-sm">{{ respuestas.count }}</span>
+                        <span class="text-sm">{{ respuestas|length }}</span> <!-- CORRECCIÓN AQUÍ -->
                     </div>
                     
                     {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
@@ -90,7 +100,7 @@
 
             <div id="lista-respuestas" class="flex flex-col gap-4">
                 {% for hijo in respuestas %}
-                    <div onclick="window.location.href='{% url 'detalle_respuesta' hijo.pk %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
+                    <div onclick="window.location.href='{% url 'detalle_respuesta' hijo.public_id %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
                         <div class="flex items-start gap-4">
                             <div class="flex-shrink-0">
                                 <a href="{% url 'perfil_usuario' hijo.autor.username %}" onclick="event.stopPropagation();" class="block hover:opacity-80 transition-opacity">
