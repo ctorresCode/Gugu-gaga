@@ -417,3 +417,5 @@ class EliminarHilos(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.get_object().autor == self.request.user
+
+

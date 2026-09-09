@@ -4,7 +4,7 @@
         hx-swap="outerHTML"
         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         onclick="event.preventDefault(); event.stopPropagation();"
-        class="flex items-center gap-1.5 group/like transition-colors {% if request.user in respuesta.likes.all %}text-red-500{% else %}text-[#3A7CA5] hover:text-red-500{% endif %}">
+        class="flex items-center gap-1.5 group/like transition-colors cursor-pointer {% if request.user in respuesta.likes.all %}text-red-500{% else %}text-[#3A7CA5] hover:text-red-500{% endif %}">
     
     <div class="p-2 -ml-2 rounded-full group-hover/like:bg-red-50 transition-colors">
         {% if request.user in respuesta.likes.all %}
