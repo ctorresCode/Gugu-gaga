@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'usuarios',
     'foro',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
@@ -71,10 +72,10 @@ DATABASES = {
         'NAME': config('DB_NAME', default='vozUni'),
         'HOST':config('DB_HOST', default='DESKTOP-737K9UP'),
         'PORT':config('DB_PORT', default=''),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
         'OPTIONS':{
             'driver': config('DB_DRIVER', default='ODBC Driver 17 for SQL Server'),
+            'trusted_connection': 'yes',
+            'extra_params': 'TrustServerCertificate=yes'
         }
     }
 }
