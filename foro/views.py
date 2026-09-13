@@ -15,6 +15,7 @@ from django.contrib import messages
 from usuarios.models import UsuarioForo
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
+from django.utils.http import url_has_allowed_host_and_scheme
 
 @method_decorator(ratelimit(key='user', rate='5/m', block=False), name='post')
 class InicioView(LoginRequiredMixin, TemplateView):
@@ -64,14 +65,18 @@ class InicioView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
 
+        referer = request.META.get('HTTP_REFERER', '/')
+        if not url_has_allowed_host_and_scheme(url=referer, allowed_hosts={request.get_host()}):
+            referer = '/'
+
         if getattr(request, 'limited', False):
             messages.error(request, "Estás publicando hilos muy rápido. Por favor, espera un minuto.")
-            return redirect(request.META.get('HTTP_REFERER', '/'))
+            return redirect(referer)
 
         idem_token = request.POST.get('idem_token')
         if idem_token:
             if cache.get(f'idem_{idem_token}'):
-                return redirect(request.META.get('HTTP_REFERER', '/'))
+                return redirect(referer)
             cache.set(f'idem_{idem_token}', True, 60)
 
         contenido = request.POST.get('contenido')
@@ -82,7 +87,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
         limite_tamano = 5 * 1024 * 1024
         for archivo in archivos:
             if archivo.size > limite_tamano:
-                return redirect(request.META.get('HTTP_REFERER', '/'))
+                return redirect(referer)
 
         if contenido:
             nuevo_hilo = Hilo.objects.create(
@@ -103,7 +108,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
                 return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
 
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+        return redirect(referer)
 
 class detalleHilo(LoginRequiredMixin, DetailView):
     model = Hilo
@@ -345,7 +350,9 @@ def interaccion_sugerencia(request, public_id, accion):
             sugerencia.likes.remove(request.user)
 
     siguiente = request.META.get('HTTP_REFERER')
-    return redirect(siguiente) if siguiente else redirect('sugerencias')
+    if siguiente and url_has_allowed_host_and_scheme(url=siguiente, allowed_hosts={request.get_host()}):
+        return redirect(siguiente)
+    return redirect('sugerencias')
 
 
 @login_required
