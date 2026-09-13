@@ -403,7 +403,6 @@ def detalle_respuesta_sugerencia(request, pk):
         'respuestas': respuestas_hijas,
     })
 
-
 class EditarHilos(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
     model = Hilo
     fields = ['contenido', 'imagen', 'imagen2', 'imagen3', 'imagen4'] 

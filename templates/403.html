@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es" class="min-h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Página no encontrada · vozUni</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col bg-[#0f172a] text-white font-sans antialiased m-0 p-0">
+    <div class="flex-1 flex items-center justify-center px-6 pt-24 pb-12">
+      <div class="max-w-[640px] flex flex-col sm:flex-row items-start sm:items-center gap-10">
+        <div class="text-[6.5rem] leading-none font-bold text-[#ffffff] shrink-0">
+          403
+        </div>
+        <div class="w-full h-[1px] sm:w-[1px] sm:self-stretch bg-[#c7ced9]"></div>
+        <div>
+          <h1 class="text-[1.7rem] font-semibold mb-3 leading-[1.3] text-[#ffffff]">
+            No tienes permiso para hacer esto
+          </h1>
+          <p class="text-[1rem] leading-[1.6] text-slate-300 mb-4 max-w-[40ch]">
+            Esta acción es solo para el autor del contenido, o tu cuenta no cumple los requisitos para acceder aquí.
+          </p>
+          {% if request_path %}
+          <p class="text-[0.85rem] text-slate-400 mb-6">
+            Intentaste acceder a:
+            <code class="font-mono bg-transparent text-[#ffffff]">{{ request_path }}</code>
+          </p>
+          {% endif %}
+          <div class="flex items-center gap-5 flex-wrap">
+            <a class="inline-block bg-[#182338] text-white no-underline px-[22px] py-[11px] text-[0.95rem] rounded-[3px] hover:bg-[#1b2131] transition-colors focus-visible:outline-2 focus-visible:outline-[#7a2e2e] focus-visible:outline-offset-2" href="/">
+              Ir al inicio
+            </a>
+            <button class="text-slate-400 underline decoration-[#c7ced9] text-[0.95rem] bg-transparent border-none cursor-pointer p-0 font-inherit hover:text-white focus-visible:outline-2 focus-visible:outline-[#7a2e2e] focus-visible:outline-offset-2" onclick="history.back()" type="button">
+              Volver atrás
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
