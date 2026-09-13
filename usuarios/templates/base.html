@@ -14,6 +14,8 @@
       }
     </style>
     <link rel="stylesheet" href="/static/css/output.css" hx-preserve="true" />
+
+    <link rel="icon" type="image/png" href="{% static 'img/wa.png' %}?v=1" />
   </head>
   <body>
     {%block content%} {%endblock%}
@@ -24,7 +26,7 @@
         </button>
         <img id="img-visor-global" src="" alt="Vista ampliada" onclick="event.stopPropagation()" style="max-width:100%; max-height:90vh; object-fit:contain; border-radius:12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
     </div>
-
+    
     <script>
         function abrirVisorGlobal(src) {
             document.getElementById('img-visor-global').src = src;
@@ -43,6 +45,8 @@
                 cerrarVisorGlobal();
             }
         });
+
+        
     </script>
   </body>
 </html>
