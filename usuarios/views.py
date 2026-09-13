@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.views.decorators.http import require_POST # NUEVO IMPORT PARA SEGURIDAD
 
 from foro.models import Hilo
+from foro.views import ImagenInvalidaError, comprimir_y_optimizar_imagen
 from usuarios.forms import RegistroForm
 from usuarios.models import Mensaje, Universidad, UsuarioForo
 
@@ -75,9 +76,14 @@ def actualizar_avatar(request):
         avatar = request.FILES['avatar']
         if avatar.size > 2 * 1024 * 1024:
             return JsonResponse({'status': 'error', 'message': 'La imagen excede el límite de 2 MB.'}, status=400)
-        user = request.user
-        user.avatar = avatar
-        user.save()
+
+        try:
+            avatar_optimizado = comprimir_y_optimizar_imagen(avatar, max_ancho=500, calidad=80)
+        except ImagenInvalidaError as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+           
+        request.user.avatar = avatar_optimizado
+        request.user.save()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
 
@@ -125,8 +131,16 @@ class ChatView(LoginRequiredMixin, TemplateView):
         
         if imagen and imagen.size > 5 * 1024 * 1024:
             return JsonResponse({'error': 'La imagen excede el límite de 5MB.'}, status=400)
+
+        if imagen and imagen.size > 0:
+            try:
+                imagen = comprimir_y_optimizar_imagen(imagen, max_ancho=1200, calidad=80)
+            except ImagenInvalidaError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+        else:
+            imagen = None        
             
-        if contenido or (imagen and imagen.size > 0):
+        if contenido or imagen:
             Mensaje.objects.create(
                 remitente=request.user,
                 destinatario=otro_usuario,
@@ -159,6 +173,20 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
         if banner and banner.size > limite_mb:
             form.add_error('banner', 'El banner no puede superar los 2MB.')
             return self.form_invalid(form)
+
+        if avatar:
+            try:
+                form.instance.avatar = comprimir_y_optimizar_imagen(avatar, max_ancho=500, calidad=80)
+            except ImagenInvalidaError as e:    
+                form.add_error('avatar', str(e))
+                return self.form_invalid(form)
+
+        if banner:
+            try:
+                form.instance.banner = comprimir_y_optimizar_imagen(banner, max_ancho=1200, calidad=85)
+            except ImagenInvalidaError as e:
+                form.add_error('banner', str(e))
+                return self.form_invalid(form)    
             
         return super().form_valid(form)
 

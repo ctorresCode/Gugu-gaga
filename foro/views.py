@@ -1,3 +1,5 @@
+from tkinter import Image
+
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q, Count
@@ -17,6 +19,62 @@ from usuarios.models import UsuarioForo
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
+from PIL import Image, ImageOps, UnidentifiedImageError
+from io import BytesIO
+from django.core.files.base import ContentFile
+
+
+MAX_PIXELS_PERMITIDOS = 100_000_000
+
+class ImagenInvalidaError(Exception):
+    """El archivo no es una imagen procesable o excede los límites seguros."""
+    pass
+
+def comprimir_y_optimizar_imagen(imagen_subida, max_ancho=1000, calidad=80):
+    if not imagen_subida:
+        return None
+
+    try:
+        imagen_subida.seek(0)
+    except Exception:
+        pass
+
+    try:
+        img = Image.open(imagen_subida)
+        ancho, alto = img.size  
+    except (UnidentifiedImageError, OSError):
+        raise ImagenInvalidaError("El archivo no es una imagen válida o está corrupto.")
+
+    if ancho * alto > MAX_PIXELS_PERMITIDOS:
+        raise ImagenInvalidaError("La imagen es demasiado grande para procesarse de forma segura.")
+
+    try:
+        img.load() 
+    except OSError:
+        raise ImagenInvalidaError("El archivo no es una imagen válida o está corrupto.")
+
+    img = ImageOps.exif_transpose(img)
+
+    if img.mode in ('RGBA', 'P', 'LA'):
+        img = img.convert('RGBA')
+        fondo = Image.new('RGB', img.size, (255, 255, 255))
+        fondo.paste(img, mask=img.split()[-1])
+        img = fondo
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+
+    if img.width > max_ancho:
+        proporcion = max_ancho / float(img.width)
+        nuevo_alto = max(1, round(img.height * proporcion))
+        img = img.resize((max_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+
+    buffer = BytesIO()
+    img.save(buffer, format='JPEG', quality=calidad, optimize=True, progressive=True)
+    buffer.seek(0)
+
+    nombre_archivo = imagen_subida.name.rsplit('.', 1)[0] + '.jpg'
+    return ContentFile(buffer.read(), name=nombre_archivo)
+
 
 @method_decorator(ratelimit(key='user', rate='5/m', block=False), name='post')
 class InicioView(LoginRequiredMixin, TemplateView):
@@ -90,6 +148,14 @@ class InicioView(LoginRequiredMixin, TemplateView):
             if archivo.size > limite_tamano:
                 return redirect(referer)
 
+        archivos_optimizados = []
+        for archivo in archivos:
+            try:
+                archivos_optimizados.append(comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
+            except ImagenInvalidaError as e:
+                 messages.error(request, str(e))
+                 return redirect(referer)
+
         if contenido:
             nuevo_hilo = Hilo.objects.create(
                 titulo=titulo,
@@ -98,12 +164,12 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 universidad=getattr(request.user, 'universidad', None)
             )
 
-            if len(archivos) > 0: nuevo_hilo.imagen = archivos[0]
-            if len(archivos) > 1: nuevo_hilo.imagen2 = archivos[1]
-            if len(archivos) > 2: nuevo_hilo.imagen3 = archivos[2]
-            if len(archivos) > 3: nuevo_hilo.imagen4 = archivos[3]
-            
-            if archivos:
+            if len(archivos_optimizados) > 0: nuevo_hilo.imagen = archivos_optimizados[0]
+            if len(archivos_optimizados) > 1: nuevo_hilo.imagen2 = archivos_optimizados[1]
+            if len(archivos_optimizados) > 2: nuevo_hilo.imagen3 = archivos_optimizados[2]
+            if len(archivos_optimizados) > 3: nuevo_hilo.imagen4 = archivos_optimizados[3]
+
+            if archivos_optimizados:
                 nuevo_hilo.save()
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
@@ -415,6 +481,21 @@ class EditarHilos(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
 
     def test_func(self):
         return self.get_object().autor == self.request.user
+
+    def form_valid(self, form):
+        for campo in ['imagen', 'imagen2', 'imagen3', 'imagen4']:
+            archivo = self.request.FILES.get(campo)
+            if archivo:
+                if archivo.size > 5 * 1024 * 1024:
+                    form.add_error(campo, 'La imagen excede los 5MB.')
+                    return self.form_invalid(form)
+                try:
+                    setattr(form.instance, campo, comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
+                except ImagenInvalidaError as e:
+                    form.add_error(campo, str(e))
+                    return self.form_invalid(form)
+        return super().form_valid(form)
+
 
 class EliminarHilos(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Hilo
