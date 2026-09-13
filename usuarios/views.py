@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -59,12 +60,13 @@ class PerfilView(LoginRequiredMixin, DetailView):
 @login_required
 @require_POST 
 def seguir_usuario(request, username):
-    usuario_a_seguir = get_object_or_404(UsuarioForo, username=username)
-    if request.user != usuario_a_seguir:
-        if request.user.seguidos.filter(id=usuario_a_seguir.id).exists():
-            request.user.seguidos.remove(usuario_a_seguir)
-        else:
-            request.user.seguidos.add(usuario_a_seguir)
+    with transaction.atomic():
+        usuario_a_seguir = get_object_or_404(UsuarioForo.objects.select_for_update(), username=username)
+        if request.user != usuario_a_seguir:
+            if request.user.seguidos.filter(id=usuario_a_seguir.id).exists():
+                request.user.seguidos.remove(usuario_a_seguir)
+            else:
+                request.user.seguidos.add(usuario_a_seguir)
     return redirect('perfil_usuario', username=username)
 
 @login_required

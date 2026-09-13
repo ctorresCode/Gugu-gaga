@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
@@ -183,25 +184,25 @@ def detalle_respuesta(request, public_id):
 def boton_like(request, hilo_id):
     if getattr(request, 'limited', False):
         return JsonResponse({'error': 'Rate limit excedido'}, status=429)
-    
-    hilo = get_object_or_404(Hilo, pk=hilo_id)
 
-    if hilo.likes.filter(id=request.user.id).exists():
-        hilo.likes.remove(request.user)
-    else:
-        hilo.likes.add(request.user)
-        
+    with transaction.atomic():
+        hilo = get_object_or_404(Hilo.objects.select_for_update(), pk=hilo_id)
+
+        if hilo.likes.filter(id=request.user.id).exists():
+            hilo.likes.remove(request.user)
+        else:
+            hilo.likes.add(request.user) 
     return render(request, 'foro/partials/boton_like.html', {'hilo': hilo})
 
 @login_required
 def Like_respuesta(request, respuesta_id):
-    respuesta = get_object_or_404(Respuesta, id=respuesta_id)
-    
-    if respuesta.likes.filter(id=request.user.id).exists():
-        respuesta.likes.remove(request.user)
-    else:
-        respuesta.likes.add(request.user)
+    with transaction.atomic():
+        respuesta = get_object_or_404(Respuesta.objects.select_for_update(), id=respuesta_id)
         
+        if respuesta.likes.filter(id=request.user.id).exists():
+            respuesta.likes.remove(request.user)
+        else:
+            respuesta.likes.add(request.user)  
     return render(request, 'foro/partials/boton_like_respuesta.html', {'respuesta': respuesta})
 
 @login_required
@@ -323,35 +324,36 @@ def detalle_sugerencia(request, public_id):
 
 @login_required
 def interaccion_sugerencia(request, public_id, accion):
-    sugerencia = get_object_or_404(Sugerencia, public_id=public_id)
+    with transaction.atomic():
+        sugerencia = get_object_or_404(Sugerencia.objects.select_for_update(), public_id=public_id)
 
-    if accion == 'like':
-        if sugerencia.likes.filter(id=request.user.id).exists():
-            sugerencia.likes.remove(request.user)
-        else:
-            sugerencia.likes.add(request.user)
-            sugerencia.dislikes.remove(request.user)
+        if accion == 'like':
+            if sugerencia.likes.filter(id=request.user.id).exists():
+                sugerencia.likes.remove(request.user)
+            else:
+                sugerencia.likes.add(request.user)
+                sugerencia.dislikes.remove(request.user)
 
-            if sugerencia.usuario and sugerencia.usuario != request.user:
-                notif, created = Notificacion.objects.get_or_create(
-                    destinatario=sugerencia.usuario,
-                    tipo=Notificacion.TIPO_LIKE_SUGERENCIA,
-                    sugerencia=sugerencia,
-                    leido=False
-                )
-                notif.actores.add(request.user)
-                notif.save()
+                if sugerencia.usuario and sugerencia.usuario != request.user:
+                    notif, created = Notificacion.objects.get_or_create(
+                        destinatario=sugerencia.usuario,
+                        tipo=Notificacion.TIPO_LIKE_SUGERENCIA,
+                        sugerencia=sugerencia,
+                        leido=False
+                    )
+                    notif.actores.add(request.user)
+                    notif.save()
 
-    elif accion == 'dislike':
-        if sugerencia.dislikes.filter(id=request.user.id).exists():
-            sugerencia.dislikes.remove(request.user)
-        else:
-            sugerencia.dislikes.add(request.user)
-            sugerencia.likes.remove(request.user)
+        elif accion == 'dislike':
+            if sugerencia.dislikes.filter(id=request.user.id).exists():
+                sugerencia.dislikes.remove(request.user)
+            else:
+                sugerencia.dislikes.add(request.user)
+                sugerencia.likes.remove(request.user)
 
-    siguiente = request.META.get('HTTP_REFERER')
-    if siguiente and url_has_allowed_host_and_scheme(url=siguiente, allowed_hosts={request.get_host()}):
-        return redirect(siguiente)
+        siguiente = request.META.get('HTTP_REFERER')
+        if siguiente and url_has_allowed_host_and_scheme(url=siguiente, allowed_hosts={request.get_host()}):
+            return redirect(siguiente)
     return redirect('sugerencias')
 
 
