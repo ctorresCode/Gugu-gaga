@@ -159,14 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagenesGrid = document.getElementById('imagenes-grid');
     const formPost = document.getElementById('form-post');
     const btnRemoverGeneral = document.getElementById('btn-remover');
-     
+
     if(btnRemoverGeneral) btnRemoverGeneral.style.display = 'none';
 
     let archivosAcumulados = [];
 
     const actualizarPrevisualizacion = () => {
         imagenesGrid.innerHTML = '';
-        
+
         if (archivosAcumulados.length === 0) {
             contenedorPreview.classList.add('hidden');
             inputImagen.value = ''; 
@@ -176,16 +176,16 @@ document.addEventListener('DOMContentLoaded', () => {
         archivosAcumulados.forEach((archivo, index) => {
             const divContenedor = document.createElement('div');
             divContenedor.className = 'relative inline-block group';
-            
+
             const img = document.createElement('img');
             img.src = URL.createObjectURL(archivo);
             img.className = 'h-20 w-20 md:h-24 md:w-24 object-cover rounded-xl border border-gray-200 shadow-sm';
-            
+
             const btnEliminar = document.createElement('button');
             btnEliminar.type = 'button';
             btnEliminar.className = 'absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10';
             btnEliminar.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-            
+
             btnEliminar.onclick = () => {
                 archivosAcumulados.splice(index, 1);
                 sincronizarInputFiles();
@@ -208,10 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
         inputImagen.files = dataTransfer.files;
     };
 
-    // Aquí está la validación de límite máximo de 4
     inputImagen.addEventListener('change', (event) => {
         const archivosNuevos = Array.from(event.target.files);
-        
+
         if (archivosAcumulados.length + archivosNuevos.length > 4) {
             alert('Solo puedes subir un máximo de 4 imágenes por publicación.');
             const espacioLibre = 4 - archivosAcumulados.length;
@@ -219,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             archivosAcumulados = archivosAcumulados.concat(archivosNuevos);
         }
-        
+
         sincronizarInputFiles();
         actualizarPrevisualizacion();
     });
@@ -231,6 +230,40 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarPrevisualizacion();
         }
     });
+});
+
+function generarTokenSeguro() {
+    const inputToken = document.getElementById('idem_token');
+    if (window.crypto && crypto.randomUUID) {
+        inputToken.value = crypto.randomUUID();
+    } else {
+        inputToken.value = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+}
+
+document.addEventListener('click', function(event) {
+    const botonClickeado = event.target.closest('.btn-opciones');
+    
+    if (!botonClickeado) {
+        document.querySelectorAll('.menu-opciones').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+        return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const menu = botonClickeado.nextElementSibling;
+    if (menu && menu.classList.contains('menu-opciones')) {
+        document.querySelectorAll('.menu-opciones').forEach(m => {
+            if (m !== menu) m.classList.add('hidden');
+        });
+        menu.classList.toggle('hidden');
+    }
 });
 </script>
 {% endblock %}

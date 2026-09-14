@@ -127,7 +127,11 @@ class ChatView(LoginRequiredMixin, TemplateView):
             return JsonResponse({'error': 'No tienen permisos para chatear.'}, status=403)
 
         contenido = request.POST.get('contenido')
-        archivos = request.FILES.getlist('imagen')[:4]
+        archivos_subidos = request.FILES.getlist('imagen')
+        if len(archivos_subidos) > 4:
+            return JsonResponse({'error': 'No puedes enviar más de 4 imágenes.'}, status=400)
+            
+        archivos = archivos_subidos[:4]
 
         limite_tamano = 5 * 1024 * 1024
         for archivo in archivos:
@@ -153,7 +157,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
             if len(archivos_optimizados) > 3: nuevo_mensaje.imagen4 = archivos_optimizados[3]
             nuevo_mensaje.save()
 
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
             return JsonResponse({'status': 'success'})
 
         return redirect('chat_usuario', username=otro_usuario.username)

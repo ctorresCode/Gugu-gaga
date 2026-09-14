@@ -1,11 +1,13 @@
-{% for hilo in page_obj %}
+{% for hilo in page_obj %}    
+    {% include 'foro/partials/tarjeta_hilo.html' %}
     {% if forloop.last and page_obj.has_next %}
         <div hx-get="?page={{ page_obj.next_page_number }}{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}{% if uni_actual %}&uni={{ uni_actual }}{% endif %}" 
              hx-trigger="revealed" 
-             hx-swap="afterend">
-            {% include 'foro/partials/tarjeta_hilo.html' %}
+             hx-swap="outerHTML"
+             class="flex flex-col gap-4 mt-4">
+            {% include 'foro/partials/hilo_skeleton.html' %}
+            {% include 'foro/partials/hilo_skeleton.html' %}
+            
         </div>
-    {% else %}
-        {% include 'foro/partials/tarjeta_hilo.html' %}
     {% endif %}
 {% endfor %}

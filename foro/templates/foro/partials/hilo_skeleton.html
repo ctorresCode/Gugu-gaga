@@ -1,0 +1,42 @@
+<div
+  class="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 animate-pulse"
+>
+  <div class="flex items-start gap-4">
+    <div class="flex-shrink-0">
+      <div class="w-12 h-12 rounded-full bg-gray-200"></div>
+    </div>
+
+    <div class="flex-grow min-w-0 pt-0.5">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="h-4 w-28 bg-gray-200 rounded-md"></div>
+          <div class="h-3 w-10 bg-gray-200 rounded-md"></div>
+        </div>
+
+        <div class="h-5 w-16 bg-gray-200 rounded-full flex-shrink-0"></div>
+      </div>
+
+      <div class="space-y-2 mb-4">
+        <div class="h-4 bg-gray-200 rounded-md w-full"></div>
+        <div class="h-4 bg-gray-200 rounded-md w-full"></div>
+        <div class="h-4 bg-gray-200 rounded-md w-2/3"></div>
+      </div>
+
+      {% if mostrar_imagen %}
+      <div class="rounded-2xl bg-gray-200 h-[220px] w-full mb-4"></div>
+      {% endif %}
+
+      <div class="flex items-center gap-6 mt-1">
+        <div class="flex items-center gap-1.5">
+          <div class="w-9 h-9 rounded-full bg-gray-200"></div>
+          <div class="h-3 w-4 bg-gray-200 rounded-md"></div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <div class="w-9 h-9 rounded-full bg-gray-200"></div>
+          <div class="h-3 w-4 bg-gray-200 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

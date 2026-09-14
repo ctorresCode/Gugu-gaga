@@ -3,7 +3,7 @@ from tkinter import Image
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q, Count
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, TemplateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -123,38 +123,45 @@ class InicioView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-
         referer = request.META.get('HTTP_REFERER', '/')
         if not url_has_allowed_host_and_scheme(url=referer, allowed_hosts={request.get_host()}):
             referer = '/'
 
+        is_htmx = request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
         if getattr(request, 'limited', False):
             messages.error(request, "Estás publicando hilos muy rápido. Por favor, espera un minuto.")
-            return redirect(referer)
+            return HttpResponse("Rate limit excedido", status=400) if is_htmx else redirect(referer)
 
         idem_token = request.POST.get('idem_token')
         if idem_token:
             if cache.get(f'idem_{idem_token}'):
-                return redirect(referer)
+                return HttpResponse("Petición duplicada", status=400) if is_htmx else redirect(referer)
             cache.set(f'idem_{idem_token}', True, 60)
 
-        contenido = request.POST.get('contenido')
-        titulo = request.POST.get('titulo')
-        
-        archivos = request.FILES.getlist('imagen')[:4]
-
+        archivos_subidos = request.FILES.getlist('imagen')
+        if len(archivos_subidos) > 4:
+            messages.error(request, "Solo puedes subir un máximo de 4 imágenes.")
+            return HttpResponse("Límite de imágenes superado", status=400) if is_htmx else redirect(referer)
+            
+        archivos = archivos_subidos[:4]
         limite_tamano = 5 * 1024 * 1024
+
         for archivo in archivos:
             if archivo.size > limite_tamano:
-                return redirect(referer)
+                messages.error(request, "Una imagen excede el límite de 5MB.")
+                return HttpResponse("Imagen muy pesada", status=400) if is_htmx else redirect(referer)
 
         archivos_optimizados = []
         for archivo in archivos:
             try:
                 archivos_optimizados.append(comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
             except ImagenInvalidaError as e:
-                 messages.error(request, str(e))
-                 return redirect(referer)
+                messages.error(request, str(e))
+                return HttpResponse(str(e), status=400) if is_htmx else redirect(referer)
+
+        contenido = request.POST.get('contenido')
+        titulo = request.POST.get('titulo')
 
         if contenido:
             nuevo_hilo = Hilo.objects.create(
@@ -172,7 +179,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
             if archivos_optimizados:
                 nuevo_hilo.save()
 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
+            if is_htmx:
                 return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
 
         return redirect(referer)
