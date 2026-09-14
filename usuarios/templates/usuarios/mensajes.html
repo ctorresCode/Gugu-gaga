@@ -84,16 +84,25 @@
 
                         {% if msj.remitente == request.user %}
                             <div class="flex justify-end relative">
-                                <div class="bg-[#093D77] text-white px-3 py-2 rounded-2xl rounded-br-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[80px]">
-                                    <div class="text-[15px] font-medium leading-relaxed break-words pl-1 pr-2 flex flex-col">
+                                <div class="bg-[#093D77] text-white p-2.5 rounded-2xl rounded-br-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[100px]">
+                                    <div class="text-[15px] font-medium leading-relaxed break-words flex flex-col w-full">
                                         {% if msj.imagen %}
-                                            <img src="{{ msj.imagen.url }}" class="rounded-xl max-w-full my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                            {% if msj.imagen2 or msj.imagen3 or msj.imagen4 %}
+                                                <div class="grid grid-cols-2 gap-1.5 my-1 w-full max-w-[240px] rounded-xl overflow-hidden">
+                                                    <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                                    {% if msj.imagen2 %}<img src="{{ msj.imagen2.url }}" onclick="abrirVisorGlobal('{{ msj.imagen2.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen3 %}<img src="{{ msj.imagen3.url }}" onclick="abrirVisorGlobal('{{ msj.imagen3.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen4 %}<img src="{{ msj.imagen4.url }}" onclick="abrirVisorGlobal('{{ msj.imagen4.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                </div>
+                                            {% else %}
+                                                <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="rounded-xl w-full max-w-[240px] h-auto my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                            {% endif %}
                                         {% endif %}
                                         {% if msj.contenido %}
-                                            <span>{{ msj.contenido }}</span>
+                                            <span class="px-1 pt-1">{{ msj.contenido }}</span>
                                         {% endif %}
                                     </div>
-                                    <div class="flex items-center justify-end gap-1 mt-1 -mb-0.5 ml-4">
+                                    <div class="flex items-center justify-end gap-1 mt-1 px-1">
                                         <span class="text-[10px] font-semibold text-white/80">{{ msj.fecha_envio|time:"g:i A" }}</span>
                                         {% if msj.leido %}
                                             <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-current text-[#34B7F1]"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"></path></svg>
@@ -105,16 +114,25 @@
                             </div>
                         {% else %}
                             <div class="flex justify-start relative">
-                                <div class="bg-white border border-gray-100 text-[#2B2B2B] px-3 py-2 rounded-2xl rounded-bl-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[80px]">
-                                    <div class="text-[15px] font-medium leading-relaxed break-words pl-1 pr-4 flex flex-col">
+                                <div class="bg-white border border-gray-100 text-[#2B2B2B] p-2.5 rounded-2xl rounded-bl-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[100px]">
+                                    <div class="text-[15px] font-medium leading-relaxed break-words flex flex-col w-full">
                                         {% if msj.imagen %}
-                                            <img src="{{ msj.imagen.url }}" class="rounded-xl max-w-full my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                            {% if msj.imagen2 or msj.imagen3 or msj.imagen4 %}
+                                                <div class="grid grid-cols-2 gap-1.5 my-1 w-full max-w-[240px] rounded-xl overflow-hidden">
+                                                    <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                                    {% if msj.imagen2 %}<img src="{{ msj.imagen2.url }}" onclick="abrirVisorGlobal('{{ msj.imagen2.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen3 %}<img src="{{ msj.imagen3.url }}" onclick="abrirVisorGlobal('{{ msj.imagen3.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen4 %}<img src="{{ msj.imagen4.url }}" onclick="abrirVisorGlobal('{{ msj.imagen4.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                </div>
+                                            {% else %}
+                                                <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="rounded-xl w-full max-w-[240px] h-auto my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                            {% endif %}
                                         {% endif %}
                                         {% if msj.contenido %}
-                                            <span>{{ msj.contenido }}</span>
+                                            <span class="px-1 pt-1">{{ msj.contenido }}</span>
                                         {% endif %}
                                     </div>
-                                    <div class="flex items-center justify-end gap-1 mt-1 -mb-0.5 ml-4">
+                                    <div class="flex items-center justify-end gap-1 mt-1 px-1">
                                         <span class="text-[10px] font-semibold text-[#3A7CA5]/70">{{ msj.fecha_envio|time:"g:i A" }}</span>
                                     </div>
                                 </div>
@@ -125,20 +143,22 @@
                     {% endfor %}
                 </div>
 
-                <form id="chat-form" data-hx-disable="true" method="post" action="{% url 'chat_usuario' chat_activo.username %}" enctype="multipart/form-data" class="p-3 md:p-4 bg-white border-t border-gray-50 z-20">
+                <form id="chat-form" data-hx-disable="true" method="post" action="{% url 'chat_usuario' chat_activo.username %}" enctype="multipart/form-data" class="p-3 md:p-4 bg-white border-t border-gray-50 z-10">
                     {% csrf_token %}
-                    <div class="flex items-center gap-2 bg-[#F8F9FA] border border-gray-200 focus-within:border-[#3A7CA5] focus-within:ring-1 focus-within:ring-[#3A7CA5] transition-all rounded-full px-4 py-2 shadow-inner">
-                        
-                        <label class="cursor-pointer p-2 rounded-full hover:bg-gray-200 text-[#3A7CA5] transition-all flex-shrink-0">
-                            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-3.31-2.69-6-6-6S3 1.69 3 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"></path></svg>
-                            <input type="file" id="chat-file" name="imagen" accept="image/*" class="hidden">
-                        </label>
-
-                        <input type="text" id="chat-input" name="contenido" placeholder="Escribe un mensaje o pega una imagen..." class="flex-1 bg-transparent outline-none border-none focus:ring-0 text-[#2B2B2B] placeholder-[#3A7CA5]/60 text-[15px] font-medium" autocomplete="off" autofocus>
-                        
-                        <button type="submit" class="p-2 rounded-full hover:bg-[#093D77] text-[#093D77] hover:text-white transition-all active:scale-95 flex-shrink-0">
-                            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M2.504 21.866l.526-2.108C3.04 19.719 4 15.823 4 12s-.96-7.719-.97-7.757l-.527-2.109L22.236 12 2.504 21.866zM5.981 13c-.072 1.962-.34 3.833-.583 5.183L17.764 12 5.398 5.818c.242 1.349.51 3.221.583 5.182H12v2H5.981z"></path></svg>
-                        </button>
+                    <div class="bg-[#F8F9FA] border border-gray-200 focus-within:border-[#3A7CA5] focus-within:ring-1 focus-within:ring-[#3A7CA5] transition-all rounded-3xl px-4 py-2 shadow-inner">
+                        <div id="chat-preview" class="hidden pt-3 pb-1 px-1">
+                            <div id="chat-preview-list" class="flex items-center gap-3 flex-wrap"></div>
+                        </div>
+                        <div class="flex items-center gap-2 py-1">
+                            <label id="chat-clip-label" class="cursor-pointer p-2 rounded-full hover:bg-gray-200 text-[#3A7CA5] transition-all flex-shrink-0">
+                                <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-3.31-2.69-6-6-6S3 1.69 3 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"></path></svg>
+                                <input type="file" id="chat-file" name="imagen" accept="image/*" multiple class="hidden">
+                            </label>
+                            <input type="text" id="chat-input" name="contenido" placeholder="Escribe un mensaje o pega una imagen..." class="flex-1 bg-transparent outline-none border-none focus:ring-0 text-[#2B2B2B] placeholder-[#3A7CA5]/60 text-[15px] font-medium" autocomplete="off" autofocus>
+                            <button type="submit" class="p-2 rounded-full hover:bg-[#093D77] text-[#093D77] hover:text-white transition-all active:scale-95 flex-shrink-0 cursor-pointer">
+                                <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M2.504 21.866l.526-2.108C3.04 19.719 4 15.823 4 12s-.96-7.719-.97-7.757l-.527-2.109L22.236 12 2.504 21.866zM5.981 13c-.072 1.962-.34 3.833-.583 5.183L17.764 12 5.398 5.818c.242 1.349.51 3.221.583 5.182H12v2H5.981z"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 </form>
             {% else %}
@@ -160,6 +180,18 @@
 
 {% if chat_activo %}
 <script>
+    if (typeof window.abrirVisorGlobal !== 'function') {
+        function abrirVisorGlobal(url) {
+            var visor = document.getElementById('visor-global');
+            var visorImg = document.getElementById('img-visor-global');
+            if (visor && visorImg) {
+                visorImg.src = url;
+                visor.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+    }
+
     (function() {
         function scrollToBottom() {
             var chatContainer = document.getElementById('chat-container');
@@ -177,34 +209,138 @@
         var chatForm = document.getElementById('chat-form');
         var chatInput = document.getElementById('chat-input');
         var chatFile = document.getElementById('chat-file');
+        var chatPreview = document.getElementById('chat-preview');
+        var chatPreviewList = document.getElementById('chat-preview-list');
+        var chatClipLabel = document.getElementById('chat-clip-label');
         var MAX_SIZE = 5 * 1024 * 1024;
+        var MAX_IMAGENES = 4;
+        var chatArchivosSeleccionados = [];
+        var chatPreviewUrls = [];
+
+        function actualizarInputFile() {
+            var dt = new DataTransfer();
+            chatArchivosSeleccionados.forEach(function(f) { dt.items.add(f); });
+            chatFile.files = dt.files;
+        }
+
+        function actualizarEstadoClip() {
+            var lleno = chatArchivosSeleccionados.length >= MAX_IMAGENES;
+            chatClipLabel.classList.toggle('opacity-40', lleno);
+            chatClipLabel.classList.toggle('pointer-events-none', lleno);
+        }
+
+        function renderPreviews() {
+            chatPreviewUrls.forEach(function(url) { URL.revokeObjectURL(url); });
+            chatPreviewUrls = [];
+            chatPreviewList.innerHTML = '';
+            if (chatArchivosSeleccionados.length === 0) {
+                chatPreview.classList.add('hidden');
+                actualizarEstadoClip();
+                return;
+            }
+            chatPreview.classList.remove('hidden');
+            chatArchivosSeleccionados.forEach(function(archivo, index) {
+                var url = URL.createObjectURL(archivo);
+                chatPreviewUrls.push(url);
+                
+                var wrapper = document.createElement('div');
+                wrapper.className = 'relative w-16 h-16 flex-shrink-0 mt-2 mr-2 overflow-visible';
+
+                var img = document.createElement('img');
+                img.src = url;
+                img.className = 'w-16 h-16 object-cover rounded-xl border border-gray-200 cursor-zoom-in hover:opacity-90 transition-opacity';
+
+                var quitar = document.createElement('button');
+                quitar.type = 'button';
+                quitar.innerHTML = '&times;';
+                quitar.title = 'Quitar imagen';
+
+                quitar.className = `
+                absolute top-0 right-0
+                translate-x-1/4 -translate-y-1/4
+                w-5 h-5
+                bg-red-600
+                text-white
+                rounded-full
+                flex items-center justify-center
+                text-xs font-bold
+                leading-none
+                shadow-md
+                cursor-pointer
+                transition-colors
+                z-50
+                `;
+
+                quitar.style.cssText = `
+                    background-color: #dc2626 !important;
+                    color: #ffffff !important;
+                    border: none !important;
+                    opacity: 1 !important;
+                    padding: 0 !important;
+                    line-height: 1 !important;
+                `;
+
+                quitar.onclick = function() { quitarImagenChat(index); };
+                wrapper.appendChild(img);
+                wrapper.appendChild(quitar);
+                chatPreviewList.appendChild(wrapper);
+            });
+            actualizarEstadoClip();
+        }
+
+        function agregarArchivosChat(nuevosArchivos) {
+            var descartadasPorLimite = false;
+            for (var i = 0; i < nuevosArchivos.length; i++) {
+                var archivo = nuevosArchivos[i];
+                if (!archivo.type.startsWith('image/')) continue;
+                if (chatArchivosSeleccionados.length >= MAX_IMAGENES) {
+                    descartadasPorLimite = true;
+                    break;
+                }
+                if (archivo.size > MAX_SIZE) {
+                    alert('Una de las imágenes excede el límite de 5MB.');
+                    continue;
+                }
+                chatArchivosSeleccionados.push(archivo);
+            }
+            if (descartadasPorLimite) {
+                alert('Solo puedes enviar un máximo de ' + MAX_IMAGENES + ' imágenes por mensaje.');
+            }
+            actualizarInputFile();
+            renderPreviews();
+        }
+
+        function quitarImagenChat(index) {
+            chatArchivosSeleccionados.splice(index, 1);
+            actualizarInputFile();
+            renderPreviews();
+        }
+
+        function limpiarPreviewChat() {
+            chatArchivosSeleccionados = [];
+            actualizarInputFile();
+            renderPreviews();
+        }
 
         if (chatFile) {
             chatFile.onchange = function() {
-                if(this.files[0] && this.files[0].size > MAX_SIZE) {
-                    alert("La imagen excede el límite de 5MB.");
-                    this.value = '';
-                }
+                agregarArchivosChat(this.files);
             };
         }
 
         if (chatInput) {
             chatInput.onpaste = function(e) {
                 var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                var imagenes = [];
                 for (var index in items) {
                     var item = items[index];
                     if (item.kind === 'file' && item.type.startsWith('image/')) {
-                        var blob = item.getAsFile();
-                        if (blob.size > MAX_SIZE) {
-                            alert("La imagen pegada excede el límite de 5MB.");
-                            return;
-                        }
-                        var dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(blob);
-                        chatFile.files = dataTransfer.files;
-                        chatInput.placeholder = "Imagen adjunta. Escribe algo o dale a enviar...";
-                        e.preventDefault(); 
+                        imagenes.push(item.getAsFile());
                     }
+                }
+                if (imagenes.length > 0) {
+                    agregarArchivosChat(imagenes);
+                    e.preventDefault();
                 }
             };
         }
@@ -215,10 +351,10 @@
                 e.stopPropagation();
 
                 var formData = new FormData(this);
-                if(!formData.get('contenido') && !chatFile.files.length) return;
+                if (!formData.get('contenido') && !chatFile.files.length) return;
 
                 chatInput.disabled = true;
-                
+
                 try {
                     var response = await fetch(this.action, {
                         method: 'POST',
@@ -226,9 +362,9 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
 
-                    if(response.ok) {
+                    if (response.ok) {
                         this.reset();
-                        chatInput.placeholder = "Escribe un mensaje o pega una imagen...";
+                        limpiarPreviewChat();
                         chatInput.disabled = false;
                         chatInput.focus();
 
@@ -236,7 +372,7 @@
                         var htmlText = await htmlResponse.text();
                         var parser = new DOMParser();
                         var doc = parser.parseFromString(htmlText, 'text/html');
-                        
+
                         var newContainer = doc.getElementById('chat-container');
                         if (newContainer) {
                             document.getElementById('chat-container').innerHTML = newContainer.innerHTML;

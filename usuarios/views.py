@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, request
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
@@ -122,36 +122,42 @@ class ChatView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         otro_usuario = get_object_or_404(UsuarioForo, username=self.kwargs['username'])
         son_amigos = request.user.seguidos.filter(id=otro_usuario.id).exists() and otro_usuario.seguidos.filter(id=request.user.id).exists()
-        
+
         if not son_amigos:
             return JsonResponse({'error': 'No tienen permisos para chatear.'}, status=403)
-            
-        contenido = request.POST.get('contenido')
-        imagen = request.FILES.get('imagen') 
-        
-        if imagen and imagen.size > 5 * 1024 * 1024:
-            return JsonResponse({'error': 'La imagen excede el límite de 5MB.'}, status=400)
 
-        if imagen and imagen.size > 0:
+        contenido = request.POST.get('contenido')
+        archivos = request.FILES.getlist('imagen')[:4]
+
+        limite_tamano = 5 * 1024 * 1024
+        for archivo in archivos:
+            if archivo.size > limite_tamano:
+                return JsonResponse({'error': 'Una de las imágenes excede el límite de 5MB.'}, status=400)
+
+        archivos_optimizados = []
+        for archivo in archivos:
             try:
-                imagen = comprimir_y_optimizar_imagen(imagen, max_ancho=1200, calidad=80)
+                archivos_optimizados.append(comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
             except ImagenInvalidaError as e:
                 return JsonResponse({'error': str(e)}, status=400)
-        else:
-            imagen = None        
-            
-        if contenido or imagen:
-            Mensaje.objects.create(
+
+        if contenido or archivos_optimizados:
+            nuevo_mensaje = Mensaje(
                 remitente=request.user,
                 destinatario=otro_usuario,
                 contenido=contenido,
-                imagen=imagen 
             )
-            
+            if len(archivos_optimizados) > 0: nuevo_mensaje.imagen = archivos_optimizados[0]
+            if len(archivos_optimizados) > 1: nuevo_mensaje.imagen2 = archivos_optimizados[1]
+            if len(archivos_optimizados) > 2: nuevo_mensaje.imagen3 = archivos_optimizados[2]
+            if len(archivos_optimizados) > 3: nuevo_mensaje.imagen4 = archivos_optimizados[3]
+            nuevo_mensaje.save()
+
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success'})
-            
+
         return redirect('chat_usuario', username=otro_usuario.username)
+        
 
 class EditarPerfilView(LoginRequiredMixin, UpdateView):
     model = UsuarioForo

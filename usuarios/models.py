@@ -27,7 +27,10 @@ class Mensaje(models.Model):
     remitente = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='mensajes_enviados', on_delete=models.CASCADE, db_index=True)
     destinatario = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='mensajes_recibidos', on_delete=models.CASCADE, db_index=True)
     contenido = models.TextField(null=True, blank=True)
-    imagen = models.ImageField(upload_to='chat_imagenes/', null=True, blank=True)
+    imagen = models.ImageField(upload_to='chat_imagenes/',  blank=True, null=True)
+    imagen2 = models.ImageField(upload_to='chat_imagenes/', blank=True, null=True)
+    imagen3 = models.ImageField(upload_to='chat_imagenes/', blank=True, null=True)
+    imagen4 = models.ImageField(upload_to='chat_imagenes/', blank=True, null=True)
     fecha_envio = models.DateTimeField(auto_now_add=True, db_index=True)
     leido = models.BooleanField(default=False, db_index=True)
 
