@@ -117,6 +117,7 @@ class Sugerencia(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     contenido = models.TextField(verbose_name="Contenido de la sugerencia")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    #likes para las sugerencias
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_likes', blank=True)
     dislikes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_dislikes', blank=True)
 
