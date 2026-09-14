@@ -2,13 +2,10 @@ from pathlib import Path
 from decouple import config, Csv
 import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
@@ -99,7 +96,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'usuarios' / 'static',
 ]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -116,9 +114,8 @@ AWS_QUERYSTRING_AUTH = False
 if AWS_ACCESS_KEY_ID:
     STORAGES = {
         "default": {"BACKEND": "storages.backends.s3.S3Storage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
     }
 else:
-    # Si las variables de R2 están vacías temporalmente en local, usa las carpetas normales
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
