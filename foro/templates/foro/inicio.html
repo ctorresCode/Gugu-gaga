@@ -266,4 +266,34 @@ document.addEventListener('click', function(event) {
     }
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabaseClient
+        .channel('likes-en-vivo')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_hilo_likes' }, function(payload) {
+            let hiloId = payload.eventType === 'INSERT' ? payload.new.hilo_id : payload.old.hilo_id;
+            
+            if (hiloId) {
+                let contador = document.getElementById('contador-like-' + hiloId);
+                if (contador) {
+                    let numeroActual = parseInt(contador.innerText) || 0;
+                    
+                    if (payload.eventType === 'INSERT') {
+                        contador.innerText = numeroActual + 1;
+                    } else if (payload.eventType === 'DELETE') {
+                        contador.innerText = Math.max(0, numeroActual - 1); 
+                    }
+                }
+            }
+        })
+        .subscribe();
+});
+</script>
 {% endblock %}
