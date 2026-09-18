@@ -78,7 +78,7 @@
     <div class="flex-grow flex flex-col pt-1">
         <input type="hidden" name="titulo" value="Publicación de {{ request.user.username }}">
         
-        <textarea name="contenido" rows="2" placeholder="¿Qué está pasando en la U?" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+        <textarea id="textarea-hilo" name="contenido" rows="2" placeholder="¿Qué está pasando en la U?" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
         
         <div id="preview-container" class="hidden relative mt-3 mb-2 border border-gray-100 rounded-2xl shadow-sm w-full p-3 bg-gray-50/50">
             <button type="button" id="btn-remover" class="absolute top-2 right-2 bg-gray-800/70 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors z-10">
@@ -231,6 +231,20 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarPrevisualizacion();
         }
     });
+
+    const textareaPost = document.getElementById('textarea-hilo');
+    if (textareaPost) {
+        textareaPost.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const form = textareaPost.closest('form');
+                if (form) {
+                    document.getElementById('idem_token').value = crypto.randomUUID();
+                    form.requestSubmit();
+                }
+            }
+        });
+    }
 });
 
 function generarTokenSeguro() {
@@ -273,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
     const miUsuarioId = Number("{{ request.user.id }}");
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.getSupabase ? window.getSupabase() : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     supabaseClient
         .channel('likes-en-vivo')
