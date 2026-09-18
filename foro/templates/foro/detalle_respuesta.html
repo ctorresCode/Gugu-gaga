@@ -88,7 +88,7 @@
                 </div>
 
                 <div class="flex-grow flex flex-col pt-1">
-                    <textarea name="contenido" rows="2" placeholder="Suma tu voz a la discusión" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+                    <textarea id="textarea-respuesta-hija" name="contenido" rows="2" placeholder="Suma tu voz a la discusión" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
                     
                     <div class="flex items-center justify-end pt-3 mt-2 border-t border-gray-50">
                         <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] transition-all text-sm shadow-md shadow-[#093D77]/20 active:scale-95 cursor-pointer">
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const miUsuarioId = Number("{{ request.user.id }}");
     const respuestaPadreId = Number("{{ respuesta.id }}");
     
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.getSupabase ? window.getSupabase() : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     supabaseClient
         .channel('respuestas-hijas-vivo')
@@ -156,7 +156,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Error cargando la respuesta hija en vivo:", error);
             }
         })
-        .subscribe();       
+        .subscribe();
+
+    const textareaHija = document.getElementById('textarea-respuesta-hija');
+    if (textareaHija) {
+        textareaHija.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const form = textareaHija.closest('form');
+                if (form) {
+                    form.requestSubmit();
+                }
+            }
+        });
+    }
 });
 </script>
-{% endblock %}
+{% endblock  %}
