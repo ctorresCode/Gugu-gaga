@@ -21,6 +21,16 @@
         </div>
 
         <div class="px-4">
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-xl text-sm font-bold shadow-sm {% if message.tags == 'error' %}bg-red-50 text-red-600 border border-red-100{% else %}bg-green-50 text-green-600 border border-green-100{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-4">
@@ -45,31 +55,9 @@
 
                 <p class="text-[#2B2B2B] text-xl leading-relaxed font-medium mb-5">{{ hilo.contenido }}</p>
 
-                {% if hilo.imagen or hilo.imagen2 or hilo.imagen3 or hilo.imagen4 %}
-                    <div class="grid gap-2 mb-5 {% if hilo.imagen2 %}grid-cols-2{% else %}grid-cols-1{% endif %}">
-                        {% if hilo.imagen %}
-                        <div class="rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full">
-                            <img src="{{ hilo.imagen.url }}" onclick="abrirImagen(this.src)" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer {% if not hilo.imagen2 %}max-h-[500px]{% else %}max-h-[300px]{% endif %}">
-                        </div>
-                        {% endif %}
-
-                        {% if hilo.imagen2 %}
-                        <div class="rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full">
-                            <img src="{{ hilo.imagen2.url }}" onclick="abrirImagen(this.src)" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer max-h-[300px]">
-                        </div>
-                        {% endif %}
-
-                        {% if hilo.imagen3 %}
-                        <div class="rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full">
-                            <img src="{{ hilo.imagen3.url }}" onclick="abrirImagen(this.src)" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer max-h-[300px]">
-                        </div>
-                        {% endif %}
-
-                        {% if hilo.imagen4 %}
-                        <div class="rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-full">
-                            <img src="{{ hilo.imagen4.url }}" onclick="abrirImagen(this.src)" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer max-h-[300px]">
-                        </div>
-                        {% endif %}
+                {% if hilo.imagen %}
+                    <div class="rounded-2xl overflow-hidden mb-5 border border-gray-100 shadow-sm">
+                        <img src="{{ hilo.imagen.url }}" class="max-h-[500px] w-full object-cover">
                     </div>
                 {% endif %}
 
@@ -80,25 +68,12 @@
                 <div class="flex items-center justify-around pt-4 text-[#3A7CA5] font-bold">
                     <div class="flex items-center gap-2">
                         <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current opacity-70"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                        <span class="text-sm">{{ respuestas.count }}</span>
+                        <span id="contador-respuestas-total" class="text-sm">{{ respuestas|length }}</span> 
                     </div>
                     
                     {% include 'foro/partials/boton_like.html' with hilo=hilo %}
                 </div>
             </div>
-
-            {% if messages %}
-    <div class="mb-6 space-y-2">
-        {% for message in messages %}
-            <div class="flex items-center gap-3 px-6 py-4 rounded-3xl text-sm font-bold bg-red-50 text-red-600 border border-red-100 shadow-sm">
-                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-                <span>{{ message }}</span>
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
 
             <form method="post" class="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex gap-4 mb-6 focus-within:shadow-md transition-all">
                 {% csrf_token %}
@@ -116,7 +91,7 @@
                     <textarea name="contenido" rows="2" placeholder="Suma tu voz a la discusión" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
                     
                     <div class="flex items-center justify-end pt-3 mt-2 border-t border-gray-50">
-                        <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] transition-all text-sm shadow-md shadow-[#093D77]/20 active:scale-95 cursor-pointer">
+                        <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#093D77]/90 transition-all text-sm shadow-md shadow-[#093D77]/20 active:scale-95 cursor-pointer">
                             Responder
                         </button>
                     </div>
@@ -124,44 +99,10 @@
             </form>
 
             <div id="lista-respuestas" class="flex flex-col gap-4">
-                {% for respuesta in respuestas %}
-                    <div onclick="window.location.href='{% url 'detalle_respuesta' respuesta.public_id %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
-                        <div class="flex items-start gap-4">
-                            <div class="flex-shrink-0">
-                                <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="block hover:opacity-80 transition-opacity">
-                                    {% if respuesta.autor.avatar %}
-                                        <img src="{{ respuesta.autor.avatar.url }}" class="w-11 h-11 rounded-full object-cover shadow-sm">
-                                    {% else %}
-                                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase text-sm shadow-sm">
-                                            {{ respuesta.autor.username|make_list|first }}
-                                        </div>
-                                    {% endif %}
-                                </a>
-                            </div>
-                            
-                            <div class="flex-grow min-w-0 pt-0.5">
-                                <div class="flex items-center gap-2 mb-1.5">
-                                    <a href="{% url 'perfil_usuario' respuesta.autor.username %}" onclick="event.stopPropagation();" class="font-extrabold text-[#2B2B2B] text-[15px] truncate hover:text-[#093D77] hover:underline decoration-2 underline-offset-2">{{ respuesta.autor.username }}</a>
-                                    <span class="text-[#3A7CA5] text-xs font-semibold whitespace-nowrap opacity-80">· {{ respuesta.fecha_creacion|timesince }}</span>
-                                </div>
-
-                                <p class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90">{{ respuesta.contenido }}</p>
-
-                                <div class="flex items-center gap-8 text-[#3A7CA5] font-semibold mt-1">
-                                    <div class="flex items-center gap-1.5 group/reply hover:text-[#093D77] transition-colors">
-                                        <div class="p-2 -ml-2 rounded-full group-hover/reply:bg-[#093D77]/10 transition-colors">
-                                            <svg viewBox="0 0 24 24" class="w-[22px] h-[22px] fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                                        </div>
-                                        <span class="text-xs">{{ respuesta.respuestas_hijas.count }}</span>
-                                    </div>
-                                    
-                                    {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                {% for hijo in respuestas %}
+                    {% include 'foro/partials/tarjeta_respuesta.html' %}
                 {% empty %}
-                    <div class="text-center py-12">
+                    <div id="mensaje-vacio-respuestas" class="text-center py-12">
                         <p class="text-[#3A7CA5] font-bold text-lg">Nadie ha respondido aún.</p>
                     </div>
                 {% endfor %}
@@ -171,34 +112,54 @@
 
     <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30"></aside>
 
-    <div id="modal-imagen"
-         onclick="cerrarImagen()"
-         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.92); z-index:9999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
-        <button onclick="cerrarImagen()"
-                style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.1); border:none; border-radius:9999px; padding:10px; cursor:pointer; color:#fff; display:flex;">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18.36 5.64L12 12l6.36 6.36-1.42 1.42L10.59 13.4 4.22 19.78 2.8 18.36 9.18 12 2.8 5.64 4.22 4.22l6.37 6.36 6.36-6.36z"></path></svg>
-        </button>
-        <img id="modal-imagen-img" src="" alt="Vista ampliada" onclick="event.stopPropagation()"
-             style="max-width:100%; max-height:100%; object-fit:contain; border-radius:12px;">
-    </div>
-
-    <script>
-        function abrirImagen(src) {
-            document.getElementById('modal-imagen-img').src = src;
-            document.getElementById('modal-imagen').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function cerrarImagen() {
-            document.getElementById('modal-imagen').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') cerrarImagen();
-        });
-    </script>
-
     {% include 'foro/partials/nav_mobile.html' %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    
+    const miUsuarioId = Number("{{ request.user.id }}");
+    const hiloActualId = Number("{{ hilo.id }}");
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const NOMBRES_GRUPO = { semana: 'Esta semana', mes: 'Este mes', anteriores: 'Anteriores' }; 
+
+    supabaseClient
+        .channel('respuestas-hilo-vivo')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'foro_respuesta' }, async function(payload) {
+            let nuevaRespuesta = payload.new;
+            
+            if (Number(nuevaRespuesta.hilo_id) !== hiloActualId) return;
+            if (nuevaRespuesta.respuesta_padre_id !== null) return;
+            if (Number(nuevaRespuesta.autor_id) === miUsuarioId) return;
+
+            try {
+                let response = await fetch(`/respuesta/${nuevaRespuesta.id}/tarjeta/`);
+                if (response.ok) {
+                    let htmlTarjeta = await response.text();
+                    let listaRespuestas = document.getElementById('lista-respuestas');
+                    
+                    if (listaRespuestas) {
+                        let mensajeVacio = document.getElementById('mensaje-vacio-respuestas');
+                        if (mensajeVacio) mensajeVacio.remove();
+
+                        listaRespuestas.insertAdjacentHTML('beforeend', htmlTarjeta);
+
+                        let contadorResp = document.getElementById('contador-respuestas-total');
+                        if (contadorResp) {
+                            contadorResp.innerText = Number(contadorResp.innerText) + 1;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error cargando la respuesta en vivo:", error);
+            }
+        })
+        .subscribe();
+               
+});
+</script>
 {% endblock %}

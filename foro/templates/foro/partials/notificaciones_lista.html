@@ -1,56 +1,69 @@
-{% for clave, lista in grupos.items %}
-    {% if lista %}
-    <div class="grupo-notif mb-6">
-        <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#3A7CA5]/70 px-2 mb-2">
-            {% if clave == 'semana' %}Esta semana{% elif clave == 'mes' %}Este mes{% else %}Anteriores{% endif %}
-        </h4>
-        <div class="flex flex-col gap-1">
-            {% for notif in lista %}
-            <a href="{% if notif.sugerencia %}{% url 'detalle_sugerencia' notif.sugerencia.public_id %}{% elif notif.hilo %}{% url 'detalle_hilo' notif.hilo.public_id %}{% else %}#{% endif %}"
-               data-tipo="{{ notif.tipo }}"
-               class="item-notif relative flex items-center gap-3 p-3 rounded-2xl transition-colors {% if notif.id in ids_no_leidas %}bg-[#093D77]/[0.05]{% else %}hover:bg-[#F8F9FA]{% endif %}">
-                
-                {% if notif.id in ids_no_leidas %}
-                    <span class="w-2 h-2 rounded-full bg-[#DAA520] flex-shrink-0"></span>
-                {% endif %}
-                
-                {% with actor=notif.actores.first %}
-                    {% if actor.avatar %}
-                        <img src="{{ actor.avatar.url }}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 shadow-sm">
-                    {% else %}
-                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0 shadow-sm">
-                            {{ actor.username|make_list|first }}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-                
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm text-[#2B2B2B] leading-snug">
-                        <span class="font-bold">{{ notif.texto_nombres }}</span>
-                        {{ notif.texto_accion }}
-                        <span class="text-[#3A7CA5]/60 font-medium"> · {{ notif.ultima_actividad|timesince }}</span>
-                    </p>
-                    
-                    {% if notif.tipo == 'comentario' and notif.respuesta %}
-                        <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta.contenido|truncatechars:60 }}"</p>
-                    {% elif notif.tipo == 'coment_sug' and notif.respuesta_sugerencia %}
-                        <p class="text-xs text-gray-400 truncate mt-0.5">"{{ notif.respuesta_sugerencia.contenido|truncatechars:60 }}"</p>
-                    {% endif %}
-                </div>
-                
-                {% if notif.hilo and notif.hilo.imagen %}
-                    <img src="{{ notif.hilo.imagen.url }}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
-                {% endif %}
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-{% endfor %}
+<div id="panel-notificaciones" class="w-full pb-8">
+    <div id="lista-notificaciones-vivo" class="flex flex-col gap-1 mb-2"></div>
 
-{% if not grupos.semana and not grupos.mes and not grupos.anteriores %}
-    <div class="text-center py-16">
-        <p class="text-[#3A7CA5] font-bold text-lg">Todo tranquilo por aquí.</p>
-        <p class="text-gray-400 text-sm mt-1">Cuando alguien interactúe contigo, lo verás en este panel.</p>
-    </div>
-{% endif %}
+    {% for clave, lista in grupos.items %}
+        {% if lista %}
+        <div class="grupo-notif mb-6">
+            <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#3A7CA5]/70 px-2 mb-2">
+                {% if clave == 'semana' %}Esta semana{% elif clave == 'mes' %}Este mes{% else %}Anteriores{% endif %}
+            </h4>
+            <div class="flex flex-col gap-1">
+                {% for notif in lista %}
+                    {% include 'foro/partials/item_notificacion.html' %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    {% if not grupos.semana and not grupos.mes and not grupos.anteriores %}
+        <div id="mensaje-vacio-notificaciones" class="text-center py-16">
+            <p class="text-[#3A7CA5] font-bold text-lg">Todo tranquilo por aquí.</p>
+            <p class="text-gray-400 text-sm mt-1">Cuando alguien interactúe contigo, lo verás en este panel.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function() {
+    if (window.notificacionesEnVivoActivadas) return;
+    window.notificacionesEnVivoActivadas = true;
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    
+    const miUsuarioId = Number("{{ request.user.id }}");
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabaseClient
+        .channel('notificaciones-vivo')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'foro_notificacion' }, async function(payload) {
+            let nuevaNotif = payload.new;
+            console.log("Supabase detectó algo en la BD:", nuevaNotif);
+            
+            if (Number(nuevaNotif.destinatario_id) !== miUsuarioId) return;
+
+            setTimeout(async () => {
+                try {
+                    let response = await fetch(`/notificacion/${nuevaNotif.id}/tarjeta/`);
+                    if (response.ok) {
+                        let htmlTarjeta = await response.text();
+                        let panelVivo = document.getElementById('lista-notificaciones-vivo');
+                        
+                        if (panelVivo) {
+                            let vacio = document.getElementById('mensaje-vacio-notificaciones');
+                            if (vacio) vacio.remove();
+                            
+                            panelVivo.insertAdjacentHTML('afterbegin', htmlTarjeta);
+                        }
+                    } else {
+                        console.error("Error trayendo HTML:", response.status);
+                    }
+                } catch (error) {
+                    console.error("Error de fetch:", error);
+                }
+            }, 1000); 
+        })
+        .subscribe();       
+})();
+</script>

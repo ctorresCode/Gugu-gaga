@@ -25,7 +25,8 @@
                 </div>
                 <h1 class="text-xl font-black text-[#2B2B2B]">Chats</h1>
             </div>
-            <div class="overflow-y-auto flex-1 bg-[#F8F9FA]/30">
+            
+            <div id="lista-amigos-sidebar" class="overflow-y-auto flex-1 bg-[#F8F9FA]/30">
                 {% for amigo in amigos %}
                 <a href="{% url 'chat_usuario' amigo.username %}" class="flex items-center gap-4 p-4 hover:bg-white transition-all border-b border-gray-100 {% if chat_activo.username == amigo.username %}bg-white shadow-sm border-l-4 border-l-[#093D77]{% endif %}">
                     <div class="relative">
@@ -391,4 +392,52 @@
     })();
 </script>
 {% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    
+    const miUsuarioId = Number("{{ request.user.id }}");
+    const chatActivoId = Number("{{ chat_activo.id|default:'0' }}");
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabaseClient
+        .channel('chat-vivo')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'usuarios_mensaje' }, async function(payload) {
+            let msg = payload.new;
+            
+            if (Number(msg.remitente_id) !== miUsuarioId && Number(msg.destinatario_id) !== miUsuarioId) return;
+            if (Number(msg.remitente_id) === miUsuarioId) return;
+
+            try {
+                let response = await fetch(window.location.href);
+                if (response.ok) {
+                    let htmlText = await response.text();
+                    let doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+                    if (Number(msg.remitente_id) === chatActivoId) {
+                        let newChat = doc.getElementById('chat-container');
+                        let currentChat = document.getElementById('chat-container');
+                        if (newChat && currentChat) {
+                            currentChat.innerHTML = newChat.innerHTML;
+                            currentChat.scrollTop = currentChat.scrollHeight;
+                        }
+                    }
+
+                    let newSidebar = doc.getElementById('lista-amigos-sidebar');
+                    let currentSidebar = document.getElementById('lista-amigos-sidebar');
+                    if (newSidebar && currentSidebar) {
+                        currentSidebar.innerHTML = newSidebar.innerHTML;
+                    }
+                }
+            } catch (error) {
+                console.error("Error en chat en vivo:", error);
+            }
+        })
+        .subscribe();       
+});
+</script>
 {% endblock %}

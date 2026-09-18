@@ -513,3 +513,32 @@ class EliminarHilos(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.get_object().autor == self.request.user
 
 
+@login_required
+def obtener_tarjeta_hilo(request, hilo_id):
+    hilo = get_object_or_404(Hilo, id=hilo_id)
+    return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': hilo})
+
+@login_required
+def obtener_tarjeta_respuesta(request, respuesta_id):
+    respuesta = get_object_or_404(Respuesta, id=respuesta_id)
+    return render(request, 'foro/partials/tarjeta_respuesta.html', {'hijo': respuesta})
+
+@login_required
+def obtener_tarjeta_notificacion(request, notificacion_id):
+    notif = get_object_or_404(
+        Notificacion.objects.select_related('hilo', 'respuesta', 'sugerencia', 'respuesta_sugerencia')
+                             .prefetch_related('actores'),
+        id=notificacion_id,
+        destinatario=request.user
+    )
+    return render(request, 'foro/partials/item_notificacion.html', {'notif': notif})
+
+@login_required
+def obtener_tarjeta_sugerencia(request, sugerencia_id):
+    sugerencia = get_object_or_404(Sugerencia, id=sugerencia_id)
+    return render(request, 'foro/partials/tarjeta_sugerencia.html', {'sugerencia': sugerencia})
+
+@login_required
+def obtener_tarjeta_respuesta_sugerencia(request, respuesta_id):
+    resp = get_object_or_404(RespuestaSugerencia, id=respuesta_id)
+    return render(request, 'foro/partials/item_respuesta_sug.html', {'resp': resp})

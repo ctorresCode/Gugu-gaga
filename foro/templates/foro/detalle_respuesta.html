@@ -14,10 +14,10 @@
     <main class="w-full md:flex-1 md:max-w-2xl min-h-screen md:px-6 pb-24 md:pb-8">
         
         <div class="flex items-center gap-6 px-4 py-4 md:pt-8 bg-[#F8F9FA]/90 backdrop-blur-md sticky top-0 z-20">
-            <a href="{% url 'inicio' %}" class="p-2.5 rounded-full bg-white shadow-sm hover:bg-[#093D77] hover:text-white text-[#2B2B2B] transition-all">
+            <a href="{% url 'detalle_hilo' respuesta.hilo.public_id %}" class="p-2.5 rounded-full bg-white shadow-sm hover:bg-[#093D77] hover:text-white text-[#2B2B2B] transition-all">
                 <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></svg>
             </a>
-            <h1 class="text-2xl font-black text-[#2B2B2B]">Hilo</h1>
+            <h1 class="text-2xl font-black text-[#2B2B2B]">Respuesta</h1>
         </div>
 
         <div class="px-4">
@@ -68,7 +68,7 @@
                 <div class="flex items-center justify-around pt-4 text-[#3A7CA5] font-bold">
                     <div class="flex items-center gap-2">
                         <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current opacity-70"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                        <span class="text-sm">{{ respuestas|length }}</span> <!-- CORRECCIÓN AQUÍ -->
+                        <span id="contador-respuestas-hijas" class="text-sm">{{ respuestas|length }}</span>
                     </div>
                     
                     {% include 'foro/partials/boton_like_respuesta.html' with respuesta=respuesta %}
@@ -100,43 +100,9 @@
 
             <div id="lista-respuestas" class="flex flex-col gap-4">
                 {% for hijo in respuestas %}
-                    <div onclick="window.location.href='{% url 'detalle_respuesta' hijo.public_id %}'" class="bg-white p-5 rounded-3xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
-                        <div class="flex items-start gap-4">
-                            <div class="flex-shrink-0">
-                                <a href="{% url 'perfil_usuario' hijo.autor.username %}" onclick="event.stopPropagation();" class="block hover:opacity-80 transition-opacity">
-                                    {% if hijo.autor.avatar %}
-                                        <img src="{{ hijo.autor.avatar.url }}" class="w-11 h-11 rounded-full object-cover shadow-sm">
-                                    {% else %}
-                                        <div class="w-11 h-11 rounded-full bg-[#093D77] text-white flex items-center justify-center font-bold uppercase text-sm shadow-sm">
-                                            {{ hijo.autor.username|make_list|first }}
-                                        </div>
-                                    {% endif %}
-                                </a>
-                            </div>
-                            
-                            <div class="flex-grow min-w-0 pt-0.5">
-                                <div class="flex items-center gap-2 mb-1.5">
-                                    <a href="{% url 'perfil_usuario' hijo.autor.username %}" onclick="event.stopPropagation();" class="font-extrabold text-[#2B2B2B] text-[15px] truncate hover:text-[#093D77] hover:underline decoration-2 underline-offset-2">{{ hijo.autor.username }}</a>
-                                    <span class="text-[#3A7CA5] text-xs font-semibold whitespace-nowrap opacity-80">· {{ hijo.fecha_creacion|timesince }}</span>
-                                </div>
-
-                                <p class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90">{{ hijo.contenido }}</p>
-
-                                <div class="flex items-center gap-8 text-[#3A7CA5] font-semibold mt-1">
-                                    <div class="flex items-center gap-1.5 group/reply hover:text-[#093D77] transition-colors">
-                                        <div class="p-2 -ml-2 rounded-full group-hover/reply:bg-[#093D77]/10 transition-colors">
-                                            <svg viewBox="0 0 24 24" class="w-[22px] h-[22px] fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                                        </div>
-                                        <span class="text-xs">{{ hijo.respuestas_hijas.count }}</span>
-                                    </div>
-                                    
-                                    {% include 'foro/partials/boton_like_respuesta.html' with respuesta=hijo %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% include 'foro/partials/tarjeta_respuesta.html' %}
                 {% empty %}
-                    <div class="text-center py-12">
+                    <div id="mensaje-vacio-respuestas" class="text-center py-12">
                         <p class="text-[#3A7CA5] font-bold text-lg">Nadie ha respondido aún.</p>
                     </div>
                 {% endfor %}
@@ -148,4 +114,49 @@
 
     {% include 'foro/partials/nav_mobile.html' %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    
+    const miUsuarioId = Number("{{ request.user.id }}");
+    const respuestaPadreId = Number("{{ respuesta.id }}");
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabaseClient
+        .channel('respuestas-hijas-vivo')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'foro_respuesta' }, async function(payload) {
+            let nuevaRespuesta = payload.new;
+            
+            if (Number(nuevaRespuesta.respuesta_padre_id) !== respuestaPadreId) return;
+            if (Number(nuevaRespuesta.autor_id) === miUsuarioId) return;
+
+            try {
+                let response = await fetch(`/respuesta/${nuevaRespuesta.id}/tarjeta/`);
+                if (response.ok) {
+                    let htmlTarjeta = await response.text();
+                    let listaRespuestas = document.getElementById('lista-respuestas');
+                    
+                    if (listaRespuestas) {
+                        let mensajeVacio = document.getElementById('mensaje-vacio-respuestas');
+                        if (mensajeVacio) mensajeVacio.remove();
+
+                        listaRespuestas.insertAdjacentHTML('beforeend', htmlTarjeta);
+
+                        let contadorResp = document.getElementById('contador-respuestas-hijas');
+                        if (contadorResp) {
+                            contadorResp.innerText = Number(contadorResp.innerText) + 1;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error cargando la respuesta hija en vivo:", error);
+            }
+        })
+        .subscribe();       
+});
+</script>
 {% endblock %}

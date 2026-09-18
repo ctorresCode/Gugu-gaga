@@ -1,5 +1,5 @@
 from django.urls import include, path
-from foro.views import EditarHilos, EliminarHilos, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, notificaciones
+from foro.views import EditarHilos, EliminarHilos, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
 
 urlpatterns = [
     path('', InicioView.as_view(), name='inicio'),
@@ -18,4 +18,18 @@ urlpatterns = [
     path('sugerencias/<uuid:public_id>/<str:accion>/', interaccion_sugerencia, name='interaccion_sugerencia'),
     path('respuesta-sugerencia/<int:respuesta_id>/like/', like_respuesta_sugerencia, name='like_respuesta_sugerencia'),
     path('respuesta-sugerencia/<int:pk>/detalle/', detalle_respuesta_sugerencia, name='detalle_respuesta_sugerencia'),
+
+    #obtener hilo
+    path('hilo/<int:hilo_id>/tarjeta/', obtener_tarjeta_hilo, name='obtener_tarjeta_hilo'),
+
+    #obtener respuesta
+    path('respuesta/<int:respuesta_id>/tarjeta/', obtener_tarjeta_respuesta, name='obtener_tarjeta_respuesta'),
+
+    #obtener notificaciones
+    path('notificacion/<int:notificacion_id>/tarjeta/', obtener_tarjeta_notificacion, name='obtener_tarjeta_notificacion'),
+
+    #Obtener sugerencias
+    path('sugerencia/<int:sugerencia_id>/tarjeta/', obtener_tarjeta_sugerencia, name='obtener_tarjeta_sugerencia'),
+    #Obtener respuestas de sugerencias
+    path('respuesta-sugerencia/<int:respuesta_id>/tarjeta/', obtener_tarjeta_respuesta_sugerencia, name='obtener_tarjeta_respuesta_sugerencia'),
 ]

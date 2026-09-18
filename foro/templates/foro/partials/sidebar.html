@@ -25,9 +25,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
                 Amigos
-                {% if total_mensajes_sin_leer > 0 %}
-                    <span class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm">{{ total_mensajes_sin_leer }}</span>
-                {% endif %}
+                <span id="badge-mensajes-desktop" class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm {% if total_mensajes_sin_leer == 0 or not total_mensajes_sin_leer %}hidden{% endif %}">
+                    <span id="badge-mensajes-desktop-count">{{ total_mensajes_sin_leer|default:"0" }}</span>
+                </span>
             </a>
 
             <button type="button" 
@@ -40,9 +40,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                 </svg>
                 Notificaciones
-                {% if total_notificaciones_sin_leer > 0 %}
-                    <span class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm">{{ total_notificaciones_sin_leer }}</span>
-                {% endif %}
+                <span id="badge-notif-desktop" class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm {% if total_notificaciones_sin_leer == 0 or not total_notificaciones_sin_leer %}hidden{% endif %}">
+                    <span id="badge-notif-desktop-count">{{ total_notificaciones_sin_leer|default:"0" }}</span>
+                </span>
             </button>
 
             <a href="{% url 'sugerencias' %}" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-lg transition-all w-full {% if request.resolver_match.url_name == 'sugerencias' %} bg-[#093D77] text-white font-bold shadow-md shadow-[#093D77]/20 {% else %} text-[#2B2B2B] font-medium hover:bg-white hover:shadow-sm {% endif %}">
@@ -143,23 +143,31 @@
     });
 
     function toggleNotifications() {
-    const panel = document.getElementById('notificaciones-panel');
-    const bg = document.getElementById('notificaciones-overlay-bg');
-    
-    if (!panel || !bg) return;
+        const panel = document.getElementById('notificaciones-panel');
+        const bg = document.getElementById('notificaciones-overlay-bg');
+        
+        if (!panel || !bg) return;
 
-    if (panel.classList.contains('translate-x-full')) {
-        panel.classList.remove('translate-x-full');
-        bg.classList.remove('hidden');
-        setTimeout(() => bg.classList.remove('opacity-0'), 10);
-        document.body.style.overflow = 'hidden';
-    } else {
-        panel.classList.add('translate-x-full');
-        bg.classList.add('opacity-0');
-        setTimeout(() => bg.classList.add('hidden'), 150);
-        document.body.style.overflow = '';
+        if (panel.classList.contains('translate-x-full')) {
+            panel.classList.remove('translate-x-full');
+            bg.classList.remove('hidden');
+            setTimeout(() => bg.classList.remove('opacity-0'), 10);
+            document.body.style.overflow = 'hidden';
+            
+            const desktopBadge = document.getElementById('badge-notif-desktop');
+            const mobileBadge = document.getElementById('badge-notif-mobile');
+            const countElem = document.getElementById('badge-notif-desktop-count');
+            if(desktopBadge) desktopBadge.classList.add('hidden');
+            if(mobileBadge) mobileBadge.classList.add('hidden');
+            if(countElem) countElem.innerText = "0";
+
+        } else {
+            panel.classList.add('translate-x-full');
+            bg.classList.add('opacity-0');
+            setTimeout(() => bg.classList.add('hidden'), 150);
+            document.body.style.overflow = '';
+        }
     }
-}
 
 function filtrarNotificaciones(tipo) {
     document.querySelectorAll('.filtro-notif').forEach(btn => {
@@ -198,16 +206,12 @@ function filtrarNotificaciones(tipo) {
         hx-trigger="click"
         class="p-2.5 rounded-2xl transition-all relative text-[#3A7CA5] hover:bg-[#F8F9FA] hover:text-[#093D77]">
     <svg class="w-6 h-6 flex-shrink-0 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-    {% if total_notificaciones_sin_leer > 0 %}
-        <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#DAA520] border-2 border-white rounded-full"></span>
-    {% endif %}
+    <span id="badge-notif-mobile" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#DAA520] border-2 border-white rounded-full {% if total_notificaciones_sin_leer == 0 or not total_notificaciones_sin_leer %}hidden{% endif %}"></span>
 </button>
     
     <a href="{% url 'bandeja_mensajes' %}" class="p-2.5 rounded-2xl transition-all relative {% if request.resolver_match.url_name == 'bandeja_mensajes' %} text-white bg-[#093D77] shadow-md {% else %} text-[#3A7CA5] hover:bg-[#F8F9FA] hover:text-[#093D77] {% endif %}">
         <svg class="w-6 h-6 flex-shrink-0 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-        {% if total_mensajes_sin_leer > 0 %}
-            <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#DAA520] border-2 border-white rounded-full"></span>
-        {% endif %}
+        <span id="badge-mensajes-mobile" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#DAA520] border-2 border-white rounded-full {% if total_mensajes_sin_leer == 0 or not total_mensajes_sin_leer %}hidden{% endif %}"></span>
     </a>
 
     <a href="{% url 'sugerencias' %}" class="p-2.5 rounded-2xl transition-all relative {% if request.resolver_match.url_name == 'sugerencias' %} text-white bg-[#093D77] shadow-md {% else %} text-[#3A7CA5] hover:bg-[#F8F9FA] hover:text-[#093D77] {% endif %}">
@@ -218,3 +222,56 @@ function filtrarNotificaciones(tipo) {
         <svg class="w-6 h-6 flex-shrink-0 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
     </a>
 </nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.globalNotifListener) return;
+    window.globalNotifListener = true;
+
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    
+    const miUsuarioId = Number("{{ request.user.id }}");
+    if (!miUsuarioId) return;
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabaseClient
+        .channel('global-notificaciones')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'foro_notificacion' }, function(payload) {
+            if (Number(payload.new.destinatario_id) !== miUsuarioId) return;
+
+            const desktopBadge = document.getElementById('badge-notif-desktop');
+            const desktopCount = document.getElementById('badge-notif-desktop-count');
+            if (desktopBadge && desktopCount) {
+                desktopBadge.classList.remove('hidden');
+                desktopCount.innerText = parseInt(desktopCount.innerText || 0) + 1;
+            }
+
+            const mobileBadge = document.getElementById('badge-notif-mobile');
+            if (mobileBadge) {
+                mobileBadge.classList.remove('hidden');
+            }
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'usuarios_mensaje' }, function(payload) {
+            if (Number(payload.new.destinatario_id) !== miUsuarioId) return;
+
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('/mensajes/')) return;
+
+            const desktopMsgBadge = document.getElementById('badge-mensajes-desktop');
+            const desktopMsgCount = document.getElementById('badge-mensajes-desktop-count');
+            if (desktopMsgBadge && desktopMsgCount) {
+                desktopMsgBadge.classList.remove('hidden');
+                desktopMsgCount.innerText = parseInt(desktopMsgCount.innerText || 0) + 1;
+            }
+
+            const mobileMsgBadge = document.getElementById('badge-mensajes-mobile');
+            if (mobileMsgBadge) {
+                mobileMsgBadge.classList.remove('hidden');
+            }
+        })
+        .subscribe();
+});
+</script>
