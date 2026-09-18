@@ -278,7 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
     supabaseClient
         .channel('likes-en-vivo')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_hilo_likes' }, function(payload) {
-            let hiloId = payload.eventType === 'INSERT' ? payload.new.hilo_id : payload.old.hilo_id;
+            let data = payload.eventType === 'INSERT' ? payload.new : payload.old;
+            if (!data) return;
+            let autorLikeId = data.usuarioforo_id || data.usuario_id || data.user_id;
+            if (autorLikeId && Number(autorLikeId) === miUsuarioId) return;
+            let hiloId = data.hilo_id;
             if (hiloId) {
                 let contador = document.getElementById('contador-like-' + hiloId);
                 if (contador) {
