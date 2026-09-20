@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse, request
 from django.shortcuts import get_object_or_404, redirect, render
@@ -8,8 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.core.cache import cache
-from django.views.decorators.http import require_POST # NUEVO IMPORT PARA SEGURIDAD
-
+from django.views.decorators.http import require_POST 
+from usuarios.forms import RegistroForm, RecuperarPasswordForm
+from django_ratelimit.decorators import ratelimit
+from django.views.decorators.cache import never_cache
 from foro.models import Hilo
 from foro.views import ImagenInvalidaError, comprimir_y_optimizar_imagen
 from usuarios.forms import RegistroForm
@@ -31,8 +34,11 @@ class RegistroUsuarioView(CreateView):
 
     def form_valid(self, form):
         usuario = form.save()
+        codigo = usuario.generar_codigo_recuperacion()
         login(self.request, usuario)
-        return super().form_valid(form)
+        self.request.session['codigo_recuperacion_nuevo'] = codigo
+        return redirect('codigo_recuperacion')
+        #return super().form_valid(form)
 
 def logout_view(request):
     logout(request)
@@ -223,3 +229,43 @@ class VerTodasLasImagenesSubidasPorUsuario(LoginRequiredMixin, ListView):
         return Hilo.objects.filter(
             autor__username=self.kwargs.get('username')
         ).select_related('autor', 'universidad').exclude(imagen='').exclude(imagen__isnull=True).order_by('-fecha_creacion')
+
+
+@never_cache
+@ratelimit(key='post:username', rate='5/15m', method='POST', block=False)
+@ratelimit(key='ip', rate='20/h', method='POST', block=False)
+def recuperar_password(request):
+    if request.user.is_authenticated:
+        return redirect('inicio')
+
+    if request.method == 'POST':
+        if getattr(request, 'limited', False):
+            messages.error(request, 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.')
+            form = RecuperarPasswordForm()
+        else:
+            form = RecuperarPasswordForm(request.POST)
+            if form.is_valid():
+                usuario = form.save()
+                codigo_nuevo = usuario.generar_codigo_recuperacion()
+                login(request, usuario)
+                request.session['codigo_recuperacion_nuevo'] = codigo_nuevo
+                messages.success(request, 'Tu contraseña fue cambiada. Guarda tu nuevo código.')
+                return redirect('codigo_recuperacion')
+    else:
+        form = RecuperarPasswordForm()
+
+    return render(request, 'usuarios/recuperar_password.html', {'form': form})
+
+
+@login_required
+@never_cache
+def codigo_recuperacion(request):
+    codigo = request.session.pop('codigo_recuperacion_nuevo', None)
+
+    if request.method == 'POST' and not codigo:
+        if request.user.check_password(request.POST.get('password', '')):
+            codigo = request.user.generar_codigo_recuperacion()
+        else:
+            messages.error(request, 'Contraseña incorrecta.')
+
+    return render(request, 'usuarios/codigo_recuperacion.html', {'codigo': codigo})

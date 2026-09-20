@@ -6,8 +6,10 @@ from usuarios.views import (
     PerfilView, 
     RegistroUsuarioView,
     VerTodasLasImagenesSubidasPorUsuario, 
-    actualizar_avatar, 
-    logout_view, 
+    actualizar_avatar,
+    codigo_recuperacion, 
+    logout_view,
+    recuperar_password, 
     seguir_usuario, 
     BandejaMensajesView, 
     ChatView
@@ -29,6 +31,8 @@ urlpatterns = [
     path('mensajes/', BandejaMensajesView.as_view(), name='bandeja_mensajes'),
     path('mensajes/<str:username>/', ChatView.as_view(), name='chat_usuario'),
 
-    #urls para poder editar y eliminar hilos
+    #urls para recuperar contraseña si se le olvidó al usuario
+    path('recuperar/', recuperar_password, name='recuperar_password'),
+    path('codigo-recuperacion/', codigo_recuperacion, name='codigo_recuperacion')
 
 ]
