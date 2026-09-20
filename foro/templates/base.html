@@ -14,6 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
     
     <style>
       html {
@@ -123,6 +124,40 @@
         document.body.addEventListener('htmx:afterRequest', function() {
             document.getElementById('global-loader').classList.add('hidden');
         });
+
+        document.addEventListener('change', async function(e) {
+        if (e.target.type === 'file' && e.target.accept && e.target.accept.includes('image')) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0 || e.target.dataset.compressing) return;
+
+            e.target.dataset.compressing = 'true';
+            const dataTransfer = new DataTransfer();
+            const compressImage = (file) => {
+                return new Promise((resolve) => {
+                    new Compressor(file, {
+                        quality: 0.8,
+                        maxWidth: 1200,
+                        success(result) {
+                            resolve(new File([result], file.name, { type: result.type }));
+                        },
+                        error(err) {
+                            console.error('Error comprimiendo:', err.message);
+                            resolve(file); 
+                        },
+                    });
+                });
+            };
+   
+            const archivosComprimidos = await Promise.all(files.map(compressImage));
+            archivosComprimidos.forEach(file => dataTransfer.items.add(file));
+            e.target.files = dataTransfer.files;
+            delete e.target.dataset.compressing;
+            e.target.dispatchEvent(new Event('imagenesComprimidas', { bubbles: true }));
+        }
+    });
+
+        
+
     </script>
   </body>
 </html>

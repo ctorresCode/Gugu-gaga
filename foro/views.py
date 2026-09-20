@@ -1,3 +1,5 @@
+import traceback
+
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q, Count
@@ -11,68 +13,12 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
-from django.template.response import TemplateResponse
 from django.contrib import messages
 from usuarios.models import UsuarioForo
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
-from PIL import Image, ImageOps, UnidentifiedImageError
-from io import BytesIO
-from django.core.files.base import ContentFile
-
-
-MAX_PIXELS_PERMITIDOS = 100_000_000
-
-class ImagenInvalidaError(Exception):
-    """El archivo no es una imagen procesable o excede los límites seguros."""
-    pass
-
-def comprimir_y_optimizar_imagen(imagen_subida, max_ancho=1000, calidad=80):
-    if not imagen_subida:
-        return None
-
-    try:
-        imagen_subida.seek(0)
-    except Exception:
-        pass
-
-    try:
-        img = Image.open(imagen_subida)
-        ancho, alto = img.size  
-    except (UnidentifiedImageError, OSError):
-        raise ImagenInvalidaError("El archivo no es una imagen válida o está corrupto.")
-
-    if ancho * alto > MAX_PIXELS_PERMITIDOS:
-        raise ImagenInvalidaError("La imagen es demasiado grande para procesarse de forma segura.")
-
-    try:
-        img.load() 
-    except OSError:
-        raise ImagenInvalidaError("El archivo no es una imagen válida o está corrupto.")
-
-    img = ImageOps.exif_transpose(img)
-
-    if img.mode in ('RGBA', 'P', 'LA'):
-        img = img.convert('RGBA')
-        fondo = Image.new('RGB', img.size, (255, 255, 255))
-        fondo.paste(img, mask=img.split()[-1])
-        img = fondo
-    elif img.mode != 'RGB':
-        img = img.convert('RGB')
-
-    if img.width > max_ancho:
-        proporcion = max_ancho / float(img.width)
-        nuevo_alto = max(1, round(img.height * proporcion))
-        img = img.resize((max_ancho, nuevo_alto), Image.Resampling.LANCZOS)
-
-    buffer = BytesIO()
-    img.save(buffer, format='JPEG', quality=calidad, optimize=True, progressive=True)
-    buffer.seek(0)
-
-    nombre_archivo = imagen_subida.name.rsplit('.', 1)[0] + '.jpg'
-    return ContentFile(buffer.read(), name=nombre_archivo)
-
+from django.db.models import F
 
 @method_decorator(ratelimit(key='user', rate='5/m', block=False), name='post')
 class InicioView(LoginRequiredMixin, TemplateView):
@@ -97,24 +43,36 @@ class InicioView(LoginRequiredMixin, TemplateView):
         if universidad_id and universidad_id.isdigit():
             hilos = hilos.filter(universidad_id=universidad_id)
 
-        hilos = hilos.annotate(
-            conteo_likes=Count('likes', distinct=True),
-            conteo_respuestas=Count('respuestas', filter=Q(respuestas__activo=True), distinct=True)
-        ).order_by('-fecha_creacion')
+        hilos = hilos.order_by('-fecha_creacion')
 
-        paginator = Paginator(hilos, 15)
-        page_number = request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
+        try:
+            page_number = int(request.GET.get('page', 1))
+        except ValueError:
+            page_number = 1
+            
+        items_por_pagina = 15
+        offset = (page_number - 1) * items_por_pagina
+        limit = offset + items_por_pagina + 1 
+
+        hilos_pagina = list(hilos[offset:limit])
+        
+        hay_siguiente = len(hilos_pagina) > items_por_pagina
+        if hay_siguiente:
+            hilos_pagina.pop() 
 
         if request.headers.get('HX-Request') and request.GET.get('page'):
             return render(request, 'foro/partials/hilos_lista.html', {
-                'page_obj': page_obj,
+                'page_obj': hilos_pagina,
+                'has_next': hay_siguiente,
+                'next_page_number': page_number + 1,
                 'busqueda_actual': busqueda,
                 'uni_actual': universidad_id
             })
 
         context['universidades'] = universidades
-        context['page_obj'] = page_obj
+        context['page_obj'] = hilos_pagina
+        context['has_next'] = hay_siguiente
+        context['next_page_number'] = page_number + 1
         context['busqueda_actual'] = busqueda
         context['uni_actual'] = int(universidad_id) if universidad_id.isdigit() else ''
 
@@ -150,35 +108,39 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 messages.error(request, "Una imagen excede el límite de 5MB.")
                 return HttpResponse("Imagen muy pesada", status=400) if is_htmx else redirect(referer)
 
-        archivos_optimizados = []
-        for archivo in archivos:
-            try:
-                archivos_optimizados.append(comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
-            except ImagenInvalidaError as e:
-                messages.error(request, str(e))
-                return HttpResponse(str(e), status=400) if is_htmx else redirect(referer)
-
         contenido = request.POST.get('contenido')
         titulo = request.POST.get('titulo')
 
         if contenido:
-            nuevo_hilo = Hilo.objects.create(
-                titulo=titulo,
-                contenido=contenido,
-                autor=request.user,
-                universidad=getattr(request.user, 'universidad', None)
-            )
+            try:
+                nuevo_hilo = Hilo.objects.create(
+                    titulo=titulo or "Sin título",
+                    contenido=contenido,
+                    autor=request.user,
+                    universidad=getattr(request.user, 'universidad', None)
+                )
 
-            if len(archivos_optimizados) > 0: nuevo_hilo.imagen = archivos_optimizados[0]
-            if len(archivos_optimizados) > 1: nuevo_hilo.imagen2 = archivos_optimizados[1]
-            if len(archivos_optimizados) > 2: nuevo_hilo.imagen3 = archivos_optimizados[2]
-            if len(archivos_optimizados) > 3: nuevo_hilo.imagen4 = archivos_optimizados[3]
+                if len(archivos) > 0: nuevo_hilo.imagen = archivos[0]
+                if len(archivos) > 1: nuevo_hilo.imagen2 = archivos[1]
+                if len(archivos) > 2: nuevo_hilo.imagen3 = archivos[2]
+                if len(archivos) > 3: nuevo_hilo.imagen4 = archivos[3]
 
-            if archivos_optimizados:
-                nuevo_hilo.save()
+                if archivos:
+                    nuevo_hilo.save()
 
-            if is_htmx:
-                return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
+                if is_htmx:
+                    return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
+
+            except Exception as e:
+                print("\n================ ROBO DE ERROR 500 ================")
+                traceback.print_exc()
+                print("===================================================\n")
+                from django.contrib import messages
+                messages.error(request, f"Ocurrió un error al intentar publicar: {str(e)}")
+                if is_htmx:
+                    return HttpResponse(status=500)
+                else:
+                    return redirect(referer)
 
         return redirect(referer)
 
@@ -249,7 +211,6 @@ def detalle_respuesta(request, public_id):
         'respuestas': respuestas_hijas,
     })
 
-
 @login_required
 @ratelimit(key='user', rate='15/m', block=False)
 def boton_like(request, hilo_id):
@@ -261,8 +222,14 @@ def boton_like(request, hilo_id):
 
         if hilo.likes.filter(id=request.user.id).exists():
             hilo.likes.remove(request.user)
+            hilo.likes_count = F('likes_count') - 1
         else:
-            hilo.likes.add(request.user) 
+            hilo.likes.add(request.user)
+            hilo.likes_count = F('likes_count') + 1
+
+        hilo.save(update_fields=['likes_count'])  
+        hilo.refresh_from_db()  
+
     return render(request, 'foro/partials/boton_like.html', {'hilo': hilo})
 
 @login_required
@@ -325,7 +292,6 @@ def notificaciones(request):
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'foro/partials/notificaciones_lista.html', contexto)
     return render(request, 'foro/notificaciones_lista.html', contexto)
-
 
 class SugerenciasCreateView(LoginRequiredMixin, CreateView):
     model = Sugerencia
@@ -494,11 +460,7 @@ class EditarHilos(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
                 if archivo.size > 5 * 1024 * 1024:
                     form.add_error(campo, 'La imagen excede los 5MB.')
                     return self.form_invalid(form)
-                try:
-                    setattr(form.instance, campo, comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
-                except ImagenInvalidaError as e:
-                    form.add_error(campo, str(e))
-                    return self.form_invalid(form)
+                setattr(form.instance, campo, archivo)
         return super().form_valid(form)
 
 

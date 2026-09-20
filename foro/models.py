@@ -14,6 +14,8 @@ class Hilo(models.Model):
     imagen2 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
     imagen3 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
     imagen4 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
+    likes_count = models.IntegerField(default=0)
+    respuestas_count = models.IntegerField(default=0)
 
     video = models.FileField(upload_to='hilos/videos/', blank=True, null=True)
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)

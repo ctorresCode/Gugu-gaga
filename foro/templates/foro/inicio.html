@@ -1,4 +1,5 @@
 {% extends 'base.html' %} 
+{% load cache %}
 {% block title %} Inicio {% endblock %} 
 
 {% block content %}
@@ -43,6 +44,8 @@
             </form>
         </div>
 
+
+        {% cache 86400 universidades_barra_superior busqueda_actual uni_actual %}
         <div class="flex flex-nowrap gap-2.5 px-4 pb-4 pt-1 items-center overflow-x-auto whitespace-nowrap scrollbar-default relative z-0">
             <a href="?q={{ busqueda_actual }}" class="px-5 py-2 rounded-xl font-bold transition-all text-sm flex-shrink-0 shadow-sm {% if not uni_actual %}bg-[#093D77] text-white{% else %}bg-white text-[#3A7CA5] hover:bg-gray-50 border border-gray-100{% endif %}">
                 Campus Global
@@ -54,6 +57,7 @@
                 </a>
             {% endfor %}
         </div>
+        {% endcache %}
 
         <div class="px-4 mb-6">
             <form id="form-post" method="post" 
@@ -113,10 +117,10 @@
     {% endif %}
 </div>
 
-        
-
     </main>
 
+
+    {% cache 3600 directorio_lateral_derecho %}
     <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30">
     <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 relative group">
         <h3 class="font-extrabold text-[#2B2B2B] text-lg mb-4">Directorio</h3>
@@ -146,7 +150,8 @@
             </div>
         </div>
     </div>
-</aside>
+    </aside>
+{% endcache %}
 
     {% include 'foro/partials/nav_mobile.html' %}
     
@@ -284,8 +289,8 @@ document.addEventListener('click', function(event) {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    const SUPABASE_URL = '{{ SUPABASE_URL|escapejs }}';
+    const SUPABASE_ANON_KEY = '{{ SUPABASE_ANON_KEY|escapejs }}';
     const miUsuarioId = Number("{{ request.user.id }}");
     const supabaseClient = window.getSupabase ? window.getSupabase() : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

@@ -8,6 +8,15 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+SUPABASE_URL = config('SUPABASE_URL', default='')
+SUPABASE_ANON_KEY = config('SUPABASE_ANON_KEY', default='')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 # Application definition
@@ -48,13 +57,13 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'foro.context_processors.notificaciones_sin_leer',
+                'foro.context_processors.supabase_globals',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -101,21 +110,31 @@ STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AWS_ACCESS_KEY_ID = config('R2_ACCESS_KEY_ID', default='')
-AWS_SECRET_ACCESS_KEY = config('R2_SECRET_ACCESS_KEY', default='')
-AWS_STORAGE_BUCKET_NAME = config('R2_BUCKET_NAME', default='')
-AWS_S3_ENDPOINT_URL = f"https://{config('R2_ACCOUNT_ID', default='')}.r2.cloudflarestorage.com"
-AWS_S3_CUSTOM_DOMAIN = config('R2_CUSTOM_DOMAIN', default=None)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-AWS_DEFAULT_ACL = None
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_QUERYSTRING_AUTH = True
+# Configuración inteligente: evita Cloudflare R2 en local, lo activa en Prod
+USE_CLOUD_STORAGE = config('USE_CLOUD_STORAGE', default=not DEBUG, cast=bool)
+r2_key = config('R2_ACCESS_KEY_ID', default='')
 
-if AWS_ACCESS_KEY_ID:
+if USE_CLOUD_STORAGE and r2_key:
+    AWS_ACCESS_KEY_ID = r2_key
+    AWS_SECRET_ACCESS_KEY = config('R2_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = config('R2_BUCKET_NAME', default='')
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='auto')  
+    AWS_S3_ENDPOINT_URL = f"https://{config('R2_ACCOUNT_ID', default='')}.r2.cloudflarestorage.com"
+    AWS_S3_CUSTOM_DOMAIN = config('R2_CUSTOM_DOMAIN', default=None)
+
+    AWS_DEFAULT_ACL = None
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_QUERYSTRING_AUTH = True
+
     STORAGES = {
         "default": {"BACKEND": "storages.backends.s3.S3Storage"},
         "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
     }
 else:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
+    }

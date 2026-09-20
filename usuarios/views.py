@@ -14,7 +14,6 @@ from usuarios.forms import RegistroForm, RecuperarPasswordForm
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import never_cache
 from foro.models import Hilo
-from foro.views import ImagenInvalidaError, comprimir_y_optimizar_imagen
 from usuarios.forms import RegistroForm
 from usuarios.models import Mensaje, Universidad, UsuarioForo
 
@@ -38,7 +37,6 @@ class RegistroUsuarioView(CreateView):
         login(self.request, usuario)
         self.request.session['codigo_recuperacion_nuevo'] = codigo
         return redirect('codigo_recuperacion')
-        #return super().form_valid(form)
 
 def logout_view(request):
     logout(request)
@@ -83,12 +81,7 @@ def actualizar_avatar(request):
         if avatar.size > 2 * 1024 * 1024:
             return JsonResponse({'status': 'error', 'message': 'La imagen excede el límite de 2 MB.'}, status=400)
 
-        try:
-            avatar_optimizado = comprimir_y_optimizar_imagen(avatar, max_ancho=500, calidad=80)
-        except ImagenInvalidaError as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-           
-        request.user.avatar = avatar_optimizado
+        request.user.avatar = avatar
         request.user.save()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
@@ -153,24 +146,17 @@ class ChatView(LoginRequiredMixin, TemplateView):
             if archivo.size > limite_tamano:
                 return JsonResponse({'error': 'Una de las imágenes excede el límite de 5MB.'}, status=400)
 
-        archivos_optimizados = []
-        for archivo in archivos:
-            try:
-                archivos_optimizados.append(comprimir_y_optimizar_imagen(archivo, max_ancho=1200, calidad=80))
-            except ImagenInvalidaError as e:
-                return JsonResponse({'error': str(e)}, status=400)
-
-        if contenido or archivos_optimizados:
+        if contenido or archivos:
             nuevo_mensaje = Mensaje(
                 remitente=request.user,
                 destinatario=otro_usuario,
                 contenido=contenido,
                 mensaje_respondido=mensaje_padre
             )
-            if len(archivos_optimizados) > 0: nuevo_mensaje.imagen = archivos_optimizados[0]
-            if len(archivos_optimizados) > 1: nuevo_mensaje.imagen2 = archivos_optimizados[1]
-            if len(archivos_optimizados) > 2: nuevo_mensaje.imagen3 = archivos_optimizados[2]
-            if len(archivos_optimizados) > 3: nuevo_mensaje.imagen4 = archivos_optimizados[3]
+            if len(archivos) > 0: nuevo_mensaje.imagen = archivos[0]
+            if len(archivos) > 1: nuevo_mensaje.imagen2 = archivos[1]
+            if len(archivos) > 2: nuevo_mensaje.imagen3 = archivos[2]
+            if len(archivos) > 3: nuevo_mensaje.imagen4 = archivos[3]
             nuevo_mensaje.save()
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
@@ -201,18 +187,9 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
             return self.form_invalid(form)
 
         if avatar:
-            try:
-                form.instance.avatar = comprimir_y_optimizar_imagen(avatar, max_ancho=500, calidad=80)
-            except ImagenInvalidaError as e:    
-                form.add_error('avatar', str(e))
-                return self.form_invalid(form)
-
+            form.instance.avatar = avatar
         if banner:
-            try:
-                form.instance.banner = comprimir_y_optimizar_imagen(banner, max_ancho=1200, calidad=85)
-            except ImagenInvalidaError as e:
-                form.add_error('banner', str(e))
-                return self.form_invalid(form)    
+            form.instance.banner = banner
             
         return super().form_valid(form)
 
@@ -275,4 +252,4 @@ class TerminosView(TemplateView):
     template_name = 'usuarios/terminos.html'
 
 class PrivacidadView(TemplateView):
-    template_name = 'usuarios/privacidad.html'    
+    template_name = 'usuarios/privacidad.html'

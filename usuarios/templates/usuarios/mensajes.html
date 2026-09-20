@@ -449,8 +449,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    const SUPABASE_URL = '{{ SUPABASE_URL|escapejs }}';
+    const SUPABASE_ANON_KEY = '{{ SUPABASE_ANON_KEY|escapejs }}';
     
     const miUsuarioId = Number("{{ request.user.id }}");
     const chatActivoId = Number("{{ chat_activo.id|default:'0' }}");
