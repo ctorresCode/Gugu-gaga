@@ -34,23 +34,14 @@
                 <div class="px-5 pb-6 relative">
                     <div class="flex justify-between items-start mb-4">
                         <div class="relative group -mt-12 md:-mt-16 z-10">
-                            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-[#093D77] text-white flex items-center justify-center font-black text-4xl uppercase overflow-hidden shadow-md">
+                            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-[#093D77] text-white flex items-center justify-center font-black text-4xl uppercase overflow-hidden shadow-md {% if perfil_usuario.avatar %}cursor-pointer hover:opacity-90 transition-opacity{% endif %}" 
+                                 {% if perfil_usuario.avatar %}onclick="openImageModal('{{ perfil_usuario.avatar.url }}')"{% endif %}>
                                 {% if perfil_usuario.avatar %}
                                     <img src="{{ perfil_usuario.avatar.url }}" class="w-full h-full object-cover">
                                 {% else %}
                                     <span>{{ perfil_usuario.username|make_list|first }}</span>
                                 {% endif %}
                             </div>
-                            
-                            {% if request.user == perfil_usuario %}
-                            <form id="form-avatar" method="post" enctype="multipart/form-data">
-                                {% csrf_token %}
-                                <label for="input-avatar" class="absolute inset-0 rounded-full border-4 border-white bg-[#2B2B2B]/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer font-bold backdrop-blur-sm">
-                                    <svg viewBox="0 0 24 24" class="w-7 h-7 fill-current"><path d="M9.697 3H11v2h-.697l-3 2H5c-.276 0-.5.224-.5.5v11c0 .276.224.5.5.5h14c.276 0 .5-.224.5-.5V10h2v8.5c0 1.381-1.119 2.5-2.5 2.5H5c-1.381 0-2.5-1.119-2.5-2.5v-11C2.5 6.119 3.619 5 5 5h1.697l3-2zM12 10.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm-4 2c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4-4-1.791-4-4zM21 4h-2.5V1.5h-2V4H14v2h2.5v2.5h2V6H21V4z"></path></svg>
-                                </label>
-                                <input type="file" id="input-avatar" name="avatar" accept="image/*" class="hidden">
-                            </form>
-                            {% endif %}
                         </div>
 
                         <div class="pt-4">
@@ -126,44 +117,43 @@
             </div>
 
             <div id="content-media" class="hidden bg-white p-2 rounded-3xl border border-gray-100 shadow-sm">
-    <div class="grid grid-cols-3 gap-2">
-        {% for hilo in hilos_usuario %}
-            
-            {% if hilo.imagen %}
-                <button onclick="abrirVisorGlobal('{{ hilo.imagen.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                    <img src="{{ hilo.imagen.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                </button>
-            {% endif %}
+                <div class="grid grid-cols-3 gap-2">
+                    {% for hilo in hilos_usuario %}
+                        
+                        {% if hilo.imagen %}
+                            <button onclick="openImageModal('{{ hilo.imagen.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
+                                <img src="{{ hilo.imagen.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            </button>
+                        {% endif %}
 
-            {% if hilo.imagen2 %}
-                <button onclick="abrirVisorGlobal('{{ hilo.imagen2.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                    <img src="{{ hilo.imagen2.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                </button>
-            {% endif %}
+                        {% if hilo.imagen2 %}
+                            <button onclick="openImageModal('{{ hilo.imagen2.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
+                                <img src="{{ hilo.imagen2.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            </button>
+                        {% endif %}
 
-            {% if hilo.imagen3 %}
-                <button onclick="abrirVisorGlobal('{{ hilo.imagen3.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                    <img src="{{ hilo.imagen3.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                </button>
-            {% endif %}
+                        {% if hilo.imagen3 %}
+                            <button onclick="openImageModal('{{ hilo.imagen3.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
+                                <img src="{{ hilo.imagen3.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            </button>
+                        {% endif %}
 
-            {% if hilo.imagen4 %}
-                <button onclick="abrirVisorGlobal('{{ hilo.imagen4.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                    <img src="{{ hilo.imagen4.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                </button>
-            {% endif %}
+                        {% if hilo.imagen4 %}
+                            <button onclick="openImageModal('{{ hilo.imagen4.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
+                                <img src="{{ hilo.imagen4.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            </button>
+                        {% endif %}
 
-        {% endfor %}
-    </div>
-    
-    {% if not hilos_usuario %}
-        <div class="text-center py-16">
-            <p class="text-[#3A7CA5] font-medium text-lg">No has subido fotos en el campus.</p>
-        </div>
-    {% endif %}
-</div>
+                    {% endfor %}
+                </div>
+                
+                {% if not hilos_usuario %}
+                    <div class="text-center py-16">
+                        <p class="text-[#3A7CA5] font-medium text-lg">No has subido fotos en el campus.</p>
+                    </div>
+                {% endif %}
+            </div>
 
-            
         </div>
     </main>
 
@@ -172,43 +162,14 @@
     {% include 'foro/partials/nav_mobile.html' %}
 </div>
 
-<div id="image-modal" class="fixed inset-0 z-[100] hidden bg-[#2B2B2B]/95 backdrop-blur-md flex-col justify-center items-center opacity-0 transition-opacity duration-300" onclick="closeImageModal()">
-    <button type="button" class="absolute top-6 right-6 bg-white/10 text-white rounded-full p-3 hover:bg-white/20 transition-colors focus:outline-none" onclick="closeImageModal()">
+<div id="image-modal" class="fixed inset-0 z-[100] hidden bg-[#2B2B2B]/95 flex-col justify-center items-center opacity-0 transition-opacity duration-150" onclick="closeImageModal()">
+    <button type="button" class="absolute top-6 right-6 bg-white/10 text-white rounded-full p-3 hover:bg-white/20 transition-colors focus:outline-none cursor-pointer" onclick="closeImageModal()">
         <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
     </button>
-    <img id="modal-image" src="" alt="Imagen ampliada" class="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+    <img id="modal-image" src="" alt="Imagen ampliada" class="max-h-[85vh] max-w-[90vw] object-contain rounded-lg" onclick="event.stopPropagation()">
 </div>
 
 <script>
-    (function() {
-        const inputAvatar = document.getElementById('input-avatar');
-        if (inputAvatar) {
-            const newAvatarInput = inputAvatar.cloneNode(true);
-            inputAvatar.parentNode.replaceChild(newAvatarInput, inputAvatar);
-            
-            newAvatarInput.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    let formData = new FormData(document.getElementById('form-avatar'));
-                    
-                    fetch("{% url 'actualizar_avatar' %}", {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            location.reload();
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                }
-            });
-        }
-    })();
-
     function switchTab(tabName) {
         const btnPosts = document.getElementById('tab-btn-posts');
         const indicatorPosts = document.getElementById('indicator-posts');
@@ -262,6 +223,5 @@
             document.body.style.overflow = '';
         }, 300);
     }
-
 </script>
 {% endblock %}
