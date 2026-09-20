@@ -269,3 +269,10 @@ def codigo_recuperacion(request):
             messages.error(request, 'Contraseña incorrecta.')
 
     return render(request, 'usuarios/codigo_recuperacion.html', {'codigo': codigo})
+
+
+class TerminosView(TemplateView):
+    template_name = 'usuarios/terminos.html'
+
+class PrivacidadView(TemplateView):
+    template_name = 'usuarios/privacidad.html'    

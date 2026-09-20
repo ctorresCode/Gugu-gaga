@@ -28,6 +28,8 @@ class UsuarioForo(AbstractUser):
     descripcion = models.TextField(blank=True, null=True)
     banner = models.ImageField(upload_to='banners/', null=True, blank=True)
     codigo_recuperacion_hash = models.CharField(max_length=128, blank=True, default='')
+    acepto_terminos_fecha = models.DateTimeField(null=True, blank=True)
+    acepto_terminos_version = models.CharField(max_length=10, blank=True, default='')
 
     def __str__(self):
         return self.username

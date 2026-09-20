@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %} Política de Privacidad {% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+<style>
+    .legal-wrap { max-width: 54rem; margin: 0 auto; padding-bottom: 3rem; }
+    .legal { padding: 1.75rem; }
+    @media (min-width: 768px) { .legal { padding: 3.5rem; } }
+
+    .legal h1 { font-size: 2.5rem; line-height: 1.15; margin-bottom: .5rem; }
+    .legal h1 + p { font-size: 1rem; margin-bottom: 0; }
+    .legal-body { margin-top: 2.5rem; }
+
+    .legal section { padding-bottom: 2rem; margin-bottom: 2rem; border-bottom: 1px solid #eef0f3; }
+    .legal section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .legal h2 { font-size: 1.4rem; line-height: 1.3; margin-bottom: 1rem; color: #164e91; }
+    .legal-body p { font-size: 1.0625rem; line-height: 1.85; color: #374151; margin-bottom: 1rem; }
+    .legal-body p:last-child { margin-bottom: 0; }
+
+    .legal ul { list-style: disc; padding-left: 1.6rem; margin: 1rem 0; }
+    .legal li { font-size: 1.0625rem; line-height: 1.8; color: #374151; margin-bottom: .7rem; padding-left: .25rem; }
+    .legal li::marker { color: #175196; }
+    .legal li:last-child { margin-bottom: 0; }
+
+    .legal-foot { margin-top: 2.5rem; padding-top: 1.75rem; border-top: 1px solid #e5e7eb; text-align: center; font-size: 1rem; }
+</style>
+
+
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 px-4" style="padding-top:2.5rem;">
+  <div class="legal-wrap">
+
+    <div style="margin-bottom:1.25rem; font-size:1rem;">
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'inicio' %}" hx-boost="false" class="text-sm text-[#175196] font-semibold hover:underline">Volver al inicio</a>
+      {% else %}
+        <a href="{% url 'registro' %}" hx-boost="false" class="text-sm text-[#175196] font-semibold hover:underline">Volver al registro</a>
+      {% endif %}
+    </div>
+
+    <div class="legal bg-white rounded-2xl shadow-2xl border border-gray-100">
+
+      <h1 class="text-3xl font-extrabold text-[#164e91] tracking-tight">Política de Privacidad</h1>
+      <p class="text-sm text-gray-500 mt-2">Versión 2026-09</p>
+
+      <div class="legal-body">
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">En resumen</h2>
+          <p>UniVoz pide muy pocos datos a propósito. No te pedimos tu nombre real, tu correo, tu cédula ni tu carnet universitario. Aquí te explicamos qué guardamos y para qué, de acuerdo con la Ley 172-13 sobre Protección de Datos Personales de la República Dominicana.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Qué guardamos</h2>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Tu nombre de usuario y la universidad que elegiste.</li>
+            <li>Tu contraseña y tu código de recuperación, ambos cifrados. No podemos ver ninguno de los dos.</li>
+            <li>Lo que publicas: hilos, comentarios, "me gusta", imágenes, foto de perfil, banner, descripción y a quién sigues.</li>
+            <li>Tus mensajes directos.</li>
+            <li>La fecha y versión de los términos que aceptaste.</li>
+            <li>Datos técnicos que genera el sitio al funcionar, como la dirección IP y el navegador, para seguridad y para evitar abusos.</li>
+          </ul>
+          <p class="mt-2">Las imágenes que subes se reducen de tamaño y se convierten a JPG, lo que elimina parte de sus datos ocultos.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Para qué lo usamos</h2>
+          <p>Para que tengas tu cuenta, para mostrar tus publicaciones y mensajes a quien corresponda, para enviarte notificaciones dentro del sitio, para moderar y mantener el sitio seguro, y para cumplir la ley cuando nos lo exija. No vendemos tus datos.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Qué ven los demás</h2>
+          <p>Otros usuarios ven tu nombre de usuario, universidad, foto, banner, descripción, publicaciones y comentarios. No ven tu contraseña ni tus datos técnicos. Lo que publicas puede ser copiado o compartido por otros, incluso si luego lo borras, así que no publiques información personal que no quieras que circule.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Con quién se comparte</h2>
+          <p>Con los proveedores que hacen funcionar el sitio (alojamiento, base de datos y almacenamiento), que pueden tener servidores fuera del país, y con las autoridades cuando exista una orden judicial o requerimiento legal válido. Si hay anuncios, con las empresas de publicidad, como se explica abajo.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Cookies y anuncios</h2>
+          <p>Usamos las cookies necesarias para mantener tu sesión iniciada y proteger los formularios. Sin ellas el sitio no funciona.</p>
+          {% comment %}
+          ACTIVAR SOLO CUANDO TENGAS GOOGLE ADSENSE (borra estas líneas de comentario):
+          <p class="mt-2">UniVoz usa Google AdSense para mostrar anuncios. Google y sus socios pueden usar cookies para mostrar anuncios según tus visitas a este y otros sitios. Puedes gestionar la personalización en adssettings.google.com y conocer más en https://policies.google.com/technologies/partner-sites.</p>
+          {% endcomment %}
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Cuánto tiempo lo guardamos</h2>
+          <p>Mientras tu cuenta exista. Si pides eliminarla, borramos o anonimizamos tus datos en un plazo razonable, salvo lo que debamos conservar por ley, seguridad o para resolver un abuso.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Tus derechos</h2>
+          <p>Puedes pedir saber qué datos tuyos tenemos, corregirlos o que eliminemos tu cuenta. Escríbenos a [cube9486@gmail.com] indicando tu nombre de usuario. Como no guardamos tu identidad real, podemos pedirte que demuestres que la cuenta es tuya antes de actuar.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Menores de edad</h2>
+          <p>UniVoz es para personas de 18 años o más. Si sabes que un menor creó una cuenta, avísanos y la eliminaremos.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Cambios</h2>
+          <p>Si actualizamos esta política, publicaremos aquí la nueva versión.</p>
+        </section>
+
+      </div>
+
+      <div class="legal-foot">
+        <a href="{% url 'terminos' %}" hx-boost="false" class="text-[#175196] font-semibold hover:underline">Ver Términos y Condiciones</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

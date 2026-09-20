@@ -5,16 +5,37 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils import timezone
+
+VERSION_TERMINOS = '2026-09'
 
 class RegistroForm(UserCreationForm):
-    consentimiento = forms.BooleanField(
+    mayor_edad = forms.BooleanField(
         required=True,
-        label="Entiendo y acepto que soy totalmente responsable de lo que publique de forma anónima."
+        label="Confirmo que tengo 18 años o más."
     )
+    consentimiento = forms.BooleanField(required=True)
 
     class Meta(UserCreationForm.Meta):
         model = UsuarioForo
         fields = ['username', 'universidad']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['consentimiento'].label = format_html(
+            'He leído y acepto los <a href="{}" target="_blank" class="underline font-semibold">Términos y Condiciones</a> '
+            'y la <a href="{}" target="_blank" class="underline font-semibold">Política de Privacidad</a>. '
+            'Entiendo que soy responsable de lo que publique y que el contenido que infrinja las reglas puede ser eliminado.',
+            reverse('terminos'), reverse('privacidad'),
+        )
+
+    def save(self, commit=True):
+        self.instance.acepto_terminos_fecha = timezone.now()
+        self.instance.acepto_terminos_version = VERSION_TERMINOS
+        return super().save(commit=commit)    
+
 
 class RecuperarPasswordForm(forms.Form):
     username = forms.CharField(max_length=150, label='Username')

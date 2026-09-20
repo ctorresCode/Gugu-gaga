@@ -12,7 +12,9 @@ from usuarios.views import (
     recuperar_password, 
     seguir_usuario, 
     BandejaMensajesView, 
-    ChatView
+    ChatView,
+    TerminosView,
+    PrivacidadView
 )
 
 urlpatterns = [
@@ -33,6 +35,9 @@ urlpatterns = [
 
     #urls para recuperar contraseña si se le olvidó al usuario
     path('recuperar/', recuperar_password, name='recuperar_password'),
-    path('codigo-recuperacion/', codigo_recuperacion, name='codigo_recuperacion')
+    path('codigo-recuperacion/', codigo_recuperacion, name='codigo_recuperacion'),
 
+    #terminos de privacidad y condiciones
+    path('terminos/', TerminosView.as_view(), name='terminos'),
+    path('privacidad/', PrivacidadView.as_view(), name='privacidad'),
 ]

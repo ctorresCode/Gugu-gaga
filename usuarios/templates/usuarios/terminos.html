@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %} Términos y Condiciones {% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+<style>
+    .legal-wrap { max-width: 54rem; margin: 0 auto; padding-bottom: 3rem; }
+    .legal { padding: 1.75rem; }
+    @media (min-width: 768px) { .legal { padding: 3.5rem; } }
+
+    .legal h1 { font-size: 2.5rem; line-height: 1.15; margin-bottom: .5rem; }
+    .legal h1 + p { font-size: 1rem; margin-bottom: 0; }
+    .legal-body { margin-top: 2.5rem; }
+
+    .legal section { padding-bottom: 2rem; margin-bottom: 2rem; border-bottom: 1px solid #eef0f3; }
+    .legal section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .legal h2 { font-size: 1.4rem; line-height: 1.3; margin-bottom: 1rem; color: #164e91; }
+    .legal-body p { font-size: 1.0625rem; line-height: 1.85; color: #374151; margin-bottom: 1rem; }
+    .legal-body p:last-child { margin-bottom: 0; }
+
+    .legal ul { list-style: disc; padding-left: 1.6rem; margin: 1rem 0; }
+    .legal li { font-size: 1.0625rem; line-height: 1.8; color: #374151; margin-bottom: .7rem; padding-left: .25rem; }
+    .legal li::marker { color: #175196; }
+    .legal li:last-child { margin-bottom: 0; }
+
+    .legal-foot { margin-top: 2.5rem; padding-top: 1.75rem; border-top: 1px solid #e5e7eb; text-align: center; font-size: 1rem; }
+</style>
+
+
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 px-4" style="padding-top:2.5rem;">
+  <div class="legal-wrap">
+
+    <div style="margin-bottom:1.25rem; font-size:1rem;">
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'inicio' %}" hx-boost="false" class="text-sm text-[#175196] font-semibold hover:underline">Volver al inicio</a>
+      {% else %}
+        <a href="{% url 'registro' %}" hx-boost="false" class="text-sm text-[#175196] font-semibold hover:underline">Volver al registro</a>
+      {% endif %}
+    </div>
+
+    <div class="legal bg-white rounded-2xl shadow-2xl border border-gray-100">
+
+      <h1 class="text-3xl font-extrabold text-[#164e91] tracking-tight">Términos y Condiciones</h1>
+      <p class="text-sm text-gray-500 mt-2">Versión 2026-09</p>
+
+      <div class="legal-body">
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Lo básico</h2>
+          <p>UniVoz es un espacio para que estudiantes universitarios de República Dominicana conversen entre sí. Al crear una cuenta o usar el sitio aceptas estos términos y la <a href="{% url 'privacidad' %}" hx-boost="false" class="text-[#175196] font-semibold underline">Política de Privacidad</a>. Si no estás de acuerdo, no uses el sitio.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Tú eres responsable de lo que haces aquí</h2>
+          <p>Todo lo que publiques, comentes, envíes por mensaje o hagas desde tu cuenta es responsabilidad tuya, y solo tuya. UniVoz es una plataforma donde los usuarios publican por su cuenta: no escribimos, revisamos ni aprobamos lo que dicen, y no respondemos por sus opiniones, ni por lo que hagan o les pase a otros por usar el sitio. Si publicas algo que perjudica a alguien, las consecuencias legales son tuyas.</p>
+          <p class="mt-2">Tampoco somos responsables de lo que publiquen otros usuarios. Si algo te molesta, puedes reportarlo o bloquear el contacto con esa persona.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Quién puede usarlo</h2>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Tener 18 años o más.</li>
+            <li>Una sola cuenta por persona.</li>
+            <li>Cuidar tu contraseña y tu código de recuperación. Lo que pase desde tu cuenta se te atribuye a ti.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Lo que no se permite</h2>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Acosar, insultar, amenazar o discriminar a otras personas.</li>
+            <li>Acusar a alguien de cosas graves sin pruebas, o difundir mentiras para dañar su reputación.</li>
+            <li>Publicar datos personales de otros (teléfonos, direcciones, cédulas, fotos o conversaciones privadas sin permiso).</li>
+            <li>Contenido sexual explícito, o imágenes íntimas de alguien sin su consentimiento. Cualquier contenido sexual con menores se elimina y puede reportarse a las autoridades.</li>
+            <li>Suplantar a otras personas, docentes o instituciones.</li>
+            <li>Spam, estafas, fraude académico o actividades ilegales.</li>
+            <li>Publicar contenido que no es tuyo y viola derechos de autor.</li>
+            <li>Intentar hackear cuentas o el sitio.</li>
+          </ul>
+          <p class="mt-2">Muchas de estas conductas son delitos según la ley dominicana, incluida la Ley 53-07 sobre Crímenes y Delitos de Alta Tecnología. Que uses un nombre de usuario no te protege de las consecuencias legales de lo que hagas.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Moderación</h2>
+          <p>Podemos ocultar o borrar contenido y suspender o eliminar cuentas cuando incumplan estas reglas, con o sin aviso. Si algo que publicaste se ocultó por error, escríbenos.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Tu contenido</h2>
+          <p>Lo que publicas sigue siendo tuyo, pero nos autorizas a guardarlo, mostrarlo y ajustarlo (por ejemplo, reducir el tamaño de las imágenes) para que el sitio funcione. Asegúrate de tener derecho a publicar lo que subes.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Mensajes directos</h2>
+          <p>No revisamos tus chats de forma rutinaria, pero podemos verlos si los reportan, si hay indicios de abuso o si una autoridad competente lo exige. La otra persona puede copiar o compartir lo que le escribas.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Código de recuperación</h2>
+          <p>No pedimos tu correo, por eso recuperar tu cuenta depende de tu código de recuperación. Solo guardamos una versión cifrada, así que no podemos verlo ni recuperarlo por ti. Si pierdes tu contraseña y tu código, es posible que no puedas recuperar la cuenta.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">No somos parte de ninguna universidad</h2>
+          <p>UniVoz es independiente. No está afiliado ni respaldado por ninguna universidad. Los nombres y logos de las instituciones pertenecen a sus dueños y se muestran solo para indicar a qué universidad pertenece cada usuario.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Sin garantías</h2>
+          <p>El sitio se ofrece tal cual. Puede fallar, cambiar o dejar de estar disponible, y no garantizamos que tu contenido se conserve para siempre. En lo que permita la ley, no respondemos por daños que resulten de usar el sitio o del contenido de otros usuarios.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Cambios y ley aplicable</h2>
+          <p>Podemos actualizar estos términos y te avisaremos en el sitio si el cambio es importante. Se rigen por las leyes de la República Dominicana.</p>
+        </section>
+
+        <section>
+          <h2 class="text-lg font-bold text-[#2B2B2B] mb-2">Contacto y reportes</h2>
+          <p>Para reportar contenido, pedir que se elimine algo que te afecta o hacer cualquier consulta: [cube9486@gmail.com].</p>
+        </section>
+
+      </div>
+
+      <div class="legal-foot">
+        <a href="{% url 'privacidad' %}" hx-boost="false" class="text-[#175196] font-semibold hover:underline">Ver Política de Privacidad</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
