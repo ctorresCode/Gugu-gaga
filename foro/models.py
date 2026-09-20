@@ -86,15 +86,14 @@ class Notificacion(models.Model):
         indexes = [models.Index(fields=['destinatario', 'leido'])]
 
     def texto_nombres(self):
-        actores = list(self.actores.all()[:2])
-        total = self.actores.count()
-        if total == 0:
-            return ''
-        if total == 1:
-            return actores[0].username
-        if total == 2:
-            return f"{actores[0].username} y {actores[1].username}"
-        return f"{actores[0].username}, {actores[1].username} y {total - 2} más"
+        todos_los_actores = list(self.actores.all())
+        total_actores = len(todos_los_actores)
+        primeros_actores = todos_los_actores[:2]
+        nombres = ", ".join([actor.username for actor in primeros_actores])
+
+        if total_actores > 2:
+            return f"{nombres} y {total_actores - 2} más"
+        return nombres
 
     def texto_accion(self):
         total = self.actores.count()

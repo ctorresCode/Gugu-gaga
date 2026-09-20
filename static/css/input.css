@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* El plugin de los formularios para que no se vean raros en Django */
+@plugin "@tailwindcss/forms";
+
+/* 
+  Le decimos a Tailwind dónde buscar tus archivos HTML. 
+  Los puntos ../.. sirven para retroceder desde /static/css/ hacia la raíz 
+  donde tienes tus carpetas de las Apps
+*/
+@source "../../templates";
+@source "../../foro/templates";
+@source "../../usuarios/templates";
+@source "../../static/js";
+
+/* Puedes agregar tu propio CSS manual debajo de esta línea si quieres */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+}
