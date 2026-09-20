@@ -26,6 +26,7 @@ class UsuarioForo(AbstractUser):
 class Mensaje(models.Model):
     remitente = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='mensajes_enviados', on_delete=models.CASCADE, db_index=True)
     destinatario = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='mensajes_recibidos', on_delete=models.CASCADE, db_index=True)
+    mensaje_respondido = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='respuestas')
     contenido = models.TextField(null=True, blank=True)
     imagen = models.ImageField(upload_to='chat_imagenes/',  blank=True, null=True)
     imagen2 = models.ImageField(upload_to='chat_imagenes/', blank=True, null=True)

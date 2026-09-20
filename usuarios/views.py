@@ -114,7 +114,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
         mensajes_query = Mensaje.objects.filter(
             (Q(remitente=self.request.user, destinatario=otro_usuario)) |
             (Q(remitente=otro_usuario, destinatario=self.request.user))
-        ).select_related('remitente').order_by('-fecha_envio')[:50]
+        ).select_related('remitente', 'mensaje_respondido', 'mensaje_respondido__remitente').order_by('-fecha_envio')[:50]
         
         context['mensajes'] = reversed(list(mensajes_query))
         return context
@@ -127,6 +127,15 @@ class ChatView(LoginRequiredMixin, TemplateView):
             return JsonResponse({'error': 'No tienen permisos para chatear.'}, status=403)
 
         contenido = request.POST.get('contenido')
+        mensaje_respondido_id = request.POST.get('mensaje_respondido_id')
+        
+        mensaje_padre = None
+        if mensaje_respondido_id:
+            try:
+                mensaje_padre = Mensaje.objects.get(id=mensaje_respondido_id)
+            except Mensaje.DoesNotExist:
+                mensaje_padre = None
+
         archivos_subidos = request.FILES.getlist('imagen')
         if len(archivos_subidos) > 4:
             return JsonResponse({'error': 'No puedes enviar más de 4 imágenes.'}, status=400)
@@ -150,6 +159,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
                 remitente=request.user,
                 destinatario=otro_usuario,
                 contenido=contenido,
+                mensaje_respondido=mensaje_padre
             )
             if len(archivos_optimizados) > 0: nuevo_mensaje.imagen = archivos_optimizados[0]
             if len(archivos_optimizados) > 1: nuevo_mensaje.imagen2 = archivos_optimizados[1]

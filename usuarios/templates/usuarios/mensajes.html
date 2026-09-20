@@ -84,8 +84,16 @@
                         {% endifchanged %}
 
                         {% if msj.remitente == request.user %}
-                            <div class="flex justify-end relative">
-                                <div class="bg-[#093D77] text-white p-2.5 rounded-2xl rounded-br-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[100px]">
+                            <div class="flex justify-end relative" id="msg-{{ msj.id }}">
+                                <div class="bg-[#093D77] text-white p-2.5 rounded-2xl rounded-br-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[120px]">
+                                    
+                                    {% if msj.mensaje_respondido %}
+                                        <div class="bg-black/15 rounded-lg p-2 mb-1.5 border-l-4 border-[#34B7F1] text-[12px] cursor-pointer transition-colors hover:bg-black/25 flex flex-col" onclick="document.getElementById('msg-{{ msj.mensaje_respondido.id }}').scrollIntoView({behavior: 'smooth', block: 'center'})">
+                                            <span class="font-bold text-[#34B7F1] mb-0.5">{{ msj.mensaje_respondido.remitente.username }}</span>
+                                            <span class="truncate text-white/70">{{ msj.mensaje_respondido.contenido|default:"📷 Imagen"|truncatechars:50 }}</span>
+                                        </div>
+                                    {% endif %}
+
                                     <div class="text-[15px] font-medium leading-relaxed break-words flex flex-col w-full">
                                         {% if msj.imagen %}
                                             {% if msj.imagen2 or msj.imagen3 or msj.imagen4 %}
@@ -103,7 +111,11 @@
                                             <span class="px-1 pt-1">{{ msj.contenido }}</span>
                                         {% endif %}
                                     </div>
-                                    <div class="flex items-center justify-end gap-1 mt-1 px-1">
+                                    <div class="flex items-center gap-1 mt-1 px-1">
+                                        <button type="button" onclick="prepararRespuesta('{{ msj.id }}', '{{ msj.remitente.username|escapejs }}', '{{ msj.contenido|default:'📷 Imagen adjunta'|escapejs }}')" class="mr-auto text-white/50 hover:text-white transition-colors" title="Responder">
+                                            <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-current" style="transform: scaleX(-1);"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+                                        </button>
+                                        
                                         <span class="text-[10px] font-semibold text-white/80">{{ msj.fecha_envio|time:"g:i A" }}</span>
                                         {% if msj.leido %}
                                             <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-current text-[#34B7F1]"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"></path></svg>
@@ -114,8 +126,16 @@
                                 </div>
                             </div>
                         {% else %}
-                            <div class="flex justify-start relative">
-                                <div class="bg-white border border-gray-100 text-[#2B2B2B] p-2.5 rounded-2xl rounded-bl-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[100px]">
+                            <div class="flex justify-start relative" id="msg-{{ msj.id }}">
+                                <div class="bg-white border border-gray-100 text-[#2B2B2B] p-2.5 rounded-2xl rounded-bl-none max-w-[80%] md:max-w-[70%] shadow-sm flex flex-col min-w-[120px]">
+                                    
+                                    {% if msj.mensaje_respondido %}
+                                        <div class="bg-black/5 rounded-lg p-2 mb-1.5 border-l-4 border-[#093D77] text-[12px] cursor-pointer transition-colors hover:bg-black/10 flex flex-col" onclick="document.getElementById('msg-{{ msj.mensaje_respondido.id }}').scrollIntoView({behavior: 'smooth', block: 'center'})">
+                                            <span class="font-bold text-[#093D77] mb-0.5">{{ msj.mensaje_respondido.remitente.username }}</span>
+                                            <span class="truncate text-gray-500">{{ msj.mensaje_respondido.contenido|default:"📷 Imagen"|truncatechars:50 }}</span>
+                                        </div>
+                                    {% endif %}
+
                                     <div class="text-[15px] font-medium leading-relaxed break-words flex flex-col w-full">
                                         {% if msj.imagen %}
                                             {% if msj.imagen2 or msj.imagen3 or msj.imagen4 %}
@@ -133,7 +153,11 @@
                                             <span class="px-1 pt-1">{{ msj.contenido }}</span>
                                         {% endif %}
                                     </div>
-                                    <div class="flex items-center justify-end gap-1 mt-1 px-1">
+                                    <div class="flex items-center gap-1 mt-1 px-1">
+                                        <button type="button" onclick="prepararRespuesta('{{ msj.id }}', '{{ msj.remitente.username|escapejs }}', '{{ msj.contenido|default:'📷 Imagen adjunta'|escapejs }}')" class="mr-auto text-gray-400 hover:text-[#093D77] transition-colors cursor-pointer" title="Responder">
+                                            <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-current" style="transform: scaleX(-1);"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+                                        </button>
+
                                         <span class="text-[10px] font-semibold text-[#3A7CA5]/70">{{ msj.fecha_envio|time:"g:i A" }}</span>
                                     </div>
                                 </div>
@@ -146,7 +170,21 @@
 
                 <form id="chat-form" data-hx-disable="true" method="post" action="{% url 'chat_usuario' chat_activo.username %}" enctype="multipart/form-data" class="p-3 md:p-4 bg-white border-t border-gray-50 z-10">
                     {% csrf_token %}
+                    
+                    <input type="hidden" name="mensaje_respondido_id" id="reply-id-input" value="">
+                    
                     <div class="bg-[#F8F9FA] border border-gray-200 focus-within:border-[#3A7CA5] focus-within:ring-1 focus-within:ring-[#3A7CA5] transition-all rounded-3xl px-4 py-2 shadow-inner">
+                        
+                        <div id="reply-preview-container" class="hidden mt-1 mb-2 bg-black/5 rounded-lg border-l-4 border-[#093D77] p-2 flex justify-between items-center transition-all">
+                            <div class="flex flex-col truncate overflow-hidden">
+                                <span class="font-bold text-[13px] text-[#093D77]" id="reply-preview-user">Usuario</span>
+                                <span class="text-[12px] text-gray-500 truncate" id="reply-preview-text">Mensaje...</span>
+                            </div>
+                            <button type="button" onclick="cancelarRespuesta()" class="p-1 text-gray-400 hover:text-red-500 rounded-full transition-colors flex-shrink-0 ml-2" title="Cancelar respuesta">
+                                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+                            </button>
+                        </div>
+                        
                         <div id="chat-preview" class="hidden pt-3 pb-1 px-1">
                             <div id="chat-preview-list" class="flex items-center gap-3 flex-wrap"></div>
                         </div>
@@ -181,6 +219,19 @@
 
 {% if chat_activo %}
 <script>
+    window.prepararRespuesta = function(id, username, content) {
+        document.getElementById('reply-id-input').value = id;
+        document.getElementById('reply-preview-user').innerText = username;
+        document.getElementById('reply-preview-text').innerText = content;
+        document.getElementById('reply-preview-container').classList.remove('hidden');
+        document.getElementById('chat-input').focus();
+    };
+
+    window.cancelarRespuesta = function() {
+        document.getElementById('reply-id-input').value = '';
+        document.getElementById('reply-preview-container').classList.add('hidden');
+    };
+
     if (typeof window.abrirVisorGlobal !== 'function') {
         function abrirVisorGlobal(url) {
             var visor = document.getElementById('visor-global');
@@ -366,6 +417,8 @@
                     if (response.ok) {
                         this.reset();
                         limpiarPreviewChat();
+                        cancelarRespuesta();
+                        
                         chatInput.disabled = false;
                         chatInput.focus();
 
