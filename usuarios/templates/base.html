@@ -6,14 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="htmx-config" content='{"historyCacheSize": 10}' />
     <title>{%block title%} {%endblock%}</title>
+    
+    <link rel="stylesheet" href="{% static 'css/output.css' %}" />
+
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <style>
       html {
         scrollbar-gutter: stable;
         overflow-y: scroll;
+        background-color: #F8F9FA; 
       }
     </style>
-    <link rel="stylesheet" href="{% static 'css/output.css' %}" hx-preserve="true" />
 
     <link rel="icon" type="image/png" href="{% static 'img/wa.png' %}?v=1" />
   </head>
@@ -45,8 +48,6 @@
                 cerrarVisorGlobal();
             }
         });
-
-        
     </script>
   </body>
 </html>
