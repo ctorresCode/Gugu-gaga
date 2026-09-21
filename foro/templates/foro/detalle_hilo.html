@@ -132,7 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
             let nuevaRespuesta = payload.new;
             
             if (Number(nuevaRespuesta.hilo_id) !== hiloActualId) return;
-            if (nuevaRespuesta.respuesta_padre_id !== null) return;
+            
+            if (nuevaRespuesta.respuesta_padre_id !== null) {
+                let counter = document.getElementById('contador-hijas-' + nuevaRespuesta.respuesta_padre_id);
+                if (counter) {
+                    counter.innerText = parseInt(counter.innerText || 0) + 1;
+                }
+                return;
+            }
+
             if (Number(nuevaRespuesta.autor_id) === miUsuarioId) return;
 
             try {
@@ -184,12 +192,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (respuestaId) {
                 let boton = document.getElementById('like-respuesta-' + respuestaId);
                 if (boton) {
-                    let spanObj = boton.querySelector('span.text-xs');
+                    let spanObj = boton.querySelector('.text-xs');
                     if (spanObj) {
                         let numeroActual = parseInt(spanObj.innerText) || 0;
                         if (payload.eventType === 'INSERT') spanObj.innerText = numeroActual + 1;
                         else if (payload.eventType === 'DELETE') spanObj.innerText = Math.max(0, numeroActual - 1);
                     }
+                }
+            }
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'foro_respuesta' }, function(payload) {
+            let borrada = payload.old;
+            if (borrada.respuesta_padre_id !== null) {
+                let counter = document.getElementById('contador-hijas-' + borrada.respuesta_padre_id);
+                if (counter) {
+                    counter.innerText = Math.max(0, parseInt(counter.innerText || 0) - 1);
                 }
             }
         })
