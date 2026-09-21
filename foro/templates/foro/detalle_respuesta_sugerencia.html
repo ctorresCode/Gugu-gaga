@@ -36,7 +36,7 @@
             <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 pl-2">
                 <a href="{% url 'like_respuesta_sugerencia' respuesta_padre.pk %}" class="flex items-center gap-1.5 text-sm {% if request.user in respuesta_padre.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
-                    {{ respuesta_padre.likes.count }}
+                    <span id="sug-resp-like-count-{{ respuesta_padre.pk }}">{{ respuesta_padre.likes.count }}</span>
                 </a>
             </div>
         </div>
@@ -60,7 +60,7 @@
             </form>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-4" id="lista-respuestas">
             {% for hija in respuestas %}
             <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm ml-4">
                 <div class="flex items-center justify-between mb-2">
@@ -74,7 +74,7 @@
                 <div class="flex items-center gap-4 mt-3 pt-2 border-t border-gray-50 text-xs">
                     <a href="{% url 'like_respuesta_sugerencia' hija.pk %}" class="flex items-center gap-1.5 {% if request.user in hija.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
-                        {{ hija.likes.count }}
+                        <span id="sug-resp-like-count-{{ hija.pk }}">{{ hija.likes.count }}</span>
                     </a>
                 </div>
             </div>
@@ -88,4 +88,55 @@
 
     {% include 'foro/partials/nav_mobile.html' %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
+    const miUsuarioId = Number("{{ request.user.id|default:'0' }}");
+    const respuestaPadreId = Number("{{ respuesta_padre.id }}");
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabaseClient
+        .channel('respuestas-hijas-sug-vivo')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'foro_respuestasugerencia' }, async function(payload) {
+            let nueva = payload.new;
+            if (Number(nueva.respuesta_padre_id) !== respuestaPadreId) return;
+            if (Number(nueva.autor_id) === miUsuarioId) return;
+
+            try {
+                let res = await fetch(`/respuesta-sugerencia/${nueva.id}/tarjeta/`);
+                if (res.ok) {
+                    let html = await res.text();
+                    let lista = document.getElementById('lista-respuestas');
+                    let vacio = lista.querySelector('.text-center.py-6');
+                    if (vacio) vacio.remove();
+                    
+                    if (lista) lista.insertAdjacentHTML('beforeend', html);
+                }
+            } catch(e) {}
+        })
+        .subscribe();
+
+    supabaseClient
+        .channel('likes-respsug-vivo')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_respuestasugerencia_likes' }, function(payload) {
+            let data = payload.eventType === 'INSERT' ? payload.new : payload.old;
+            if (!data) return;
+            let autorLikeId = data.usuario_id || data.user_id || data.usuarioforo_id;
+            if (autorLikeId && Number(autorLikeId) === miUsuarioId) return;
+            
+            let id = data.respuestasugerencia_id;
+            let span = document.getElementById('sug-resp-like-count-' + id);
+            if(span) {
+                 let num = parseInt(span.innerText) || 0;
+                 if(payload.eventType==='INSERT') span.innerText=num+1;
+                 else span.innerText=Math.max(0, num-1);
+            }
+        })
+        .subscribe();
+});
+</script>
 {% endblock %}

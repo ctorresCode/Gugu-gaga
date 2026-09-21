@@ -80,6 +80,36 @@
             }, 500);
         })
         .subscribe();
+
+    supabaseClient
+        .channel('likes-sug-vivo')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_sugerencia_likes' }, function(payload) {
+            let data = payload.eventType === 'INSERT' ? payload.new : payload.old;
+            if (!data) return;
+            let autorId = data.usuario_id || data.user_id || data.usuarioforo_id;
+            if (autorId && Number(autorId) === miUsuarioId) return;
+            
+            let span = document.getElementById('sug-like-count-' + data.sugerencia_id);
+            if (span) {
+                let num = parseInt(span.innerText) || 0;
+                if (payload.eventType === 'INSERT') span.innerText = num + 1;
+                else span.innerText = Math.max(0, num - 1);
+            }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_sugerencia_dislikes' }, function(payload) {
+            let data = payload.eventType === 'INSERT' ? payload.new : payload.old;
+            if (!data) return;
+            let autorId = data.usuario_id || data.user_id || data.usuarioforo_id;
+            if (autorId && Number(autorId) === miUsuarioId) return;
+
+            let span = document.getElementById('sug-dislike-count-' + data.sugerencia_id);
+            if (span) {
+                let num = parseInt(span.innerText) || 0;
+                if (payload.eventType === 'INSERT') span.innerText = num + 1;
+                else span.innerText = Math.max(0, num - 1);
+            }
+        })
+        .subscribe();
 })();
 </script>
 {% endblock %}

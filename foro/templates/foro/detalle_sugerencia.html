@@ -36,11 +36,11 @@
             <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
                 <a href="{% url 'interaccion_sugerencia' sugerencia.public_id 'like' %}" class="flex items-center gap-1.5 text-sm {% if request.user in sugerencia.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
-                    {{ sugerencia.likes.count }}
+                    <span id="sug-like-count-{{ sugerencia.id }}">{{ sugerencia.likes.count }}</span>
                 </a>
                 <a href="{% url 'interaccion_sugerencia' sugerencia.public_id 'dislike' %}" class="flex items-center gap-1.5 text-sm {% if request.user in sugerencia.dislikes.all %}text-red-600 font-bold{% else %}text-gray-500 hover:text-red-600{% endif %}">
                     <svg class="w-5 h-5 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
-                    {{ sugerencia.dislikes.count }}
+                    <span id="sug-dislike-count-{{ sugerencia.id }}">{{ sugerencia.dislikes.count }}</span>
                 </a>
             </div>
         </div>
@@ -120,6 +120,38 @@
                     }
                 } catch(e) { console.error(e); }
             }, 500);
+        })
+        .subscribe();
+
+    supabaseClient
+        .channel('likes-sug-vivo-detalle')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_sugerencia_likes' }, function(payload) {
+            let data = payload.eventType === 'INSERT' ? payload.new : payload.old;
+            if (!data) return;
+            let autorId = data.usuario_id || data.user_id || data.usuarioforo_id;
+            if (autorId && Number(autorId) === miUsuarioId) return;
+            
+            if (Number(data.sugerencia_id) !== sugerenciaActualId) return;
+            let span = document.getElementById('sug-like-count-' + data.sugerencia_id);
+            if (span) {
+                let num = parseInt(span.innerText) || 0;
+                if (payload.eventType === 'INSERT') span.innerText = num + 1;
+                else span.innerText = Math.max(0, num - 1);
+            }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'foro_sugerencia_dislikes' }, function(payload) {
+            let data = payload.eventType === 'INSERT' ? payload.new : payload.old;
+            if (!data) return;
+            let autorId = data.usuario_id || data.user_id || data.usuarioforo_id;
+            if (autorId && Number(autorId) === miUsuarioId) return;
+
+            if (Number(data.sugerencia_id) !== sugerenciaActualId) return;
+            let span = document.getElementById('sug-dislike-count-' + data.sugerencia_id);
+            if (span) {
+                let num = parseInt(span.innerText) || 0;
+                if (payload.eventType === 'INSERT') span.innerText = num + 1;
+                else span.innerText = Math.max(0, num - 1);
+            }
         })
         .subscribe();
 })();
