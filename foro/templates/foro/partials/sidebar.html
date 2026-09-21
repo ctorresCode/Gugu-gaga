@@ -2,7 +2,7 @@
 {% load static %}
 <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-[#2B2B2B]/60 z-40 hidden md:hidden transition-opacity opacity-0 duration-300 backdrop-blur-sm"></div>
 
-{% cache 3600 sidebar_izq request.user.username request.resolver_match.url_name %}
+{% cache 3600 sidebar_izq_p1 request.user.username request.resolver_match.url_name %}
 <header id="mobile-sidebar" class="fixed md:sticky top-0 left-0 z-50 md:z-0 h-screen w-72 md:w-64 bg-[#F8F9FA] md:bg-transparent transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between py-6 px-4 md:border-r border-gray-200/60 shadow-2xl md:shadow-none overflow-y-auto">
     
     <div class="flex flex-col gap-8">
@@ -27,11 +27,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
                 Amigos
+{% endcache %}
                 <span id="badge-mensajes-desktop" class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm {% if total_mensajes_sin_leer == 0 or not total_mensajes_sin_leer %}hidden{% endif %}">
                     <span id="badge-mensajes-desktop-count">{{ total_mensajes_sin_leer|default:"0" }}</span>
                 </span>
             </a>
 
+{% cache 3600 sidebar_izq_p2 request.user.username request.resolver_match.url_name %}
             <button type="button" 
                 onclick="toggleNotifications()"
                 hx-get="{% url 'notificaciones' %}"
@@ -42,11 +44,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                 </svg>
                 Notificaciones
+{% endcache %}
                 <span id="badge-notif-desktop" class="bg-[#DAA520] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ml-auto shadow-sm {% if total_notificaciones_sin_leer == 0 or not total_notificaciones_sin_leer %}hidden{% endif %}">
                     <span id="badge-notif-desktop-count">{{ total_notificaciones_sin_leer|default:"0" }}</span>
                 </span>
             </button>
 
+{% cache 3600 sidebar_izq_p3 request.user.username request.resolver_match.url_name %}
             <a href="{% url 'sugerencias' %}" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-lg transition-all w-full {% if request.resolver_match.url_name == 'sugerencias' %} bg-[#093D77] text-white font-bold shadow-md shadow-[#093D77]/20 {% else %} text-[#2B2B2B] font-medium hover:bg-white hover:shadow-sm {% endif %}">
                 <svg class="w-6 h-6 flex-shrink-0 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
