@@ -242,7 +242,7 @@ def solicitar_reset_password(request):
                         ),
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[email],
-                        fail_silently=True,
+                        fail_silently=False,
                     )
                     request.session['reset_usuario_id'] = usuario.id
                 else:

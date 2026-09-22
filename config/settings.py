@@ -150,4 +150,4 @@ else:
     EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
-DEFAULT_FROM_EMAIL = 'UniVoz <noreply@univoz.com>'    
+DEFAULT_FROM_EMAIL = f"UniVoz <{config('EMAIL_HOST_USER', default='soporte.univoz@gmail.com')}>"    
