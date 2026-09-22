@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %} Recuperar contraseña {% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+<div class="min-h-screen flex items-center justify-center relative bg-gray-950 bg-cover bg-center py-10" style="background-image: url('/static/img/LoginImageBackground.png');">
+  <div class="absolute inset-0 bg-black/70 z-0"></div>
+
+  <div class="w-full max-w-[92%] sm:max-w-md bg-[#0f172a] p-8 sm:p-10 rounded-2xl shadow-2xl relative z-10 border border-gray-700">
+
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-extrabold text-white tracking-tight">Recuperar contraseña</h2>
+      <p class="text-sm text-gray-400 mt-2">
+        {% if esperando_codigo %}
+          Ingresa el código de 6 dígitos que enviamos a tu correo.
+        {% else %}
+          Ingresa tu correo y te enviaremos un código de verificación.
+        {% endif %}
+      </p>
+    </div>
+
+    {% for message in messages %}
+      <div class="{% if message.tags == 'error' %}bg-red-500/10 border border-red-500 text-red-500{% else %}bg-[#1e293b] ring-1 ring-inset ring-gray-600 text-white{% endif %} p-3 rounded-xl mb-6 text-sm text-center font-bold">
+        {{ message }}
+      </div>
+    {% endfor %}
+
+    {% if not esperando_codigo %}
+    
+    <form method="post" hx-boost="false" class="space-y-5">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="enviar_codigo">
+      <div>
+        <label for="id_email" class="block text-sm font-medium text-gray-200 mb-2">Correo electrónico</label>
+        <input type="email" name="email" id="id_email" required autocomplete="email" placeholder="tu-correo@ejemplo.com"
+               class="w-full px-4 py-3 border-0 ring-1 ring-inset ring-gray-600 rounded-xl focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] outline-none transition-shadow text-white bg-[#1e293b] sm:text-sm shadow-inner">
+      </div>
+      <button type="submit" class="w-full bg-[#174b9e] hover:bg-[#113a7a] active:bg-[#0c2a5c] text-white font-bold py-3.5 px-4 rounded-xl transition-colors mt-6 text-sm shadow-lg cursor-pointer">
+        Enviar código
+      </button>
+    </form>
+    
+    {% else %}
+    <form method="post" hx-boost="false" class="space-y-5">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="verificar_codigo">
+      <div>
+        <label for="id_codigo" class="block text-sm font-medium text-gray-200 mb-2">Código de verificación</label>
+        <input type="text" name="codigo" id="id_codigo" required autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="000000"
+               class="w-full px-4 py-3 border-0 ring-1 ring-inset ring-gray-600 rounded-xl focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] outline-none transition-shadow text-white bg-[#1e293b] sm:text-sm shadow-inner font-mono text-center text-2xl tracking-[0.5em]">
+      </div>
+      <button type="submit" class="w-full bg-[#174b9e] hover:bg-[#113a7a] active:bg-[#0c2a5c] text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-sm shadow-lg cursor-pointer">
+        Verificar código
+      </button>
+    </form>
+    
+    <form method="post" hx-boost="false" class="mt-3">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="reenviar">
+      <button type="submit" class="w-full text-center text-sm text-gray-400 hover:text-[#60a5fa] transition-colors py-2 cursor-pointer">
+        ¿No te llegó? Usar otro correo
+      </button>
+    </form>
+    {% endif %}
+
+    <div class="mt-8 pt-6 border-t border-gray-700/80 text-center">
+      <a href="{% url 'login' %}" hx-boost="false" class="text-sm text-gray-400 hover:text-[#60a5fa] transition-colors">Volver a iniciar sesión</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

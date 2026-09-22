@@ -6,15 +6,15 @@ from usuarios.views import (
     PerfilView, 
     RegistroUsuarioView,
     VerTodasLasImagenesSubidasPorUsuario, 
-    actualizar_avatar,
-    codigo_recuperacion, 
+    actualizar_avatar, 
     logout_view,
-    recuperar_password, 
+    nueva_password, 
     seguir_usuario, 
     BandejaMensajesView, 
     ChatView,
     TerminosView,
-    PrivacidadView
+    PrivacidadView,
+    solicitar_reset_password
 )
 
 urlpatterns = [
@@ -34,8 +34,8 @@ urlpatterns = [
     path('mensajes/<str:username>/', ChatView.as_view(), name='chat_usuario'),
 
     #urls para recuperar contraseña si se le olvidó al usuario
-    path('recuperar/', recuperar_password, name='recuperar_password'),
-    path('codigo-recuperacion/', codigo_recuperacion, name='codigo_recuperacion'),
+    path('recuperar/', solicitar_reset_password, name='recuperar_password'),
+    path('recuperar/nueva-password/', nueva_password, name='nueva_password'),
 
     #terminos de privacidad y condiciones
     path('terminos/', TerminosView.as_view(), name='terminos'),

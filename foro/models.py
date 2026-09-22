@@ -9,7 +9,7 @@ from usuarios.models import Universidad
 class Hilo(models.Model):
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     titulo = models.CharField(max_length=200)
-    contenido = models.TextField()
+    contenido = models.TextField(max_length=500)
     imagen = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
     imagen2 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
     imagen3 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)

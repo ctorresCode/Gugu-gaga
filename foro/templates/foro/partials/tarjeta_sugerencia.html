@@ -15,7 +15,7 @@
         </span>
     </div>
     
-    <p class="text-gray-800 mt-2">{{ sugerencia.contenido|linebreaksbr }}</p>
+    <p class="text-gray-800 mt-2 break-words">{{ sugerencia.contenido|linebreaksbr }}</p>
 
     <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
         <a href="{% url 'interaccion_sugerencia' sugerencia.public_id 'like' %}" onclick="event.stopPropagation();" class="flex items-center gap-1.5 text-sm {% if request.user in sugerencia.likes.all %}text-blue-600 font-bold{% else %}text-gray-500 hover:text-blue-600{% endif %}">

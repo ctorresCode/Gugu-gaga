@@ -49,8 +49,8 @@
         </div>
       </div>
 
-      <p class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90">
-        {{ hilo.contenido }}
+      <p class="text-[#2B2B2B] text-[15px] md:text-base leading-relaxed font-medium mb-3 opacity-90 break-words">
+        {{ hilo.contenido | truncatechars:200 }}
       </p>
 
       {% if hilo.imagen or hilo.imagen2 or hilo.imagen3 or hilo.imagen4 %}

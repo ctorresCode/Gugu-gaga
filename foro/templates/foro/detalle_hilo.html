@@ -53,7 +53,7 @@
                     </span>
                 </div>
 
-                <p class="text-[#2B2B2B] text-xl leading-relaxed font-medium mb-5">{{ hilo.contenido }}</p>
+                <p class="text-[#2B2B2B] text-xl leading-relaxed font-medium mb-5 break-words">{{ hilo.contenido }}</p>
 
                 {% if hilo.imagen %}
                     <div class="rounded-2xl overflow-hidden mb-5 border border-gray-100 shadow-sm">
@@ -88,7 +88,7 @@
                 </div>
 
                 <div class="flex-grow flex flex-col pt-1">
-                    <textarea id="textarea-respuesta-hilo" name="contenido" rows="2" placeholder="Suma tu voz a la discusión" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
+                    <textarea id="textarea-respuesta-hilo" name="contenido" rows="2" maxlength="500" placeholder="Suma tu voz a la discusión" class="w-full resize-none outline-none text-[17px] text-[#2B2B2B] placeholder-[#3A7CA5]/60 bg-transparent font-medium border-none p-0 focus:ring-0 leading-relaxed" required></textarea>
                     
                     <div class="flex items-center justify-end pt-3 mt-2 border-t border-gray-50">
                         <button type="submit" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#093D77]/90 transition-all text-sm shadow-md shadow-[#093D77]/20 active:scale-95 cursor-pointer">

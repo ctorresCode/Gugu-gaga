@@ -10,12 +10,21 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
 from django.core.cache import cache
 from django.views.decorators.http import require_POST 
-from usuarios.forms import RegistroForm, RecuperarPasswordForm
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import never_cache
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
 from foro.models import Hilo
-from usuarios.forms import RegistroForm
 from usuarios.models import Mensaje, Universidad, UsuarioForo
+from usuarios.forms import (
+    RegistroForm, 
+    SolicitarResetPasswordForm, 
+    VerificarCodigoResetForm, 
+    NuevaPasswordForm
+)
 
 class RegistroUsuarioView(CreateView):
     template_name = 'usuarios/registro.html'
@@ -33,10 +42,8 @@ class RegistroUsuarioView(CreateView):
 
     def form_valid(self, form):
         usuario = form.save()
-        codigo = usuario.generar_codigo_recuperacion()
         login(self.request, usuario)
-        self.request.session['codigo_recuperacion_nuevo'] = codigo
-        return redirect('codigo_recuperacion')
+        return redirect('inicio')
 
 def logout_view(request):
     logout(request)
@@ -167,7 +174,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
 
 class EditarPerfilView(LoginRequiredMixin, UpdateView):
     model = UsuarioForo
-    fields = ['banner', 'avatar', 'username', 'descripcion']
+    fields = ['banner', 'avatar', 'username', 'descripcion', 'email']
     template_name = 'usuarios/editar_perfil.html'
 
     def get_object(self, queryset=None):
@@ -207,46 +214,99 @@ class VerTodasLasImagenesSubidasPorUsuario(LoginRequiredMixin, ListView):
             autor__username=self.kwargs.get('username')
         ).select_related('autor', 'universidad').exclude(imagen='').exclude(imagen__isnull=True).order_by('-fecha_creacion')
 
-
 @never_cache
-@ratelimit(key='post:username', rate='5/15m', method='POST', block=False)
-@ratelimit(key='ip', rate='20/h', method='POST', block=False)
-def recuperar_password(request):
+@ratelimit(key='ip', rate='10/15m', method='POST', block=False)
+def solicitar_reset_password(request):
     if request.user.is_authenticated:
         return redirect('inicio')
+
+    form_email = SolicitarResetPasswordForm()
+    form_codigo = VerificarCodigoResetForm()
 
     if request.method == 'POST':
         if getattr(request, 'limited', False):
             messages.error(request, 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.')
-            form = RecuperarPasswordForm()
-        else:
-            form = RecuperarPasswordForm(request.POST)
-            if form.is_valid():
-                usuario = form.save()
-                codigo_nuevo = usuario.generar_codigo_recuperacion()
-                login(request, usuario)
-                request.session['codigo_recuperacion_nuevo'] = codigo_nuevo
-                messages.success(request, 'Tu contraseña fue cambiada. Guarda tu nuevo código.')
-                return redirect('codigo_recuperacion')
-    else:
-        form = RecuperarPasswordForm()
+            
+        elif request.POST.get('accion') == 'enviar_codigo':
+            form_email = SolicitarResetPasswordForm(request.POST)
+            if form_email.is_valid():
+                email = form_email.cleaned_data['email']
+                usuario = UsuarioForo.objects.filter(email__iexact=email, is_active=True).first()
+                if usuario:
+                    codigo = usuario.generar_codigo_reset_password()
+                    send_mail(
+                        subject='Tu código de recuperación - UniVoz',
+                        message=(
+                            f'Tu código de verificación es: {codigo}\n\n'
+                            'Expira en 15 minutos. Si no solicitaste esto, ignora este correo.'
+                        ),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[email],
+                        fail_silently=True,
+                    )
+                    request.session['reset_usuario_id'] = usuario.id
+                else:
+                    request.session.pop('reset_usuario_id', None)
+                
+                request.session['reset_esperando'] = True
+                messages.success(request, 'Si ese correo está registrado, te enviamos un código de verificación.')
+                return redirect('recuperar_password')
 
-    return render(request, 'usuarios/recuperar_password.html', {'form': form})
+        elif request.POST.get('accion') == 'verificar_codigo':
+            if not request.session.get('reset_esperando'):
+                messages.error(request, 'Tu sesión expiró, solicita el código de nuevo.')
+                return redirect('recuperar_password')
+                
+            form_codigo = VerificarCodigoResetForm(request.POST)
+            if form_codigo.is_valid():
+                usuario_id = request.session.get('reset_usuario_id')
+                usuario = UsuarioForo.objects.filter(id=usuario_id, is_active=True).first() if usuario_id else None
+                
+                if usuario and usuario.verificar_codigo_reset_password(form_codigo.cleaned_data['codigo']):
+                    usuario.limpiar_codigo_reset_password()
+                    request.session.pop('reset_usuario_id', None)
+                    request.session.pop('reset_esperando', None)
+                    request.session['reset_verificado_id'] = usuario.id
+                    return redirect('nueva_password')
+                
+                messages.error(request, 'Código incorrecto o expirado.')
 
+        elif request.POST.get('accion') == 'reenviar':
+            request.session.pop('reset_usuario_id', None)
+            request.session.pop('reset_esperando', None)
+            return redirect('recuperar_password')
 
-@login_required
+    esperando_codigo = request.session.get('reset_esperando', False)
+    return render(request, 'usuarios/solicitar_reset.html', {
+        'form_email': form_email,
+        'form_codigo': form_codigo,
+        'esperando_codigo': esperando_codigo,
+    })
+
 @never_cache
-def codigo_recuperacion(request):
-    codigo = request.session.pop('codigo_recuperacion_nuevo', None)
+def nueva_password(request):
+    usuario_id = request.session.get('reset_verificado_id')
+    usuario = UsuarioForo.objects.filter(id=usuario_id, is_active=True).first() if usuario_id else None
+    
+    if not usuario:
+        messages.error(request, 'Tu verificación expiró. Solicita el código de nuevo.')
+        return redirect('recuperar_password')
 
-    if request.method == 'POST' and not codigo:
-        if request.user.check_password(request.POST.get('password', '')):
-            codigo = request.user.generar_codigo_recuperacion()
+    form = NuevaPasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            validate_password(form.cleaned_data['password1'], usuario)
+        except ValidationError as e:
+            form.add_error('password1', e)
         else:
-            messages.error(request, 'Contraseña incorrecta.')
+            usuario.set_password(form.cleaned_data['password1'])
+            usuario.save(update_fields=['password'])
+            request.session.pop('reset_verificado_id', None)
+            login(request, usuario)
+            messages.success(request, 'Tu contraseña fue cambiada correctamente.')
+            return redirect('inicio') 
 
-    return render(request, 'usuarios/codigo_recuperacion.html', {'codigo': codigo})
-
+    return render(request, 'usuarios/nueva_password.html', {'form': form})
 
 class TerminosView(TemplateView):
     template_name = 'usuarios/terminos.html'
