@@ -168,11 +168,13 @@ if DEBUG:
         }
     }
 else:
-    redis_url = config('REDIS_URL', default='')
+    redis_url_env = config('REDIS_URL', default='')
+    redis_url = redis_url_env.strip('"').strip("'")
 
     if redis_url and not redis_url.startswith('redis://127.0.0.1'):
         redis_options = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'IGNORE_EXCEPTIONS': True,
         }
         if redis_url.startswith('rediss://'):
             redis_options['CONNECTION_POOL_KWARGS'] = {'ssl_cert_reqs': None}
