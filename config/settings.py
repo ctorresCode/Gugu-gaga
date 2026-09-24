@@ -194,6 +194,8 @@ else:
             }
         }
 
+RATELIMIT_FAIL_OPEN = True
+
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',
     'django.contrib.auth.backends.ModelBackend',
