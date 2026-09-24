@@ -21,12 +21,26 @@
     <link rel="icon" type="image/png" href="{% static 'img/wa.png' %}?v=1" />
   </head>
   <body>
-    {% if user.is_authenticated and not user.codigo_recuperacion_hash and request.resolver_match.url_name != 'codigo_recuperacion' %}
-      <a href="{% url 'codigo_recuperacion' %}" hx-boost="false"
-         class="block bg-[#1e293b] text-white text-sm text-center font-semibold p-3">
-        Aún no tienes código de recuperación. Genera uno aquí para no perder tu cuenta.
-      </a>
-    {% endif %}
+    <div style="display:none">{% csrf_token %}</div>
+    {% if avisos_pendientes %}
+<div id="contenedor-avisos">
+{% for aviso in avisos_pendientes %}
+  <div id="aviso-{{ aviso.id }}"
+       style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 16px; font-size:14px; font-weight:500; color:#ffffff; background-color:{% if aviso.tipo == 'alert' %}#dc2626{% elif aviso.tipo == 'feature' %}#9333ea{% else %}#2563eb{% endif %};">
+    <span><strong>{{ aviso.titulo }}:</strong> {{ aviso.mensaje }}</span>
+    <button data-url="{% url 'marcar_aviso_visto' aviso.id %}"
+            onclick="marcarAvisoVisto(this)"
+            onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+            onmouseout="this.style.background='transparent'"
+            style="flex-shrink:0; border:none; background:transparent; border-radius:9999px; padding:4px; cursor:pointer; color:#ffffff; display:flex; transition:background 0.2s;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+        <path d="M18.36 5.64L12 12l6.36 6.36-1.42 1.42L10.59 13.4 4.22 19.78 2.8 18.36 9.18 12 2.8 5.64 4.22 4.22l6.37 6.36 6.36-6.36z"></path>
+      </svg>
+    </button>
+  </div>
+{% endfor %}
+</div>
+{% endif %}
 
     {%block content%} {%endblock%}
 
@@ -55,6 +69,29 @@
                 cerrarVisorGlobal();
             }
         });
+
+        function marcarAvisoVisto(boton) {
+          const url = boton.getAttribute('data-url');
+          const contenedor = boton.closest('div[id^="aviso-"]');
+          const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': csrftoken,
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'ok' && contenedor) {
+                contenedor.style.transition = 'opacity .15s ease';
+                contenedor.style.opacity = '0';
+                setTimeout(() => contenedor.remove(), 150);
+              }
+            })
+            .catch(err => console.error('Error al marcar aviso como visto:', err));
+    }   
     </script>
   </body>
 </html>

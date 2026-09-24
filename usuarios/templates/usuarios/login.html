@@ -18,7 +18,11 @@
       <h2 class="text-3xl font-extrabold text-white tracking-tight">Iniciar Sesión</h2>
     </div>
 
-    {% if form.errors %}
+    {% if request.GET.locked %}
+      <div class="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-xl mb-6 text-sm text-center font-bold">
+        Demasiados intentos fallidos. Tu acceso está bloqueado temporalmente.
+      </div>
+    {% elif form.errors %}
       <div class="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-xl mb-6 text-sm text-center font-bold">
         Usuario o contraseña incorrectos.
       </div>

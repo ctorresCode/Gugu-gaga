@@ -1,17 +1,17 @@
 from datetime import timedelta
-from django.utils import timezone
-from io import BytesIO
-import random
 import secrets
-from PIL import Image
-from django.core.files.base import ContentFile
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.conf import settings
-from django.contrib.auth.hashers import make_password, check_password
-
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.utils import timezone
 
 ALFABETO_RECUPERACION = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+RESET_MINUTOS = 15            
+RESET_MAX_INTENTOS = 5        
+RESET_COOLDOWN_SEGUNDOS = 60  
+
 
 def normalizar_codigo(codigo):
     return ''.join(c for c in (codigo or '').upper() if c.isalnum())
@@ -34,7 +34,7 @@ class UsuarioForo(AbstractUser):
     acepto_terminos_fecha = models.DateTimeField(null=True, blank=True)
     acepto_terminos_version = models.CharField(max_length=10, blank=True, default='')
 
-    reset_password_codigo_hash = models.CharField(max_length=128,blank=True, null=True)
+    reset_password_codigo_hash = models.CharField(max_length=128, blank=True, null=True)
     reset_password_expira = models.DateTimeField(blank=True, null=True)
     reset_password_intentos = models.PositiveSmallIntegerField(default=0)
 
@@ -53,10 +53,17 @@ class UsuarioForo(AbstractUser):
             return False
         return check_password(normalizar_codigo(codigo), self.codigo_recuperacion_hash)
 
+    def puede_pedir_codigo_reset(self):
+        """False si ya se generó un código hace menos de RESET_COOLDOWN_SEGUNDOS."""
+        if not self.reset_password_expira:
+            return True
+        creado = self.reset_password_expira - timedelta(minutes=RESET_MINUTOS)
+        return (timezone.now() - creado).total_seconds() >= RESET_COOLDOWN_SEGUNDOS
+
     def generar_codigo_reset_password(self):
-        codigo = f"{random.randint(0, 999999):06d}"
+        codigo = f"{secrets.randbelow(1000000):06d}"
         self.reset_password_codigo_hash = make_password(codigo)
-        self.reset_password_expira = timezone.now() + timedelta(minutes=15)
+        self.reset_password_expira = timezone.now() + timedelta(minutes=RESET_MINUTOS)
         self.reset_password_intentos = 0
         self.save(update_fields=['reset_password_codigo_hash', 'reset_password_expira', 'reset_password_intentos'])
         return codigo
@@ -66,15 +73,18 @@ class UsuarioForo(AbstractUser):
             return False
         if timezone.now() > self.reset_password_expira:
             return False
-        if self.reset_password_intentos >= 5:
+
+        UsuarioForo.objects.filter(pk=self.pk).update(
+            reset_password_intentos=models.F('reset_password_intentos') + 1
+        )
+        self.refresh_from_db(fields=['reset_password_intentos', 'reset_password_codigo_hash', 'reset_password_expira'])
+
+        if not self.reset_password_codigo_hash:
+            return False
+        if self.reset_password_intentos > RESET_MAX_INTENTOS:
             return False
 
-        
-        valido = check_password(codigo, self.reset_password_codigo_hash)
-        if not valido:
-            self.reset_password_intentos += 1
-            self.save(update_fields=['reset_password_intentos'])
-        return valido
+        return check_password(codigo, self.reset_password_codigo_hash)
 
     def limpiar_codigo_reset_password(self):
         self.reset_password_codigo_hash = None
@@ -102,6 +112,3 @@ class Mensaje(models.Model):
 
     def __str__(self):
         return f"{self.remitente.username} a {self.destinatario.username}"
-
-
- 

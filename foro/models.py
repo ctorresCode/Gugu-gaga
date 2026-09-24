@@ -1,10 +1,13 @@
 import uuid
+import secrets
 
 from django.db import models
 from django.utils import timezone
-
+from django.contrib.auth import get_user_model
 from config import settings
 from usuarios.models import Universidad
+
+User = get_user_model()
 
 class Hilo(models.Model):
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
@@ -141,3 +144,26 @@ class RespuestaSugerencia(models.Model):
 
     def __str__(self):
         return f"Respuesta de {self.autor} en sugerencia {self.sugerencia.pk}"
+
+class AvisoGlobal(models.Model):
+    TIPOS = [
+        ('info', 'Información (Azul)'),
+        ('feature', 'Nueva Función (Morado)'),
+        ('alert', 'Mantenimiento / Urgente (Rojo)'),
+    ]
+
+    titulo = models.CharField(max_length=150)
+    mensaje = models.TextField(help_text="Texto corto del aviso")
+    tipo = models.CharField(max_length=20, choices=TIPOS, default='info')
+    activo = models.BooleanField(default=True, help_text="Desmárcalo para apagar el aviso a nivel global")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)       
+
+    visto_por = models.ManyToManyField(User, blank=True, related_name='avisos_vistos')
+
+    class Meta:
+        ordering = ['-fecha_creacion'] 
+        verbose_name = 'Aviso Global'
+        verbose_name_plural = 'Avisos Globales'
+
+    def __str__(self):
+        return f"{self.titulo} ({self.get_tipo_display()})"    

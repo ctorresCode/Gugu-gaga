@@ -38,7 +38,7 @@
         <input type="email" name="email" id="id_email" required autocomplete="email" placeholder="tu-correo@ejemplo.com"
                class="w-full px-4 py-3 border-0 ring-1 ring-inset ring-gray-600 rounded-xl focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] outline-none transition-shadow text-white bg-[#1e293b] sm:text-sm shadow-inner">
       </div>
-      <button type="submit" class="w-full bg-[#174b9e] hover:bg-[#113a7a] active:bg-[#0c2a5c] text-white font-bold py-3.5 px-4 rounded-xl transition-colors mt-6 text-sm shadow-lg cursor-pointer">
+      <button type="submit" id="btn-enviar" class="w-full bg-[#174b9e] hover:bg-[#113a7a] active:bg-[#0c2a5c] disabled:bg-gray-600 disabled:hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-70 text-white font-bold py-3.5 px-4 rounded-xl transition-colors mt-6 text-sm shadow-lg">
         Enviar código
       </button>
     </form>
@@ -71,4 +71,58 @@
     </div>
   </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const btn = document.getElementById("btn-enviar"); 
+        if (!btn) return; 
+        
+        const form = btn.closest("form");
+        const cooldownTime = 60000; 
+        
+        function disableButton(secondsLeft) {
+            btn.disabled = true;
+            // Forzar el estilo bloqueado ignorando Tailwind
+            btn.style.backgroundColor = "#4b5563"; 
+            btn.style.opacity = "0.7";
+            btn.style.cursor = "not-allowed";
+            
+            let timeLeft = secondsLeft;
+            btn.innerText = `Espera ${timeLeft}s...`;
+            
+            const interval = setInterval(() => {
+                timeLeft--;
+                btn.innerText = `Espera ${timeLeft}s...`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    btn.disabled = false;
+                    // Restaurar el botón a la normalidad
+                    btn.style.backgroundColor = ""; 
+                    btn.style.opacity = "1";
+                    btn.style.cursor = "pointer";
+                    btn.innerText = "Enviar código"; 
+                    localStorage.removeItem('resetCooldown');
+                }
+            }, 1000);
+        }
+
+        const lastSubmit = localStorage.getItem('resetCooldown');
+        if (lastSubmit) {
+            const timePassed = new Date().getTime() - parseInt(lastSubmit);
+            if (timePassed < cooldownTime) {
+                const secondsLeft = Math.ceil((cooldownTime - timePassed) / 1000);
+                disableButton(secondsLeft);
+            } else {
+                localStorage.removeItem('resetCooldown');
+            }
+        }
+
+        form.addEventListener("submit", function() {
+            if (!btn.disabled) {
+                localStorage.setItem('resetCooldown', new Date().getTime());
+            }
+        });
+    });
+</script>
 {% endblock %}

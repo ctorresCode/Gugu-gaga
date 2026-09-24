@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 from decouple import config, Csv
 import dj_database_url
@@ -8,18 +9,24 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+BEHIND_CLOUDFLARE = config('BEHIND_CLOUDFLARE', default=False, cast=bool)
+PROXY_COUNT = config('PROXY_COUNT', default=0 if DEBUG else 1, cast=int)
+
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    CSRF_COOKIE_HTTPONLY = True
+    SECURE_REFERRER_POLICY = 'same-origin'
 
 SUPABASE_URL = config('SUPABASE_URL', default='')
 SUPABASE_ANON_KEY = config('SUPABASE_ANON_KEY', default='')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
-# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -29,19 +36,23 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'usuarios',
     'foro',
-    'sslserver',
-    'storages', 
+    'storages',
+    'axes',  
 ]
+
+if DEBUG:
+    INSTALLED_APPS += ['sslserver']  
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',  
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -58,6 +69,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'foro.context_processors.notificaciones_sin_leer',
                 'foro.context_processors.supabase_globals',
+                'foro.context_processors.avisos_globales',
             ],
         },
     },
@@ -100,20 +112,17 @@ LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' 
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'usuarios' / 'static',
 ]
-
-STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Configuración inteligente: evita Cloudflare R2 en local, lo activa en Prod
 USE_CLOUD_STORAGE = config('USE_CLOUD_STORAGE', default=not DEBUG, cast=bool)
 r2_key = config('R2_ACCESS_KEY_ID', default='')
 
@@ -121,7 +130,7 @@ if USE_CLOUD_STORAGE and r2_key:
     AWS_ACCESS_KEY_ID = r2_key
     AWS_SECRET_ACCESS_KEY = config('R2_SECRET_ACCESS_KEY', default='')
     AWS_STORAGE_BUCKET_NAME = config('R2_BUCKET_NAME', default='')
-    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='auto')  
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='auto')
     AWS_S3_ENDPOINT_URL = f"https://{config('R2_ACCOUNT_ID', default='')}.r2.cloudflarestorage.com"
     AWS_S3_CUSTOM_DOMAIN = config('R2_CUSTOM_DOMAIN', default=None)
 
@@ -139,7 +148,6 @@ else:
         "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
     }
 
-
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
@@ -150,4 +158,33 @@ else:
     EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
-DEFAULT_FROM_EMAIL = f"UniVoz <{config('EMAIL_HOST_USER', default='soporte.univoz@gmail.com')}>"    
+DEFAULT_FROM_EMAIL = f"UniVoz <{config('EMAIL_HOST_USER', default='soporte.univoz@gmail.com')}>"
+
+if DEBUG:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'univoz-local-cache',
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+AXES_FAILURE_LIMIT = 8                                   
+AXES_COOLOFF_TIME = timedelta(minutes=15)                
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]   
+AXES_CLIENT_IP_CALLABLE = 'config.utils.get_client_ip'   
+AXES_RESET_ON_SUCCESS = True                             
+AXES_LOCKOUT_URL = '/login/?locked=1'                     

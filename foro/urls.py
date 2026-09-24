@@ -1,5 +1,5 @@
 from django.urls import include, path
-from foro.views import EditarHilos, EliminarHilos, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
+from foro.views import EditarHilos, EliminarHilos, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, marcar_aviso_visto, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
 
 urlpatterns = [
     path('', InicioView.as_view(), name='inicio'),
@@ -32,4 +32,7 @@ urlpatterns = [
     path('sugerencia/<int:sugerencia_id>/tarjeta/', obtener_tarjeta_sugerencia, name='obtener_tarjeta_sugerencia'),
     #Obtener respuestas de sugerencias
     path('respuesta-sugerencia/<int:respuesta_id>/tarjeta/', obtener_tarjeta_respuesta_sugerencia, name='obtener_tarjeta_respuesta_sugerencia'),
+
+    #ruta de los avisos
+    path('avisos/marcar-visto/<int:aviso_id>/', marcar_aviso_visto, name='marcar_aviso_visto'),
 ]

@@ -1,64 +1,89 @@
-import traceback
-
+import logging
+from datetime import timedelta
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Q, Count
-from django.http import HttpResponse, JsonResponse
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, TemplateView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from foro.models import Hilo, Notificacion, Respuesta, Sugerencia, Universidad, RespuestaSugerencia
-from django.shortcuts import redirect, render, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.db.models import Count, F, Q
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from datetime import timedelta
-from django.core.paginator import Paginator
-from django.contrib import messages
-from usuarios.models import UsuarioForo
-from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
-from django.utils.http import url_has_allowed_host_and_scheme
-from django.db.models import F
+from django.views.decorators.http import require_POST
+from django.views.generic import CreateView, DeleteView, DetailView, TemplateView, UpdateView
 
-@method_decorator(ratelimit(key='user', rate='5/m', block=False), name='post')
+from foro.limites import (
+    error_peticion,
+    limite_busqueda,
+    limite_comentarios,
+    limite_excedido,
+    limite_hilos,
+    limite_likes,
+    limite_sugerencias,
+)
+from foro.models import (
+    AvisoGlobal,
+    Hilo,
+    Notificacion,
+    Respuesta,
+    RespuestaSugerencia,
+    Sugerencia,
+    Universidad,
+)
+from foro.utils import (
+    MAX_COMENTARIO,
+    MAX_HILO,
+    MAX_SUGERENCIA,
+    MAX_TITULO,
+    a_int,
+    es_htmx,
+    limpiar_texto,
+    procesar_imagenes,
+    referer_seguro,
+)
+from usuarios.models import UsuarioForo
+
+logger = logging.getLogger(__name__)
+
+CAMPOS_IMAGEN_HILO = ('imagen', 'imagen2', 'imagen3', 'imagen4')
+
+@method_decorator(limite_hilos, name='post')
 class InicioView(LoginRequiredMixin, TemplateView):
     template_name = 'foro/inicio.html'
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        
+
         busqueda = request.GET.get('q', '')
-        universidad_id = request.GET.get('uni', '')
+        universidad_id = a_int(request.GET.get('uni'))
 
         universidades = cache.get('universidades_list')
         if not universidades:
             universidades = Universidad.objects.all()
             cache.set('universidades_list', universidades, 86400)
-            
+
         if busqueda:
             universidades = universidades.filter(nombre__icontains=busqueda)
 
         hilos = Hilo.objects.select_related('universidad', 'autor').filter(activo=True)
-        
-        if universidad_id and universidad_id.isdigit():
+
+        if universidad_id:
             hilos = hilos.filter(universidad_id=universidad_id)
 
         hilos = hilos.order_by('-fecha_creacion')
 
-        try:
-            page_number = int(request.GET.get('page', 1))
-        except ValueError:
-            page_number = 1
-            
+        page_number = max(1, a_int(request.GET.get('page'), 1))  # antes: page=0 o negativo daba 500
+
         items_por_pagina = 15
         offset = (page_number - 1) * items_por_pagina
-        limit = offset + items_por_pagina + 1 
+        limit = offset + items_por_pagina + 1
 
         hilos_pagina = list(hilos[offset:limit])
-        
+
         hay_siguiente = len(hilos_pagina) > items_por_pagina
         if hay_siguiente:
-            hilos_pagina.pop() 
+            hilos_pagina.pop()
 
         if request.headers.get('HX-Request') and request.GET.get('page'):
             return render(request, 'foro/partials/hilos_lista.html', {
@@ -66,7 +91,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 'has_next': hay_siguiente,
                 'next_page_number': page_number + 1,
                 'busqueda_actual': busqueda,
-                'uni_actual': universidad_id
+                'uni_actual': universidad_id or '',
             })
 
         context['universidades'] = universidades
@@ -74,76 +99,60 @@ class InicioView(LoginRequiredMixin, TemplateView):
         context['has_next'] = hay_siguiente
         context['next_page_number'] = page_number + 1
         context['busqueda_actual'] = busqueda
-        context['uni_actual'] = int(universidad_id) if universidad_id.isdigit() else ''
+        context['uni_actual'] = universidad_id or ''
 
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        referer = request.META.get('HTTP_REFERER', '/')
-        if not url_has_allowed_host_and_scheme(url=referer, allowed_hosts={request.get_host()}):
-            referer = '/'
-
-        is_htmx = request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        referer = referer_seguro(request)
 
         if getattr(request, 'limited', False):
-            messages.error(request, "Estás publicando hilos muy rápido. Por favor, espera un minuto.")
-            return HttpResponse("Rate limit excedido", status=400) if is_htmx else redirect(referer)
+            return limite_excedido(request, "Estás publicando hilos muy rápido. Por favor, espera un momento.", referer)
 
-        idem_token = request.POST.get('idem_token')
-        if idem_token:
-            if cache.get(f'idem_{idem_token}'):
-                return HttpResponse("Petición duplicada", status=400) if is_htmx else redirect(referer)
-            cache.set(f'idem_{idem_token}', True, 60)
+        titulo, error = limpiar_texto(request.POST.get('titulo'), MAX_TITULO, requerido=False, nombre='El título')
+        if error:
+            return error_peticion(request, error, referer)
+
+        contenido, error = limpiar_texto(request.POST.get('contenido'), MAX_HILO)
+        if error:
+            return error_peticion(request, error, referer)
 
         archivos_subidos = request.FILES.getlist('imagen')
         if len(archivos_subidos) > 4:
-            messages.error(request, "Solo puedes subir un máximo de 4 imágenes.")
-            return HttpResponse("Límite de imágenes superado", status=400) if is_htmx else redirect(referer)
-            
-        archivos = archivos_subidos[:4]
-        limite_tamano = 5 * 1024 * 1024
+            return error_peticion(request, "Solo puedes subir un máximo de 4 imágenes.", referer)
 
-        for archivo in archivos:
-            if archivo.size > limite_tamano:
-                messages.error(request, "Una imagen excede el límite de 5MB.")
-                return HttpResponse("Imagen muy pesada", status=400) if is_htmx else redirect(referer)
+        imagenes, error = procesar_imagenes(archivos_subidos, max_mb=5)
+        if error:
+            return error_peticion(request, error, referer)
 
-        contenido = request.POST.get('contenido')
-        titulo = request.POST.get('titulo')
+        idem_token = (request.POST.get('idem_token') or '')[:64]
+        idem_key = f'idem_{request.user.id}_{idem_token}' if idem_token else None
+        if idem_key and not cache.add(idem_key, True, 60):
+            return error_peticion(request, "Petición duplicada", referer)
 
-        if contenido:
-            try:
-                nuevo_hilo = Hilo.objects.create(
-                    titulo=titulo or "Sin título",
-                    contenido=contenido,
-                    autor=request.user,
-                    universidad=getattr(request.user, 'universidad', None)
-                )
+        try:
+            nuevo_hilo = Hilo(
+                titulo=titulo or "Sin título",
+                contenido=contenido,
+                autor=request.user,
+                universidad=getattr(request.user, 'universidad', None),
+            )
+            for campo, archivo in zip(CAMPOS_IMAGEN_HILO, imagenes):
+                setattr(nuevo_hilo, campo, archivo)
+            nuevo_hilo.save()
+        except Exception:
+            logger.exception("Error creando hilo (usuario %s)", request.user.id)
+            if idem_key:
+                cache.delete(idem_key)  # deja reintentar con el mismo token
+            return error_peticion(
+                request, "Ocurrió un error al intentar publicar. Intenta de nuevo.", referer, status=500
+            )
 
-                if len(archivos) > 0: nuevo_hilo.imagen = archivos[0]
-                if len(archivos) > 1: nuevo_hilo.imagen2 = archivos[1]
-                if len(archivos) > 2: nuevo_hilo.imagen3 = archivos[2]
-                if len(archivos) > 3: nuevo_hilo.imagen4 = archivos[3]
-
-                if archivos:
-                    nuevo_hilo.save()
-
-                if is_htmx:
-                    return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
-
-            except Exception as e:
-                print("\n================ ROBO DE ERROR 500 ================")
-                traceback.print_exc()
-                print("===================================================\n")
-                from django.contrib import messages
-                messages.error(request, f"Ocurrió un error al intentar publicar: {str(e)}")
-                if is_htmx:
-                    return HttpResponse(status=500)
-                else:
-                    return redirect(referer)
-
+        if es_htmx(request):
+            return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': nuevo_hilo})
         return redirect(referer)
 
+@method_decorator(limite_comentarios, name='post')
 class detalleHilo(LoginRequiredMixin, DetailView):
     model = Hilo
     template_name = 'foro/detalle_hilo.html'
@@ -160,47 +169,47 @@ class detalleHilo(LoginRequiredMixin, DetailView):
             conteo_likes=Count('likes', distinct=True),
             conteo_respuestas_hijas=Count('respuestas_hijas', filter=Q(respuestas_hijas__activo=True), distinct=True)
         ).order_by('fecha_creacion')
-        return context   
+        return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        contenido = request.POST.get('contenido')
+        destino = reverse('detalle_hilo', kwargs={'public_id': self.object.public_id})
 
-        ultimo_comentario = Respuesta.objects.filter(autor=request.user).order_by('-fecha_creacion').first()
-        if ultimo_comentario:
-            tiempo_transcurrido = timezone.now() - ultimo_comentario.fecha_creacion
-            if tiempo_transcurrido < timedelta(seconds=4):
-                messages.error(request, "Espera unos segundos antes de publicar otro comentario.")
-                return redirect('detalle_hilo', public_id=self.object.public_id)
+        # Reemplaza el chequeo manual de 4s por DB (tenía race condition y costaba una query).
+        if getattr(request, 'limited', False):
+            return limite_excedido(request, "Estás comentando muy rápido. Espera un momento.", destino)
 
-        if contenido:
-            self.object.respuestas.create(
-                contenido=contenido,
-                autor=request.user
-            ) 
+        contenido, error = limpiar_texto(request.POST.get('contenido'), MAX_COMENTARIO, nombre='El comentario')
+        if error:
+            return error_peticion(request, error, destino)
 
-        return redirect('detalle_hilo', public_id=self.object.public_id)    
+        self.object.respuestas.create(contenido=contenido, autor=request.user)
+        return redirect(destino)
+
 
 @login_required
-@ratelimit(key='user', rate='10/m', method='POST', block=False)
+@limite_comentarios
 def detalle_respuesta(request, public_id):
-    if getattr(request, 'limited', False):
-        messages.error(request, "Estás comentando muy rápido. Espera un momento.")
-        return redirect('detalle_respuesta', public_id=public_id) 
+    destino = reverse('detalle_respuesta', kwargs={'public_id': public_id})
 
-    respuesta_actual = get_object_or_404(Respuesta, public_id=public_id, activo=True) 
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, "Estás comentando muy rápido. Espera un momento.", destino)
+
+    respuesta_actual = get_object_or_404(Respuesta, public_id=public_id, activo=True)
     hilo_original = respuesta_actual.hilo
-    
+
     if request.method == 'POST':
-        contenido = request.POST.get('contenido')
-        if contenido:
-            Respuesta.objects.create(
-                autor=request.user,
-                hilo=hilo_original,
-                respuesta_padre=respuesta_actual,
-                contenido=contenido
-            )
-            return redirect('detalle_respuesta', public_id=respuesta_actual.public_id) 
+        contenido, error = limpiar_texto(request.POST.get('contenido'), MAX_COMENTARIO, nombre='El comentario')
+        if error:
+            return error_peticion(request, error, destino)
+
+        Respuesta.objects.create(
+            autor=request.user,
+            hilo=hilo_original,
+            respuesta_padre=respuesta_actual,
+            contenido=contenido,
+        )
+        return redirect(destino)
 
     respuestas_hijas = respuesta_actual.respuestas_hijas.filter(activo=True).select_related('autor').annotate(
         conteo_likes=Count('likes', distinct=True)
@@ -211,14 +220,16 @@ def detalle_respuesta(request, public_id):
         'respuestas': respuestas_hijas,
     })
 
+
 @login_required
-@ratelimit(key='user', rate='15/m', block=False)
+@require_POST
+@limite_likes
 def boton_like(request, hilo_id):
     if getattr(request, 'limited', False):
-        return JsonResponse({'error': 'Rate limit excedido'}, status=429)
+        return limite_excedido(request, "Vas muy rápido con los likes. Espera un momento.", referer_seguro(request))
 
     with transaction.atomic():
-        hilo = get_object_or_404(Hilo.objects.select_for_update(), pk=hilo_id)
+        hilo = get_object_or_404(Hilo.objects.select_for_update(), pk=hilo_id, activo=True)
 
         if hilo.likes.filter(id=request.user.id).exists():
             hilo.likes.remove(request.user)
@@ -227,42 +238,52 @@ def boton_like(request, hilo_id):
             hilo.likes.add(request.user)
             hilo.likes_count = F('likes_count') + 1
 
-        hilo.save(update_fields=['likes_count'])  
-        hilo.refresh_from_db()  
+        hilo.save(update_fields=['likes_count'])
+        hilo.refresh_from_db()
 
     return render(request, 'foro/partials/boton_like.html', {'hilo': hilo})
 
 @login_required
+@require_POST
+@limite_likes
 def Like_respuesta(request, respuesta_id):
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, "Vas muy rápido con los likes. Espera un momento.", referer_seguro(request))
+
     with transaction.atomic():
-        respuesta = get_object_or_404(Respuesta.objects.select_for_update(), id=respuesta_id)
-        
+        respuesta = get_object_or_404(Respuesta.objects.select_for_update(), id=respuesta_id, activo=True)
+
         if respuesta.likes.filter(id=request.user.id).exists():
             respuesta.likes.remove(request.user)
         else:
-            respuesta.likes.add(request.user)  
+            respuesta.likes.add(request.user)
     return render(request, 'foro/partials/boton_like_respuesta.html', {'respuesta': respuesta})
 
 @login_required
+@limite_busqueda
 def explorar_usuarios(request):
-    query = request.GET.get('q_usuarios', '')
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, "Estás buscando muy rápido. Espera un momento.", referer_seguro(request))
+
+    query = request.GET.get('q_usuarios', '').strip()[:50]
     usuarios = []
-    
+
     if query:
         usuarios = UsuarioForo.objects.filter(
             username__icontains=query, is_active=True
         ).exclude(id=request.user.id)[:50]
-        
+
     if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'foro/partials/resultados_usuarios.html', {
             'usuarios': usuarios,
             'query': query
         })
-        
+
     return render(request, 'foro/explorar.html', {
         'usuarios': usuarios,
         'query': query
     })
+
 
 @login_required
 def notificaciones(request):
@@ -276,7 +297,7 @@ def notificaciones(request):
     for notif in todas:
         if not notif.leido:
             ids_no_leidas.add(notif.id)
-            
+
         if notif.ultima_actividad >= ahora - timedelta(days=7):
             grupos['semana'].append(notif)
         elif notif.ultima_actividad >= ahora - timedelta(days=30):
@@ -293,15 +314,23 @@ def notificaciones(request):
         return render(request, 'foro/partials/notificaciones_lista.html', contexto)
     return render(request, 'foro/notificaciones_lista.html', contexto)
 
+@method_decorator(limite_sugerencias, name='post')
 class SugerenciasCreateView(LoginRequiredMixin, CreateView):
     model = Sugerencia
     fields = ['contenido']
     template_name = 'foro/sugerencias.html'
     success_url = reverse_lazy('sugerencias')
 
+    def post(self, request, *args, **kwargs):
+        if getattr(request, 'limited', False):
+            return limite_excedido(request, 'Estás enviando sugerencias muy rápido.', reverse('sugerencias'))
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
-        if self.request.user.is_authenticated:
-            form.instance.usuario = self.request.user
+        if len(form.cleaned_data['contenido']) > MAX_SUGERENCIA:
+            form.add_error('contenido', f'La sugerencia no puede superar los {MAX_SUGERENCIA} caracteres.')
+            return self.form_invalid(form)
+        form.instance.usuario = self.request.user
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -314,37 +343,47 @@ class SugerenciasCreateView(LoginRequiredMixin, CreateView):
         return context
 
 @login_required
+@limite_comentarios
 def detalle_sugerencia(request, public_id):
-    sugerencia = get_object_or_404(Sugerencia, public_id=public_id)
-    
-    if request.method == 'POST':
-        contenido = request.POST.get('contenido')
-        respuesta_padre_id = request.POST.get('respuesta_padre_id')
-        
-        if contenido:
-            respuesta_padre = None
-            if respuesta_padre_id:
-                respuesta_padre = get_object_or_404(RespuestaSugerencia, pk=respuesta_padre_id, sugerencia=sugerencia)
+    destino = reverse('detalle_sugerencia', kwargs={'public_id': public_id})
 
-            nueva_respuesta = RespuestaSugerencia.objects.create(
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, 'Estás comentando muy rápido.', destino)
+
+    sugerencia = get_object_or_404(Sugerencia, public_id=public_id)
+
+    if request.method == 'POST':
+        contenido, error = limpiar_texto(request.POST.get('contenido'), MAX_COMENTARIO, nombre='El comentario')
+        if error:
+            return error_peticion(request, error, destino)
+
+        respuesta_padre = None
+        padre_raw = request.POST.get('respuesta_padre_id')
+        if padre_raw:
+            padre_id = a_int(padre_raw)
+            if padre_id is None:
+                raise Http404
+            respuesta_padre = get_object_or_404(RespuestaSugerencia, pk=padre_id, sugerencia=sugerencia)
+
+        RespuestaSugerencia.objects.create(
+            sugerencia=sugerencia,
+            respuesta_padre=respuesta_padre,
+            autor=request.user,
+            contenido=contenido
+        )
+
+        destinatario = respuesta_padre.autor if respuesta_padre else sugerencia.usuario
+        if destinatario and destinatario != request.user:
+            notif, created = Notificacion.objects.get_or_create(
+                destinatario=destinatario,
+                tipo=Notificacion.TIPO_COMENTARIO_SUGERENCIA,
                 sugerencia=sugerencia,
-                respuesta_padre=respuesta_padre,
-                autor=request.user,
-                contenido=contenido
+                leido=False
             )
-            
-            destinatario = respuesta_padre.autor if respuesta_padre else sugerencia.usuario
-            if destinatario and destinatario != request.user:
-                notif, created = Notificacion.objects.get_or_create(
-                    destinatario=destinatario,
-                    tipo=Notificacion.TIPO_COMENTARIO_SUGERENCIA,
-                    sugerencia=sugerencia,
-                    leido=False
-                )
-                notif.actores.add(request.user)
-                notif.save()
-                
-            return redirect('detalle_sugerencia', public_id=sugerencia.public_id)
+            notif.actores.add(request.user)
+            notif.save()
+
+        return redirect(destino)
 
     respuestas_principales = sugerencia.respuestas.filter(respuesta_padre__isnull=True).select_related('autor').prefetch_related(
         'likes',
@@ -358,9 +397,18 @@ def detalle_sugerencia(request, public_id):
         'respuestas': respuestas_principales
     })
 
-
 @login_required
+@require_POST
+@limite_likes
 def interaccion_sugerencia(request, public_id, accion):
+    destino = referer_seguro(request, reverse('sugerencias'))
+
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, "Vas muy rápido. Espera un momento.", destino)
+
+    if accion not in ('like', 'dislike'):
+        raise Http404
+
     with transaction.atomic():
         sugerencia = get_object_or_404(Sugerencia.objects.select_for_update(), public_id=public_id)
 
@@ -381,21 +429,22 @@ def interaccion_sugerencia(request, public_id, accion):
                     notif.actores.add(request.user)
                     notif.save()
 
-        elif accion == 'dislike':
+        else:  # dislike
             if sugerencia.dislikes.filter(id=request.user.id).exists():
                 sugerencia.dislikes.remove(request.user)
             else:
                 sugerencia.dislikes.add(request.user)
                 sugerencia.likes.remove(request.user)
 
-        siguiente = request.META.get('HTTP_REFERER')
-        if siguiente and url_has_allowed_host_and_scheme(url=siguiente, allowed_hosts={request.get_host()}):
-            return redirect(siguiente)
-    return redirect('sugerencias')
-
+    return redirect(destino)
 
 @login_required
+@require_POST
+@limite_likes
 def like_respuesta_sugerencia(request, respuesta_id):
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, "Vas muy rápido con los likes. Espera un momento.", referer_seguro(request))
+
     respuesta = get_object_or_404(RespuestaSugerencia, id=respuesta_id)
     if respuesta.likes.filter(id=request.user.id).exists():
         respuesta.likes.remove(request.user)
@@ -404,33 +453,41 @@ def like_respuesta_sugerencia(request, respuesta_id):
     return redirect('detalle_sugerencia', public_id=respuesta.sugerencia.public_id)
 
 @login_required
+@limite_comentarios
 def detalle_respuesta_sugerencia(request, pk):
+    destino = reverse('detalle_respuesta_sugerencia', kwargs={'pk': pk})
+
+    if getattr(request, 'limited', False):
+        return limite_excedido(request, 'Estás comentando muy rápido.', destino)
+
     respuesta_actual = get_object_or_404(RespuestaSugerencia, pk=pk)
     sugerencia = respuesta_actual.sugerencia
-    
+
     if request.method == 'POST':
-        contenido = request.POST.get('contenido')
-        if contenido:
-            nueva_respuesta = RespuestaSugerencia.objects.create(
+        contenido, error = limpiar_texto(request.POST.get('contenido'), MAX_COMENTARIO, nombre='El comentario')
+        if error:
+            return error_peticion(request, error, destino)
+
+        nueva_respuesta = RespuestaSugerencia.objects.create(
+            sugerencia=sugerencia,
+            respuesta_padre=respuesta_actual,
+            autor=request.user,
+            contenido=contenido
+        )
+
+        destinatario = respuesta_actual.autor
+        if destinatario and destinatario != request.user:
+            notif, created = Notificacion.objects.get_or_create(
+                destinatario=destinatario,
+                tipo=Notificacion.TIPO_COMENTARIO_SUGERENCIA,
                 sugerencia=sugerencia,
-                respuesta_padre=respuesta_actual,
-                autor=request.user,
-                contenido=contenido
+                leido=False
             )
-            
-            destinatario = respuesta_actual.autor
-            if destinatario and destinatario != request.user:
-                notif, created = Notificacion.objects.get_or_create(
-                    destinatario=destinatario,
-                    tipo=Notificacion.TIPO_COMENTARIO_SUGERENCIA,
-                    sugerencia=sugerencia,
-                    leido=False
-                )
-                notif.actores.add(request.user)
-                notif.respuesta_sugerencia = nueva_respuesta
-                notif.save()
-                
-            return redirect('detalle_respuesta_sugerencia', pk=respuesta_actual.pk)
+            notif.actores.add(request.user)
+            notif.respuesta_sugerencia = nueva_respuesta
+            notif.save()
+
+        return redirect(destino)
 
     respuestas_hijas = respuesta_actual.respuestas_hijas.all().select_related('autor').annotate(
         conteo_likes=Count('likes', distinct=True)
@@ -442,9 +499,10 @@ def detalle_respuesta_sugerencia(request, pk):
         'respuestas': respuestas_hijas,
     })
 
-class EditarHilos(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
+
+class EditarHilos(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Hilo
-    fields = ['contenido', 'imagen', 'imagen2', 'imagen3', 'imagen4'] 
+    fields = ['contenido', 'imagen', 'imagen2', 'imagen3', 'imagen4']
     template_name = 'foro/editar_hilo.html'
     success_url = reverse_lazy('inicio')
     slug_field = 'public_id'
@@ -454,13 +512,19 @@ class EditarHilos(LoginRequiredMixin,UserPassesTestMixin,UpdateView):
         return self.get_object().autor == self.request.user
 
     def form_valid(self, form):
-        for campo in ['imagen', 'imagen2', 'imagen3', 'imagen4']:
+        _, error = limpiar_texto(form.cleaned_data.get('contenido'), MAX_HILO)
+        if error:
+            form.add_error('contenido', error)
+            return self.form_invalid(form)
+
+        for campo in CAMPOS_IMAGEN_HILO:
             archivo = self.request.FILES.get(campo)
             if archivo:
-                if archivo.size > 5 * 1024 * 1024:
-                    form.add_error(campo, 'La imagen excede los 5MB.')
+                limpios, error = procesar_imagenes([archivo], max_mb=5)
+                if error:
+                    form.add_error(campo, error)
                     return self.form_invalid(form)
-                setattr(form.instance, campo, archivo)
+                setattr(form.instance, campo, limpios[0])
         return super().form_valid(form)
 
 
@@ -477,30 +541,45 @@ class EliminarHilos(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 @login_required
 def obtener_tarjeta_hilo(request, hilo_id):
-    hilo = get_object_or_404(Hilo, id=hilo_id)
+    hilo = get_object_or_404(Hilo, id=hilo_id, activo=True)
     return render(request, 'foro/partials/tarjeta_hilo.html', {'hilo': hilo})
+
 
 @login_required
 def obtener_tarjeta_respuesta(request, respuesta_id):
-    respuesta = get_object_or_404(Respuesta, id=respuesta_id)
+    respuesta = get_object_or_404(Respuesta, id=respuesta_id, activo=True)
     return render(request, 'foro/partials/tarjeta_respuesta.html', {'hijo': respuesta})
+
 
 @login_required
 def obtener_tarjeta_notificacion(request, notificacion_id):
     notif = get_object_or_404(
         Notificacion.objects.select_related('hilo', 'respuesta', 'sugerencia', 'respuesta_sugerencia')
-                             .prefetch_related('actores'),
+                              .prefetch_related('actores'),
         id=notificacion_id,
         destinatario=request.user
     )
     return render(request, 'foro/partials/item_notificacion.html', {'notif': notif})
+
 
 @login_required
 def obtener_tarjeta_sugerencia(request, sugerencia_id):
     sugerencia = get_object_or_404(Sugerencia, id=sugerencia_id)
     return render(request, 'foro/partials/tarjeta_sugerencia.html', {'sugerencia': sugerencia})
 
+
 @login_required
 def obtener_tarjeta_respuesta_sugerencia(request, respuesta_id):
     resp = get_object_or_404(RespuestaSugerencia, id=respuesta_id)
     return render(request, 'foro/partials/item_respuesta_sug.html', {'resp': resp})
+
+
+@login_required
+@require_POST
+def marcar_aviso_visto(request, aviso_id):
+    try:
+        aviso = AvisoGlobal.objects.get(id=aviso_id, activo=True)
+        aviso.visto_por.add(request.user)
+        return JsonResponse({'status': 'ok', 'mensaje': 'Aviso marcado como visto'})
+    except AvisoGlobal.DoesNotExist:
+        return JsonResponse({'status': 'error', 'mensaje': 'Aviso no encontrado'}, status=404)

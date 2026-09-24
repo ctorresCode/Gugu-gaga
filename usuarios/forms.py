@@ -1,15 +1,13 @@
-
 from django import forms
-from usuarios.models import UsuarioForo, normalizar_codigo
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from django.urls import reverse
-from django.utils.html import format_html
 from django.utils import timezone
+from django.utils.html import format_html
+
+from usuarios.models import UsuarioForo
 
 VERSION_TERMINOS = '2026-09'
+
 
 class RegistroForm(UserCreationForm):
     mayor_edad = forms.BooleanField(
@@ -20,10 +18,11 @@ class RegistroForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = UsuarioForo
-        fields = ['username', 'universidad']
+        fields = ['username', 'email', 'universidad']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['email'].label = 'Correo electrónico (para recuperar tu contraseña)'
         self.fields['consentimiento'].label = format_html(
             'He leído y acepto los <a href="{}" target="_blank" class="underline font-semibold">Términos y Condiciones</a> '
             'y la <a href="{}" target="_blank" class="underline font-semibold">Política de Privacidad</a>. '
@@ -31,13 +30,27 @@ class RegistroForm(UserCreationForm):
             reverse('terminos'), reverse('privacidad'),
         )
 
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if not email:
+            return None
+        if UsuarioForo.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('Ese correo ya está registrado.')
+        return email
+
     def save(self, commit=True):
         self.instance.acepto_terminos_fecha = timezone.now()
         self.instance.acepto_terminos_version = VERSION_TERMINOS
-        return super().save(commit=commit)    
+
+        if not self.instance.email:
+            self.instance.email = None
+
+        return super().save(commit=commit)
+
 
 class SolicitarResetPasswordForm(forms.Form):
     email = forms.EmailField(label='Correo electrónico')
+
 
 class VerificarCodigoResetForm(forms.Form):
     codigo = forms.CharField(
@@ -57,16 +70,3 @@ class NuevaPasswordForm(forms.Form):
         if p1 and p2 and p1 != p2:
             self.add_error('password2', 'Las contraseñas no coinciden.')
         return cleaned
-
-
-def clean_contenido(self):
-    contenido = self.cleaned_data.get('contenido', '').strip()
-    if len(contenido) > 500:
-        raise forms.ValidationError('El contenido no puede superar los 500 caracteres.')
-    if not contenido:
-        raise forms.ValidationError('El contenido no puede estar vacío.')
-    return contenido
-
-
-
-
