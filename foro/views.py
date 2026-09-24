@@ -127,8 +127,10 @@ class InicioView(LoginRequiredMixin, TemplateView):
 
         idem_token = (request.POST.get('idem_token') or '')[:64]
         idem_key = f'idem_{request.user.id}_{idem_token}' if idem_token else None
-        if idem_key and not cache.add(idem_key, True, 60):
-            return error_peticion(request, "Petición duplicada", referer)
+        if idem_key:
+            if cache.get(idem_key):
+                return error_peticion(request, "Petición duplicada", referer)
+            cache.set(idem_key, True, 60)
 
         try:
             nuevo_hilo = Hilo(
