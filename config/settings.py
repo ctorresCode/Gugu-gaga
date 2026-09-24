@@ -168,15 +168,29 @@ if DEBUG:
         }
     }
 else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+    redis_url = config('REDIS_URL', default='')
+
+    if redis_url and not redis_url.startswith('redis://127.0.0.1'):
+        redis_options = {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+        if redis_url.startswith('rediss://'):
+            redis_options['CONNECTION_POOL_KWARGS'] = {'ssl_cert_reqs': None}
+
+        CACHES = {
+            'default': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': redis_url,
+                'OPTIONS': redis_options
             }
         }
-    }
+    else:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'univoz-local-cache',
+            }
+        }
 
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',
