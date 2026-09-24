@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Q, Exists, OuterRef
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -67,6 +67,9 @@ class InicioView(LoginRequiredMixin, TemplateView):
             universidades = universidades.filter(nombre__icontains=busqueda)
 
         hilos = Hilo.objects.select_related('universidad', 'autor').filter(activo=True)
+
+        if request.user.is_authenticated:
+            hilos = hilos.annotate(les_gusta_al_usuario=Exists(Hilo.objects.filter(pk=OuterRef('pk'), likes=request.user)))
 
         if universidad_id:
             hilos = hilos.filter(universidad_id=universidad_id)
@@ -165,12 +168,16 @@ class detalleHilo(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['respuestas'] = self.object.respuestas.filter(
+        respuestas = self.object.respuestas.filter(
             activo=True, respuesta_padre__isnull=True
         ).select_related('autor').annotate(
             conteo_likes=Count('likes', distinct=True),
             conteo_respuestas_hijas=Count('respuestas_hijas', filter=Q(respuestas_hijas__activo=True), distinct=True)
-        ).order_by('fecha_creacion')
+        )
+        if self.request.user.is_authenticated:
+            respuestas = respuestas.annotate(les_gusta_al_usuario=Exists(Respuesta.objects.filter(pk=OuterRef('pk'), likes=self.request.user)))
+        
+        context['respuestas'] = respuestas.order_by('fecha_creacion')
         return context
 
     def post(self, request, *args, **kwargs):
@@ -337,11 +344,17 @@ class SugerenciasCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['sugerencias'] = Sugerencia.objects.select_related('usuario').annotate(
+        sugerencias = Sugerencia.objects.select_related('usuario').annotate(
             conteo_likes=Count('likes', distinct=True),
             conteo_dislikes=Count('dislikes', distinct=True),
             conteo_respuestas=Count('respuestas', distinct=True),
-        )[:50]
+        )
+        if self.request.user.is_authenticated:
+            sugerencias = sugerencias.annotate(
+                les_gusta_al_usuario=Exists(Sugerencia.objects.filter(pk=OuterRef('pk'), likes=self.request.user)),
+                no_les_gusta_al_usuario=Exists(Sugerencia.objects.filter(pk=OuterRef('pk'), dislikes=self.request.user))
+            )
+        context['sugerencias'] = sugerencias[:50]
         return context
 
 @login_required

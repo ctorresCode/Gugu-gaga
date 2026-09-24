@@ -24,7 +24,7 @@ class Hilo(models.Model):
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     universidad = models.ForeignKey(Universidad, on_delete=models.CASCADE, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
-    ultima_actividad = models.DateTimeField(default=timezone.now) 
+    ultima_actividad = models.DateTimeField(default=timezone.now, db_index=True) 
     activo = models.BooleanField(default=True)
 
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='hilos_likes', blank=True )
