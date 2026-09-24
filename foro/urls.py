@@ -1,5 +1,5 @@
 from django.urls import include, path
-from foro.views import EditarHilos, EliminarHilos, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, marcar_aviso_visto, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
+from foro.views import EditarHilos, EliminarHilos, reportar_hilo, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, marcar_aviso_visto, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
 
 urlpatterns = [
     path('', InicioView.as_view(), name='inicio'),
@@ -8,6 +8,7 @@ urlpatterns = [
 
     path('hilo/<uuid:public_id>/editar/', EditarHilos.as_view(), name='editar_hilo'),
     path('hilo/<uuid:public_id>/eliminar/', EliminarHilos.as_view(), name='eliminar_hilo'),
+    path('hilo/<uuid:public_id>/reportar/', reportar_hilo, name='reportar_hilo'),
     
     path('respuesta/<int:respuesta_id>/like/', Like_respuesta, name='like_respuesta'),
     path('respuesta/<uuid:public_id>/', detalle_respuesta, name='detalle_respuesta'),

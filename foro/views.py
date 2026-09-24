@@ -1,11 +1,12 @@
 import logging
+import json
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, F, Q, Exists, OuterRef
-from django.http import Http404, JsonResponse
+from django.http import Http404, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -598,3 +599,18 @@ def marcar_aviso_visto(request, aviso_id):
         return JsonResponse({'status': 'ok', 'mensaje': 'Aviso marcado como visto'})
     except AvisoGlobal.DoesNotExist:
         return JsonResponse({'status': 'error', 'mensaje': 'Aviso no encontrado'}, status=404)
+
+@login_required
+@require_POST
+def reportar_hilo(request, public_id):
+    hilo = get_object_or_404(Hilo, public_id=public_id, activo=True)
+    if not hilo.reportes.filter(id=request.user.id).exists():
+        hilo.reportes.add(request.user)
+        if hilo.reportes.count() >= 8:
+            hilo.activo = False
+            hilo.save(update_fields=['activo'])
+            
+    resp = HttpResponse("OK", status=200)
+    resp['HX-Trigger'] = json.dumps({'mostrarError': 'Gracias por tu reporte. Lo hemos ocultado para ti.'})
+    resp['HX-Reswap'] = 'delete'
+    return resp

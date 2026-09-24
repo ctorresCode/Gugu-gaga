@@ -1,8 +1,26 @@
 from django.contrib import admin
-from foro.models import AvisoGlobal, Hilo, Respuesta, RespuestaSugerencia, Sugerencia
+from foro.models import AvisoGlobal, Hilo, Notificacion, Respuesta, RespuestaSugerencia, Sugerencia
 
-admin.site.register(Hilo)
-admin.site.register(Respuesta)
+@admin.register(Hilo)
+class HiloAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'autor', 'universidad', 'fecha_creacion', 'activo')
+    list_filter = ('activo', 'universidad', 'fecha_creacion')
+    search_fields = ('titulo', 'contenido')
+    raw_id_fields = ('autor', 'universidad')
+
+@admin.register(Respuesta)
+class RespuestaAdmin(admin.ModelAdmin):
+    list_display = ('autor', 'hilo', 'fecha_creacion', 'activo')
+    list_filter = ('activo', 'fecha_creacion')
+    search_fields = ('contenido',)
+    raw_id_fields = ('autor', 'hilo', 'respuesta_padre')
+
+@admin.register(Notificacion)
+class NotificacionAdmin(admin.ModelAdmin):
+    list_display = ('destinatario', 'tipo', 'leido', 'fecha_creacion')
+    list_filter = ('tipo', 'leido', 'fecha_creacion')
+    raw_id_fields = ('destinatario', 'hilo', 'respuesta', 'sugerencia', 'respuesta_sugerencia')
+
 
 @admin.register(Sugerencia)
 class SugerenciasAdmin(admin.ModelAdmin):

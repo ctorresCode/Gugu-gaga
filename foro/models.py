@@ -27,6 +27,7 @@ class Hilo(models.Model):
     ultima_actividad = models.DateTimeField(default=timezone.now, db_index=True) 
     activo = models.BooleanField(default=True)
 
+    reportes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='hilos_reportados', blank=True)
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='hilos_likes', blank=True )
 
     class Meta:

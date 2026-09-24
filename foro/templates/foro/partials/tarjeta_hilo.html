@@ -1,4 +1,5 @@
 <div
+  id="hilo-card-{{ hilo.id }}"
   class="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 hover:shadow-md hover:border-[#3A7CA5]/20 transition-all cursor-pointer group"
   data-url="{% url 'detalle_hilo' hilo.public_id %}"
   onclick="if(!event.target.closest('.btn-opciones, .menu-opciones')) window.location.href = this.getAttribute('data-url')"
@@ -106,9 +107,7 @@
           </div>
         </div>
 
-        {% if request.user == hilo.autor %}
         <div class="relative inline-block text-left">
-          
           <button class="btn-opciones text-gray-400 hover:text-[#093D77] focus:outline-none p-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
               <svg class="w-5 h-5 pointer-events-none" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -116,7 +115,7 @@
           </button>
           
           <div id="dropdown-{{ hilo.id }}" class="menu-opciones hidden absolute right-0 bottom-full mb-2 z-[60] w-36 origin-bottom-right bg-white border border-gray-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] focus:outline-none transition-all p-1.5">
-    
+            {% if request.user == hilo.autor %}
             <a href="{% url 'editar_hilo' hilo.public_id %}" class="flex items-center gap-2.5 px-3 py-2 text-[14px] font-bold text-[#2B2B2B] rounded-xl hover:bg-[#F8F9FA] hover:text-[#093D77] transition-colors cursor-pointer">
                 <svg class="w-4 h-4 text-[#3A7CA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -130,9 +129,16 @@
                 </svg>
                 Eliminar
             </a>
+            {% else %}
+            <button hx-post="{% url 'reportar_hilo' hilo.public_id %}" hx-target="#hilo-card-{{ hilo.id }}" hx-swap="outerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="w-full flex items-center gap-2.5 px-3 py-2 text-[14px] font-bold text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-colors mt-0.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+                </svg>
+                Reportar
+            </button>
+            {% endif %}
           </div>
         </div>
-        {% endif %}
 
       </div>
     </div>
