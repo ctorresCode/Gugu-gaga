@@ -8,7 +8,6 @@ from usuarios.models import UsuarioForo
 
 VERSION_TERMINOS = '2026-09'
 
-
 class RegistroForm(UserCreationForm):
     mayor_edad = forms.BooleanField(
         required=True,
@@ -18,11 +17,10 @@ class RegistroForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = UsuarioForo
-        fields = ['username', 'email', 'universidad']
+        fields = ['username', 'universidad']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['email'].label = 'Correo electrónico (para recuperar tu contraseña)'
         self.fields['consentimiento'].label = format_html(
             'He leído y acepto los <a href="{}" target="_blank" class="underline font-semibold">Términos y Condiciones</a> '
             'y la <a href="{}" target="_blank" class="underline font-semibold">Política de Privacidad</a>. '
@@ -30,27 +28,16 @@ class RegistroForm(UserCreationForm):
             reverse('terminos'), reverse('privacidad'),
         )
 
-    def clean_email(self):
-        email = (self.cleaned_data.get('email') or '').strip().lower()
-        if not email:
-            return None
-        if UsuarioForo.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError('Ese correo ya está registrado.')
-        return email
-
     def save(self, commit=True):
         self.instance.acepto_terminos_fecha = timezone.now()
         self.instance.acepto_terminos_version = VERSION_TERMINOS
-
-        if not self.instance.email:
-            self.instance.email = None
+        
+        self.instance.email = None
 
         return super().save(commit=commit)
 
-
 class SolicitarResetPasswordForm(forms.Form):
     email = forms.EmailField(label='Correo electrónico')
-
 
 class VerificarCodigoResetForm(forms.Form):
     codigo = forms.CharField(

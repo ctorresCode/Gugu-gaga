@@ -28,7 +28,7 @@ limite_busqueda = _apilar(_rl('busqueda', '60/m', method='GET'))  # búsqueda mi
 limite_chat = _apilar(_rl('chat_min', '30/m'), _rl('chat_hora', '300/h'))
 limite_seguir = _apilar(_rl('seguir', '30/m'))
 limite_perfil = _apilar(_rl('perfil_hora', '10/h'))
-limite_registro = _apilar(_rl('registro', '30/h', key=ip_key))  # IP: el campus comparte wifi
+limite_registro = _apilar(_rl('registro', '1000/h', key=ip_key))  # Aumentado a 1000/h para redes wifi compartidas
 
 def _respuesta_htmx(mensaje, status):    
     resp = HttpResponse(status=204)
