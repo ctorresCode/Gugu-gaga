@@ -10,7 +10,8 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, IntegerField, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -83,17 +84,32 @@ class PerfilView(LoginRequiredMixin, DetailView):
     slug_field = 'username'
     slug_url_kwarg = 'username'
 
+    def get_queryset(self):
+        # Contadores y "lo sigo" en la misma consulta del usuario, en vez de 3 consultas extra.
+        Seguimiento = UsuarioForo.seguidos.through
+        def contar(campo):
+            return Coalesce(Subquery(
+                Seguimiento.objects.filter(**{campo: OuterRef('pk')}).order_by()
+                .values(campo).annotate(total=Count('*')).values('total'),
+                output_field=IntegerField(),
+            ), Value(0))
+        return UsuarioForo.objects.select_related('universidad').annotate(
+            num_seguidos=contar('from_usuarioforo'),
+            num_seguidores=contar('to_usuarioforo'),
+            lo_sigo=Exists(Seguimiento.objects.filter(
+                from_usuarioforo_id=self.request.user.pk, to_usuarioforo_id=OuterRef('pk'),
+            )),
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['lo_sigo'] = self.object.lo_sigo
         context['hilos_usuario'] = list(
             Hilo.objects.filter(autor=self.object)
             .visibles_para(self.request.user)
             .con_conteos(self.request.user)
-            .order_by('-fecha_creacion')[:50]
+            .order_by('-id')[:50]
         )
-
-        if self.request.user.is_authenticated:
-            context['lo_sigo'] = self.request.user.seguidos.filter(id=self.object.id).exists()
         return context
 
 

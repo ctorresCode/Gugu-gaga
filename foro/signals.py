@@ -1,7 +1,8 @@
-from django.db.models.signals import m2m_changed, post_save
+from django.core.cache import cache
+from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
-from foro.models import Hilo, Notificacion, Respuesta
+from foro.models import AvisoGlobal, Hilo, Notificacion, Respuesta
 from foro.notificaciones import notificar, retirar_notificacion
 from usuarios.models import UsuarioForo
 
@@ -68,3 +69,9 @@ def notificar_nuevo_seguidor(sender, instance, action, pk_set, reverse, **kwargs
     elif action == 'post_remove':
         for destinatario in _usuarios(pk_set):
             retirar_notificacion(destinatario, Notificacion.TIPO_SEGUIDOR, [instance.pk], hilo=None)
+
+
+@receiver([post_save, post_delete], sender=AvisoGlobal)
+def invalidar_cache_avisos(sender, **kwargs):
+    from foro.context_processors import CLAVE_AVISOS_ACTIVOS
+    cache.delete(CLAVE_AVISOS_ACTIVOS)

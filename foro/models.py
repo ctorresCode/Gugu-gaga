@@ -56,6 +56,10 @@ class Hilo(models.Model):
 
     class Meta:
         ordering = ['-ultima_actividad']
+        indexes = [
+            # Feed filtrado por universidad (el feed general usa la clave primaria).
+            models.Index(fields=['universidad', '-id'], condition=models.Q(activo=True), name='hilo_uni_recientes'),
+        ]
 
     def __str__(self):
         return self.titulo

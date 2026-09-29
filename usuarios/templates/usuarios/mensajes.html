@@ -3,7 +3,6 @@
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
@@ -31,7 +30,7 @@
                 <a href="{% url 'chat_usuario' amigo.username %}" class="flex items-center gap-4 p-4 hover:bg-white transition-all border-b border-gray-100 {% if chat_activo.username == amigo.username %}bg-white shadow-sm border-l-4 border-l-[#093D77]{% endif %}">
                     <div class="relative">
                         {% if amigo.avatar %}
-                            <img src="{{ amigo.avatar.url }}" class="w-14 h-14 rounded-full object-cover shadow-sm">
+                            <img loading="lazy" decoding="async" src="{{ amigo.avatar.url }}" class="w-14 h-14 rounded-full object-cover shadow-sm">
                         {% else %}
                             <div class="w-14 h-14 rounded-full bg-[#093D77] text-white flex items-center justify-center font-extrabold uppercase text-xl shadow-sm">
                                 {{ amigo.username|make_list|first }}
@@ -98,13 +97,13 @@
                                         {% if msj.imagen %}
                                             {% if msj.imagen2 or msj.imagen3 or msj.imagen4 %}
                                                 <div class="grid grid-cols-2 gap-1.5 my-1 w-full max-w-[240px] rounded-xl overflow-hidden">
-                                                    <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">
-                                                    {% if msj.imagen2 %}<img src="{{ msj.imagen2.url }}" onclick="abrirVisorGlobal('{{ msj.imagen2.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
-                                                    {% if msj.imagen3 %}<img src="{{ msj.imagen3.url }}" onclick="abrirVisorGlobal('{{ msj.imagen3.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
-                                                    {% if msj.imagen4 %}<img src="{{ msj.imagen4.url }}" onclick="abrirVisorGlobal('{{ msj.imagen4.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    <img loading="lazy" decoding="async" src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                                    {% if msj.imagen2 %}<img loading="lazy" decoding="async" src="{{ msj.imagen2.url }}" onclick="abrirVisorGlobal('{{ msj.imagen2.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen3 %}<img loading="lazy" decoding="async" src="{{ msj.imagen3.url }}" onclick="abrirVisorGlobal('{{ msj.imagen3.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen4 %}<img loading="lazy" decoding="async" src="{{ msj.imagen4.url }}" onclick="abrirVisorGlobal('{{ msj.imagen4.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
                                                 </div>
                                             {% else %}
-                                                <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="rounded-xl w-full max-w-[240px] h-auto my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                                <img loading="lazy" decoding="async" src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="rounded-xl w-full max-w-[240px] h-auto my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
                                             {% endif %}
                                         {% endif %}
                                         {% if msj.contenido %}
@@ -140,13 +139,13 @@
                                         {% if msj.imagen %}
                                             {% if msj.imagen2 or msj.imagen3 or msj.imagen4 %}
                                                 <div class="grid grid-cols-2 gap-1.5 my-1 w-full max-w-[240px] rounded-xl overflow-hidden">
-                                                    <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">
-                                                    {% if msj.imagen2 %}<img src="{{ msj.imagen2.url }}" onclick="abrirVisorGlobal('{{ msj.imagen2.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
-                                                    {% if msj.imagen3 %}<img src="{{ msj.imagen3.url }}" onclick="abrirVisorGlobal('{{ msj.imagen3.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
-                                                    {% if msj.imagen4 %}<img src="{{ msj.imagen4.url }}" onclick="abrirVisorGlobal('{{ msj.imagen4.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    <img loading="lazy" decoding="async" src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                                    {% if msj.imagen2 %}<img loading="lazy" decoding="async" src="{{ msj.imagen2.url }}" onclick="abrirVisorGlobal('{{ msj.imagen2.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen3 %}<img loading="lazy" decoding="async" src="{{ msj.imagen3.url }}" onclick="abrirVisorGlobal('{{ msj.imagen3.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
+                                                    {% if msj.imagen4 %}<img loading="lazy" decoding="async" src="{{ msj.imagen4.url }}" onclick="abrirVisorGlobal('{{ msj.imagen4.url }}')" class="w-full h-28 object-cover cursor-pointer hover:opacity-90 transition-opacity">{% endif %}
                                                 </div>
                                             {% else %}
-                                                <img src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="rounded-xl w-full max-w-[240px] h-auto my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                                <img loading="lazy" decoding="async" src="{{ msj.imagen.url }}" onclick="abrirVisorGlobal('{{ msj.imagen.url }}')" class="rounded-xl w-full max-w-[240px] h-auto my-1 object-cover cursor-pointer hover:opacity-90 transition-opacity">
                                             {% endif %}
                                         {% endif %}
                                         {% if msj.contenido %}

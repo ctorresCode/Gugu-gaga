@@ -7,9 +7,13 @@
     <meta name="htmx-config" content='{"historyCacheSize": 10}' />
     <title>{%block title%} {%endblock%}</title>
 
+    {% if MEDIA_ORIGIN %}<link rel="preconnect" href="{{ MEDIA_ORIGIN }}" />{% endif %}
+    <link rel="preload" href="{% static 'fonts/plus-jakarta-sans-latin.woff2' %}" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="{% static 'css/fuentes.css' %}" />
     <link rel="stylesheet" href="{% static 'css/output.css' %}" />
 
-    <script src="{% static 'js/vendor/htmx.min.js' %}"></script>
+    {# defer: se descarga en paralelo y no bloquea el pintado de la página #}
+    <script defer src="{% static 'js/vendor/htmx.min.js' %}"></script>
     <style>
       html {
         scrollbar-gutter: stable;
@@ -20,7 +24,25 @@
     <link rel="icon" type="image/png" href="{% static 'img/wa.png' %}?v=1" />
 
     {% if request.user.is_authenticated %}
-    <script src="{% static 'js/vendor/supabase.min.js' %}"></script>
+    {# Navegación casi instantánea: el navegador precarga la página al pasar el ratón o poner el dedo en un enlace. #}
+    {# Se excluyen páginas cuyo GET cambia datos (marcar como leído) y el logout. #}
+    <script type="speculationrules">
+    {
+      "prefetch": [{
+        "where": {
+          "and": [
+            { "href_matches": "/*" },
+            { "not": { "href_matches": "/mensajes/*" } },
+            { "not": { "href_matches": "/notificaciones/*" } },
+            { "not": { "href_matches": "/logout/*" } },
+            { "not": { "href_matches": "/admin/*" } },
+            { "not": { "selector_matches": "[data-no-prefetch]" } }
+          ]
+        },
+        "eagerness": "moderate"
+      }]
+    }
+    </script>
     <script>
       window.UNIVOZ = {
         usuarioId: {{ request.user.id }},
@@ -28,19 +50,52 @@
         logoutUrl: "{% url 'logout' %}",
         supabaseUrl: "{{ SUPABASE_URL|escapejs }}",
         supabaseAnonKey: "{{ SUPABASE_ANON_KEY|escapejs }}",
+        supabaseJs: "{% static 'js/vendor/supabase.min.js' %}",
       };
 
-      // Un único cliente de Supabase por página. Solo se usa para eventos PÚBLICOS del foro
-      // (la BD solo deja leer ids a la anon key). Si no está configurado, devuelve un cliente
-      // inerte para que las páginas no fallen.
+      // Cliente de Supabase bajo demanda: supabase-js (~220 KB) solo se descarga en páginas que
+      // escuchan eventos en vivo, y después de pintar la página. Mientras tanto se devuelve un
+      // cliente que anota las llamadas .channel().on().subscribe() y las repite al cargar.
+      // Solo se usa para eventos PÚBLICOS del foro (la BD solo deja leer ids a la anon key).
       window.getSupabase = function () {
         if (window._supabaseClient) return window._supabaseClient;
-        if (window.supabase && UNIVOZ.supabaseUrl && UNIVOZ.supabaseAnonKey) {
-          window._supabaseClient = window.supabase.createClient(UNIVOZ.supabaseUrl, UNIVOZ.supabaseAnonKey);
-        } else {
-          const canal = { on: function () { return canal; }, subscribe: function () { return canal; } };
-          window._supabaseClient = { channel: function () { return canal; } };
+        const pendientes = [];
+        let real = null;
+
+        function aplicar(registro) {
+          let canal = real.channel(registro.nombre);
+          registro.llamadas.forEach(function (l) { canal = canal[l.metodo].apply(canal, l.args); });
         }
+
+        window._supabaseClient = {
+          channel: function (nombre) {
+            const registro = { nombre: nombre, llamadas: [] };
+            const proxy = {
+              on: function () { registro.llamadas.push({ metodo: 'on', args: arguments }); return proxy; },
+              subscribe: function () {
+                registro.llamadas.push({ metodo: 'subscribe', args: arguments });
+                if (real) aplicar(registro); else pendientes.push(registro);
+                return proxy;
+              },
+            };
+            return proxy;
+          },
+        };
+
+        if (!UNIVOZ.supabaseUrl || !UNIVOZ.supabaseAnonKey) return window._supabaseClient;
+
+        function cargar() {
+          const script = document.createElement('script');
+          script.src = UNIVOZ.supabaseJs;
+          script.async = true;
+          script.onload = function () {
+            real = window.supabase.createClient(UNIVOZ.supabaseUrl, UNIVOZ.supabaseAnonKey);
+            pendientes.splice(0).forEach(aplicar);
+          };
+          document.head.appendChild(script);
+        }
+        if (document.readyState === 'complete') cargar();
+        else window.addEventListener('load', cargar, { once: true });
         return window._supabaseClient;
       };
     </script>

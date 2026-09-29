@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'config.apps.StaticFilesSinFuentesConfig',  # django.contrib.staticfiles sin los fuentes de Tailwind
     'usuarios',
     'foro',
     'storages',
@@ -51,6 +51,8 @@ if DEBUG and importlib.util.find_spec('sslserver'):  # requirements-dev.txt
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # Comprime el HTML (~10x menos bytes). Los tokens CSRF van enmascarados por petición (anti-BREACH).
+    'django.middleware.gzip.GZipMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -92,6 +94,9 @@ else:
             conn_health_checks=True,
         )
     }
+    # El pooler de Supabase (puerto 6543) funciona en modo transacción: no admite cursores
+    # del lado del servidor, que Django usaría en .iterator().
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -145,16 +150,24 @@ if USE_CLOUD_STORAGE and r2_key:
     AWS_DEFAULT_ACL = None
     AWS_S3_SIGNATURE_VERSION = 's3v4'
     AWS_QUERYSTRING_AUTH = True
+    # Los archivos se guardan con nombre uuid y nunca cambian: el navegador y Cloudflare pueden
+    # guardarlos un año sin volver a pedirlos.
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'public, max-age=31536000, immutable'}
 
     STORAGES = {
         "default": {"BACKEND": "storages.backends.s3.S3Storage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
     }
 else:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
     }
+
+# En producción: CSS/JS/fuentes precomprimidos (Brotli + gzip) y con hash en el nombre, así se
+# sirven con caché de un año y cada deploy invalida solo lo que cambió.
+STORAGES["staticfiles"] = {
+    "BACKEND": "whitenoise.storage.StaticFilesStorage" if (DEBUG or TESTING)
+    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+}
 
 if DEBUG or TESTING:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -203,6 +216,10 @@ else:
         }
 
 RATELIMIT_FAIL_OPEN = True
+
+# La sesión se lee de la caché (Redis) en vez de hacer una consulta a la BD en cada petición.
+# Si Redis falla, Django vuelve a leerla de la BD, así que nadie pierde la sesión.
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',

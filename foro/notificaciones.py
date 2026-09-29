@@ -6,7 +6,49 @@ Una notificación agrupa a todos los actores de la misma acción sobre el mismo 
 get_or_create() porque sin una restricción UNIQUE en la BD dos peticiones simultáneas
 pueden crear duplicados, y get() reventaría luego con MultipleObjectsReturned.
 """
+from django.db.models import Count, IntegerField, OuterRef, Subquery, Value
+from django.db.models.functions import Coalesce
+
 from foro.models import Notificacion
+from usuarios.models import Mensaje, UsuarioForo
+
+
+def _contar(queryset, campo):
+    subconsulta = (
+        queryset.filter(**{campo: OuterRef('pk')})
+        .order_by().values(campo).annotate(total=Count('*')).values('total')
+    )
+    return Coalesce(Subquery(subconsulta, output_field=IntegerField()), Value(0))
+
+
+def _ultimo_id(queryset, campo):
+    return Coalesce(
+        Subquery(queryset.filter(**{campo: OuterRef('pk')}).order_by('-id').values('id')[:1]),
+        Value(0),
+    )
+
+
+def contadores_usuario(usuario):
+    """
+    Notificaciones y mensajes sin leer + id del último mensaje, en UNA sola consulta
+    (cada consulta es un viaje de red a la base de datos).
+    """
+    fila = (
+        UsuarioForo.objects.filter(pk=usuario.pk)
+        .annotate(
+            _n_notificaciones=_contar(Notificacion.objects.filter(leido=False), 'destinatario'),
+            _n_mensajes=_contar(Mensaje.objects.filter(leido=False), 'destinatario'),
+            _ultimo_recibido=_ultimo_id(Mensaje.objects.all(), 'destinatario'),
+            _ultimo_enviado=_ultimo_id(Mensaje.objects.all(), 'remitente'),
+        )
+        .values('_n_notificaciones', '_n_mensajes', '_ultimo_recibido', '_ultimo_enviado')
+        .first()
+    ) or {}
+    return {
+        'notificaciones': fila.get('_n_notificaciones', 0),
+        'mensajes': fila.get('_n_mensajes', 0),
+        'ultimo_mensaje_id': max(fila.get('_ultimo_recibido', 0), fila.get('_ultimo_enviado', 0)),
+    }
 
 
 def notificar(destinatario, tipo, actor, actualizar=None, **objetos):

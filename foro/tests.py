@@ -177,6 +177,29 @@ class ConsultasTest(BaseForoTest):
         despues = {u: self.consultas(u) for u in antes}
         self.assertEqual(antes, despues)
 
+    def test_presupuesto_de_consultas(self):
+        """Cada consulta es un viaje de red a la BD: si alguien añade consultas, este test avisa."""
+        self.crear_contenido(3)
+        presupuesto = {'/': 3, '/sugerencias/': 3, '/perfil/bob/': 4, '/explorar/': 2, reverse('estado_tiempo_real'): 2}
+        for url in presupuesto:
+            self.consultas(url)  # calienta cachés (sesión, universidades, avisos)
+        for url, maximo in presupuesto.items():
+            self.assertLessEqual(self.consultas(url), maximo, url)
+
+    def test_paginacion_por_cursor(self):
+        hilos = [Hilo.objects.create(titulo='t', contenido=f'hilo {i}', autor=self.bob) for i in range(20)]
+        respuesta = self.client.get('/')
+        self.assertEqual(len(respuesta.context['page_obj']), 15)
+        cursor = respuesta.context['cursor_siguiente']
+        self.assertEqual(cursor, hilos[5].id)
+        pagina2 = self.client.get(f'/?antes={cursor}', HTTP_HX_REQUEST='true')
+        self.assertEqual([h.id for h in pagina2.context['page_obj']], [h.id for h in reversed(hilos[:5])])
+        self.assertFalse(pagina2.context['has_next'])
+
+    def test_html_comprimido(self):
+        respuesta = self.client.get('/', HTTP_ACCEPT_ENCODING='gzip')
+        self.assertEqual(respuesta.get('Content-Encoding'), 'gzip')
+
     def test_contador_de_respuestas_ignora_inactivas(self):
         hilo = Hilo.objects.create(titulo='t', contenido='c', autor=self.bob)
         Respuesta.objects.create(hilo=hilo, autor=self.ana, contenido='visible')

@@ -179,7 +179,10 @@ class Mensaje(models.Model):
     class Meta:
         ordering = ['fecha_envio']
         indexes = [
-            models.Index(fields=['remitente', 'destinatario']),
+            # Conversación entre dos usuarios, de la más reciente hacia atrás.
+            models.Index(fields=['remitente', 'destinatario', '-fecha_envio'], name='mensaje_conversacion'),
+            # Contador de mensajes sin leer (se consulta en cada página y en /estado/).
+            models.Index(fields=['destinatario'], condition=models.Q(leido=False), name='mensaje_no_leidos'),
         ]
 
     def __str__(self):

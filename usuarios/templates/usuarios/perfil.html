@@ -3,7 +3,6 @@
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
 
@@ -89,8 +88,8 @@
                     </div>
 
                     <div class="flex gap-5 text-[15px]">
-                        <span class="text-[#2B2B2B] font-black">{{ perfil_usuario.seguidos.count }} <span class="text-[#3A7CA5] font-semibold">Siguiendo</span></span>
-                        <span class="text-[#2B2B2B] font-black">{{ perfil_usuario.seguidores.count }} <span class="text-[#3A7CA5] font-semibold">Seguidores</span></span>
+                        <span class="text-[#2B2B2B] font-black">{{ perfil_usuario.num_seguidos }} <span class="text-[#3A7CA5] font-semibold">Siguiendo</span></span>
+                        <span class="text-[#2B2B2B] font-black">{{ perfil_usuario.num_seguidores }} <span class="text-[#3A7CA5] font-semibold">Seguidores</span></span>
                     </div>
                 </div>
 
@@ -122,25 +121,25 @@
                         
                         {% if hilo.imagen %}
                             <button onclick="openImageModal('{{ hilo.imagen.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                                <img src="{{ hilo.imagen.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                <img loading="lazy" decoding="async" src="{{ hilo.imagen.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             </button>
                         {% endif %}
 
                         {% if hilo.imagen2 %}
                             <button onclick="openImageModal('{{ hilo.imagen2.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                                <img src="{{ hilo.imagen2.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                <img loading="lazy" decoding="async" src="{{ hilo.imagen2.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             </button>
                         {% endif %}
 
                         {% if hilo.imagen3 %}
                             <button onclick="openImageModal('{{ hilo.imagen3.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                                <img src="{{ hilo.imagen3.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                <img loading="lazy" decoding="async" src="{{ hilo.imagen3.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             </button>
                         {% endif %}
 
                         {% if hilo.imagen4 %}
                             <button onclick="openImageModal('{{ hilo.imagen4.url }}')" type="button" class="aspect-square bg-[#F8F9FA] rounded-xl overflow-hidden group w-full p-0 border-none cursor-pointer">
-                                <img src="{{ hilo.imagen4.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                <img loading="lazy" decoding="async" src="{{ hilo.imagen4.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             </button>
                         {% endif %}
 

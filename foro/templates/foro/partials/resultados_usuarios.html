@@ -3,7 +3,7 @@
         {% for usuario in usuarios %}
             <a href="{% url 'perfil_usuario' usuario.username %}" class="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 transition-all cursor-pointer group">
                 {% if usuario.avatar %}
-                    <img src="{{ usuario.avatar.url }}" class="w-14 h-14 rounded-full object-cover ring-2 ring-transparent group-hover:ring-[#093D77]/20 transition-all">
+                    <img loading="lazy" decoding="async" src="{{ usuario.avatar.url }}" class="w-14 h-14 rounded-full object-cover ring-2 ring-transparent group-hover:ring-[#093D77]/20 transition-all">
                 {% else %}
                     <div class="w-14 h-14 rounded-full bg-[#093D77] text-white flex items-center justify-center font-extrabold text-xl uppercase shadow-sm">
                         {{ usuario.username|make_list|first }}

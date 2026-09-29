@@ -34,7 +34,7 @@ from foro.models import (
     Sugerencia,
     Universidad,
 )
-from foro.notificaciones import notificar, retirar_notificacion
+from foro.notificaciones import contadores_usuario, notificar, retirar_notificacion
 from foro.utils import (
     MAX_COMENTARIO,
     MAX_HILO,
@@ -47,7 +47,7 @@ from foro.utils import (
     procesar_imagenes,
     referer_seguro,
 )
-from usuarios.models import Mensaje, UsuarioForo
+from usuarios.models import UsuarioForo
 
 logger = logging.getLogger(__name__)
 
@@ -62,15 +62,18 @@ class InicioView(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         busqueda = request.GET.get('q', '').strip()[:50]
         universidad_id = a_int(request.GET.get('uni'))
-        page_number = max(1, a_int(request.GET.get('page'), 1))
+        # Paginación por cursor ("los anteriores a este id"): cuesta lo mismo en la página 1 que en
+        # la 100, a diferencia de OFFSET, que obliga a la BD a recorrer todo lo anterior.
+        antes = a_int(request.GET.get('antes'))
 
         hilos = Hilo.objects.visibles_para(request.user).con_conteos(request.user)
         if universidad_id:
             hilos = hilos.filter(universidad_id=universidad_id)
-        hilos = hilos.order_by('-fecha_creacion')
+        if antes:
+            hilos = hilos.filter(id__lt=antes)
+        hilos = hilos.order_by('-id')  # los ids crecen con la fecha de creación
 
-        offset = (page_number - 1) * self.items_por_pagina
-        hilos_pagina = list(hilos[offset:offset + self.items_por_pagina + 1])
+        hilos_pagina = list(hilos[:self.items_por_pagina + 1])
         hay_siguiente = len(hilos_pagina) > self.items_por_pagina
         if hay_siguiente:
             hilos_pagina.pop()
@@ -78,11 +81,11 @@ class InicioView(LoginRequiredMixin, TemplateView):
         contexto_lista = {
             'page_obj': hilos_pagina,
             'has_next': hay_siguiente,
-            'next_page_number': page_number + 1,
+            'cursor_siguiente': hilos_pagina[-1].id if hilos_pagina else '',
             'busqueda_actual': busqueda,
             'uni_actual': universidad_id or '',
         }
-        if request.headers.get('HX-Request') and request.GET.get('page'):
+        if request.headers.get('HX-Request') and antes:
             return render(request, 'foro/partials/hilos_lista.html', contexto_lista)
 
         universidades = Universidad.cacheadas()
@@ -337,16 +340,7 @@ def estado_tiempo_real(request):
     Contadores privados para refrescar badges y el chat sin exponer datos a Supabase.
     La web lo consulta periódicamente (ver base.html) en lugar de escuchar tablas privadas.
     """
-    usuario = request.user
-    ultimo_mensaje = (
-        Mensaje.objects.filter(Q(destinatario=usuario) | Q(remitente=usuario))
-        .order_by('-id').values_list('id', flat=True).first()
-    )
-    return JsonResponse({
-        'notificaciones': Notificacion.objects.filter(destinatario=usuario, leido=False).count(),
-        'mensajes': Mensaje.objects.filter(destinatario=usuario, leido=False).count(),
-        'ultimo_mensaje_id': ultimo_mensaje or 0,
-    })
+    return JsonResponse(contadores_usuario(request.user))
 
 
 class SugerenciasCreateView(LoginRequiredMixin, CreateView):
