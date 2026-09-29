@@ -1,6 +1,7 @@
 import io
 import json
 import shutil
+from unittest import mock
 from datetime import timedelta
 
 from django.conf import settings
@@ -88,6 +89,12 @@ class CrearHiloTest(BaseForoTest):
         self.publicar(contenido='uno', idem_token='tok')
         self.publicar(contenido='uno', idem_token='tok')
         self.assertEqual(Hilo.objects.count(), 1)
+
+    def test_publica_aunque_redis_no_responda(self):
+        """Con Redis caído, django-redis (IGNORE_EXCEPTIONS) devuelve None en add(): no es un duplicado."""
+        with mock.patch('foro.views.cache.add', return_value=None):
+            self.publicar(contenido='con redis caido', idem_token='tok', imagen=[imagen_png()])
+        self.assertTrue(Hilo.objects.filter(contenido='con redis caido').exists())
 
     def test_error_htmx_devuelve_status_y_toast(self):
         respuesta = self.client.post(reverse('inicio'), {'contenido': ''}, HTTP_HX_REQUEST='true')

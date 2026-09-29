@@ -116,7 +116,9 @@ class InicioView(LoginRequiredMixin, TemplateView):
 
         idem_token = (request.POST.get('idem_token') or '')[:64]
         idem_key = f'idem_{request.user.id}_{idem_token}' if idem_token else None
-        if idem_key and not cache.add(idem_key, True, 60):  # add() es atómico: solo el primero entra
+        # add() es atómico: True = primera vez, False = ya existía (duplicado).
+        # Con Redis caído (IGNORE_EXCEPTIONS) devuelve None: se deja publicar en vez de bloquear.
+        if idem_key and cache.add(idem_key, True, 60) is False:
             return error_peticion(request, "Petición duplicada", referer, status=409)
 
         try:
