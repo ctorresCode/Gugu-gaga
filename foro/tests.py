@@ -111,6 +111,47 @@ class CrearHiloTest(BaseForoTest):
         self.assertNotContains(self.client.get(reverse('inicio')), '<script>alert(1)</script>')
 
 
+class ImagenesTest(BaseForoTest):
+    def foto(self, ancho, alto, formato='JPEG'):
+        buffer = io.BytesIO()
+        Image.new('RGB', (ancho, alto), 'green').save(buffer, formato)
+        return SimpleUploadedFile(f'foto.{formato.lower()}', buffer.getvalue())
+
+    def test_se_reducen_a_1600px_manteniendo_proporcion(self):
+        self.client.post(reverse('inicio'), {'contenido': 'grande', 'imagen': [self.foto(4000, 3000)]})
+        hilo = Hilo.objects.get()
+        with Image.open(hilo.imagen.path) as img:
+            self.assertEqual(img.size, (1600, 1200))
+
+    def test_imagen_pequena_no_se_agranda(self):
+        self.client.post(reverse('inicio'), {'contenido': 'chica', 'imagen': [self.foto(800, 600, 'PNG')]})
+        with Image.open(Hilo.objects.get().imagen.path) as img:
+            self.assertEqual(img.size, (800, 600))
+
+    def test_avatar_a_512px(self):
+        self.client.post(reverse('actualizar_avatar'), {'avatar': self.foto(2000, 2000)})
+        self.ana.refresh_from_db()
+        with Image.open(self.ana.avatar.path) as img:
+            self.assertEqual(img.size, (512, 512))
+
+    def test_cuatro_imagenes_se_suben_y_asignan(self):
+        self.client.post(reverse('inicio'), {'contenido': 'cuatro', 'imagen': [self.foto(100, 100) for _ in range(4)]})
+        hilo = Hilo.objects.get()
+        nombres = [getattr(hilo, c).name for c in ('imagen', 'imagen2', 'imagen3', 'imagen4')]
+        self.assertEqual(len(set(nombres)), 4)
+        for nombre in nombres:
+            self.assertTrue(hilo.imagen.storage.exists(nombre))
+
+    def test_si_falla_la_bd_se_borran_las_imagenes_subidas(self):
+        storage = Hilo._meta.get_field('imagen').storage
+        antes = set(storage.listdir('hilos/imagenes')[1]) if storage.exists('hilos/imagenes') else set()
+        with mock.patch.object(Hilo, 'save', side_effect=RuntimeError('BD caída')):
+            respuesta = self.client.post(reverse('inicio'), {'contenido': 'x', 'imagen': [self.foto(100, 100)]},
+                                         HTTP_HX_REQUEST='true')
+        self.assertEqual(respuesta.status_code, 500)
+        self.assertEqual(set(storage.listdir('hilos/imagenes')[1]), antes)
+
+
 class ConsultasTest(BaseForoTest):
     """El número de consultas no debe crecer con el número de elementos (sin N+1)."""
 

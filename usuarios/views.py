@@ -31,7 +31,7 @@ from foro.limites import (
     limite_seguir,
 )
 from foro.models import Hilo
-from foro.utils import MAX_MENSAJE, a_int, limpiar_texto, procesar_imagenes
+from foro.utils import MAX_LADO, MAX_LADO_AVATAR, MAX_MENSAJE, a_int, asignar_imagenes_en_paralelo, limpiar_texto, procesar_imagenes
 from usuarios.forms import (
     CodigoEmailForm,
     EditarPerfilForm,
@@ -128,7 +128,7 @@ def actualizar_avatar(request):
     if not archivo:
         return JsonResponse({'status': 'error', 'message': 'No se recibió ninguna imagen.'}, status=400)
 
-    limpios, error = procesar_imagenes([archivo], max_mb=2)
+    limpios, error = procesar_imagenes([archivo], max_mb=2, max_lado=MAX_LADO_AVATAR)
     if error:
         return JsonResponse({'status': 'error', 'message': error}, status=400)
 
@@ -156,7 +156,8 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
         for campo in ('avatar', 'banner'):
             archivo = self.request.FILES.get(campo)
             if archivo:
-                limpios, error = procesar_imagenes([archivo], max_mb=2)
+                max_lado = MAX_LADO_AVATAR if campo == 'avatar' else MAX_LADO
+                limpios, error = procesar_imagenes([archivo], max_mb=2, max_lado=max_lado)
                 if error:
                     form.add_error(campo, error)
                     return self.form_invalid(form)
@@ -320,9 +321,18 @@ class ChatView(LoginRequiredMixin, TemplateView):
             contenido=contenido or None,
             mensaje_respondido=mensaje_padre
         )
-        for campo, archivo in zip(('imagen', 'imagen2', 'imagen3', 'imagen4'), archivos):
-            setattr(nuevo_mensaje, campo, archivo)
-        nuevo_mensaje.save()
+        deshacer_subida = None
+        try:
+            if archivos:
+                deshacer_subida = asignar_imagenes_en_paralelo(
+                    nuevo_mensaje, ('imagen', 'imagen2', 'imagen3', 'imagen4'), archivos
+                )
+            nuevo_mensaje.save()
+        except Exception:
+            logger.exception('Error enviando mensaje (usuario %s)', request.user.id)
+            if deshacer_subida:
+                deshacer_subida()
+            return JsonResponse({'error': 'No se pudo enviar el mensaje. Intenta de nuevo.'}, status=500)
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
             return JsonResponse({'status': 'success'})

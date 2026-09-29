@@ -41,6 +41,7 @@ from foro.utils import (
     MAX_SUGERENCIA,
     MAX_TITULO,
     a_int,
+    asignar_imagenes_en_paralelo,
     es_htmx,
     limpiar_texto,
     procesar_imagenes,
@@ -121,6 +122,7 @@ class InicioView(LoginRequiredMixin, TemplateView):
         if idem_key and cache.add(idem_key, True, 60) is False:
             return error_peticion(request, "Petición duplicada", referer, status=409)
 
+        deshacer_subida = None
         try:
             nuevo_hilo = Hilo(
                 titulo=titulo or "Sin título",
@@ -128,11 +130,13 @@ class InicioView(LoginRequiredMixin, TemplateView):
                 autor=request.user,
                 universidad=request.user.universidad,
             )
-            for campo, archivo in zip(CAMPOS_IMAGEN_HILO, imagenes):
-                setattr(nuevo_hilo, campo, archivo)
+            if imagenes:
+                deshacer_subida = asignar_imagenes_en_paralelo(nuevo_hilo, CAMPOS_IMAGEN_HILO, imagenes)
             nuevo_hilo.save()
         except Exception:
             logger.exception("Error creando hilo (usuario %s)", request.user.id)
+            if deshacer_subida:
+                deshacer_subida()  # no dejar imágenes huérfanas en R2
             if idem_key:
                 cache.delete(idem_key)  # deja reintentar con el mismo token
             return error_peticion(

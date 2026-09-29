@@ -101,6 +101,50 @@
           if (!e.detail.headers['X-CSRFToken']) e.detail.headers['X-CSRFToken'] = csrfToken();
         });
 
+        // Reduce una foto en el navegador antes de subirla (máx. 1600 px, calidad 82 %).
+        // Una foto de móvil de ~5 MB queda en ~300 KB: la subida pasa de decenas de segundos a 1-2 s.
+        // Si algo falla (formato no soportado, navegador antiguo...), devuelve el archivo original.
+        window.comprimirImagen = async function (archivo, maxLado, calidad) {
+          maxLado = maxLado || 1600;
+          calidad = calidad || 0.82;
+          if (!archivo || !archivo.type || !archivo.type.startsWith('image/') || archivo.type === 'image/gif') return archivo;
+          try {
+            let bitmap;
+            try { bitmap = await createImageBitmap(archivo, { imageOrientation: 'from-image' }); }
+            catch (e) { bitmap = await createImageBitmap(archivo); }
+
+            const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height));
+            const ancho = Math.max(1, Math.round(bitmap.width * escala));
+            const alto = Math.max(1, Math.round(bitmap.height * escala));
+            const canvas = document.createElement('canvas');
+            canvas.width = ancho;
+            canvas.height = alto;
+            const ctx = canvas.getContext('2d');
+
+            // PNG/WebP pueden tener transparencia: se guardan como WebP. El resto como JPEG.
+            const conTransparencia = archivo.type === 'image/png' || archivo.type === 'image/webp';
+            const tipo = conTransparencia ? 'image/webp' : 'image/jpeg';
+            if (!conTransparencia) {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, ancho, alto);
+            }
+            ctx.drawImage(bitmap, 0, 0, ancho, alto);
+            if (bitmap.close) bitmap.close();
+
+            const blob = await new Promise(function (resolve) { canvas.toBlob(resolve, tipo, calidad); });
+            if (!blob || blob.size >= archivo.size) return archivo;
+            const extension = { 'image/webp': 'webp', 'image/png': 'png' }[blob.type] || 'jpg';
+            const nombre = (archivo.name || 'imagen').replace(/\.[^.]+$/, '') + '.' + extension;
+            return new File([blob], nombre, { type: blob.type, lastModified: Date.now() });
+          } catch (e) {
+            return archivo;
+          }
+        };
+
+        window.comprimirImagenes = function (archivos) {
+          return Promise.all(Array.from(archivos).map(function (a) { return window.comprimirImagen(a); }));
+        };
+
         function mostrarToast(texto, tipo) {
           const contenedor = document.getElementById('toasts');
           if (!contenedor || !texto) return;

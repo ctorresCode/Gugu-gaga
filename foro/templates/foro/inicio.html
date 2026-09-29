@@ -65,7 +65,8 @@
       hx-encoding="multipart/form-data"
       hx-target="#lista-hilos" 
       hx-swap="afterbegin"
-      hx-on::after-request="if(event.detail.successful) this.reset()"
+      hx-disabled-elt="#btn-publicar"
+      data-username="{{ request.user.username }}"
       class="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-5 flex gap-4 transition-all focus-within:shadow-md focus-within:border-[#3A7CA5]/30">
     {% csrf_token %}
     <input type="hidden" name="idem_token" id="idem_token">
@@ -99,7 +100,7 @@
                 <input type="file" id="imagen-input" name="imagen" accept="image/*" multiple class="hidden">
             </label>
 
-            <button type="submit" onclick="document.getElementById('idem_token').value = crypto.randomUUID();" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] active:scale-95 transition-all text-sm shadow-md shadow-[#093D77]/20 cursor-pointer">
+            <button type="submit" id="btn-publicar" class="bg-[#093D77] text-white font-bold py-2 px-6 rounded-full hover:bg-[#3A7CA5] active:scale-95 transition-all text-sm shadow-md shadow-[#093D77]/20 cursor-pointer">
                 Publicar
             </button>
         </div>
@@ -158,38 +159,54 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const MAX_IMAGENES = 4;
+    const formPost = document.getElementById('form-post');
     const inputImagen = document.getElementById('imagen-input');
+    const textareaPost = document.getElementById('textarea-hilo');
     const contenedorPreview = document.getElementById('preview-container');
     const imagenesGrid = document.getElementById('imagenes-grid');
-    const formPost = document.getElementById('form-post');
+    const btnPublicar = document.getElementById('btn-publicar');
+    const inputToken = document.getElementById('idem_token');
     const btnRemoverGeneral = document.getElementById('btn-remover');
-
-    if(btnRemoverGeneral) btnRemoverGeneral.style.display = 'none';
+    if (btnRemoverGeneral) btnRemoverGeneral.style.display = 'none';
 
     let archivosAcumulados = [];
+    let comprimiendo = 0;
+    let borrador = null;      // lo que se está publicando, por si hay que restaurarlo
+    let tarjetaProvisional = null;
+
+    // Un token por borrador: si el mismo envío llega dos veces, el servidor lo descarta.
+    const nuevoToken = () => {
+        inputToken.value = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    };
+    nuevoToken();
+
+    const sincronizarInputFiles = () => {
+        const dataTransfer = new DataTransfer();
+        archivosAcumulados.forEach(archivo => dataTransfer.items.add(archivo));
+        inputImagen.files = dataTransfer.files;
+    };
 
     const actualizarPrevisualizacion = () => {
         imagenesGrid.innerHTML = '';
-
         if (archivosAcumulados.length === 0) {
             contenedorPreview.classList.add('hidden');
-            inputImagen.value = ''; 
             return;
         }
-
         archivosAcumulados.forEach((archivo, index) => {
             const divContenedor = document.createElement('div');
             divContenedor.className = 'relative inline-block group';
 
             const img = document.createElement('img');
             img.src = URL.createObjectURL(archivo);
+            img.onload = () => URL.revokeObjectURL(img.src);
             img.className = 'h-20 w-20 md:h-24 md:w-24 object-cover rounded-xl border border-gray-200 shadow-sm';
 
             const btnEliminar = document.createElement('button');
             btnEliminar.type = 'button';
             btnEliminar.className = 'absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10';
             btnEliminar.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-
             btnEliminar.onclick = () => {
                 archivosAcumulados.splice(index, 1);
                 sincronizarInputFiles();
@@ -200,68 +217,169 @@ document.addEventListener('DOMContentLoaded', () => {
             divContenedor.appendChild(btnEliminar);
             imagenesGrid.appendChild(divContenedor);
         });
-
         contenedorPreview.classList.remove('hidden');
     };
 
-    const sincronizarInputFiles = () => {
-        const dataTransfer = new DataTransfer();
-        archivosAcumulados.forEach(archivo => {
-            dataTransfer.items.add(archivo);
-        });
-        inputImagen.files = dataTransfer.files;
+    const estadoBoton = () => {
+        btnPublicar.disabled = comprimiendo > 0;
+        btnPublicar.textContent = comprimiendo > 0 ? 'Optimizando…' : 'Publicar';
+        btnPublicar.classList.toggle('opacity-60', comprimiendo > 0);
     };
 
-    inputImagen.addEventListener('change', (event) => {
-        const archivosNuevos = Array.from(event.target.files);
-
-        if (archivosAcumulados.length + archivosNuevos.length > 4) {
-            alert('Solo puedes subir un máximo de 4 imágenes por publicación.');
-            const espacioLibre = 4 - archivosAcumulados.length;
-            archivosAcumulados = archivosAcumulados.concat(archivosNuevos.slice(0, espacioLibre));
-        } else {
-            archivosAcumulados = archivosAcumulados.concat(archivosNuevos);
+    // Al elegir imágenes se comprimen en el móvil, mientras el usuario escribe.
+    inputImagen.addEventListener('change', async (event) => {
+        let archivosNuevos = Array.from(event.target.files);
+        const espacioLibre = MAX_IMAGENES - archivosAcumulados.length;
+        if (archivosNuevos.length > espacioLibre) {
+            mostrarToast('Solo puedes subir un máximo de ' + MAX_IMAGENES + ' imágenes por publicación.', 'error');
+            archivosNuevos = archivosNuevos.slice(0, Math.max(0, espacioLibre));
         }
+        sincronizarInputFiles();  // el input vuelve a contener solo lo ya aceptado
+        if (!archivosNuevos.length) return;
 
-        sincronizarInputFiles();
-        actualizarPrevisualizacion();
-    });
-
-    formPost.addEventListener('htmx:afterRequest', (event) => {
-        if (event.detail.successful) {
-            archivosAcumulados = [];
-            inputImagen.value = '';
+        comprimiendo++;
+        estadoBoton();
+        try {
+            const comprimidos = await comprimirImagenes(archivosNuevos);
+            archivosAcumulados = archivosAcumulados.concat(comprimidos).slice(0, MAX_IMAGENES);
+        } finally {
+            comprimiendo--;
+            estadoBoton();
+            sincronizarInputFiles();
             actualizarPrevisualizacion();
         }
     });
 
-    const textareaPost = document.getElementById('textarea-hilo');
-    if (textareaPost) {
-        textareaPost.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const form = textareaPost.closest('form');
-                if (form) {
-                    document.getElementById('idem_token').value = crypto.randomUUID();
-                    form.requestSubmit();
-                }
-            }
-        });
-    }
+    // Tarjeta provisional que aparece al instante mientras se sube el hilo de verdad.
+    const crearTarjetaProvisional = (texto, archivos) => {
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 opacity-80';
+        tarjeta.setAttribute('aria-busy', 'true');
+
+        const fila = document.createElement('div');
+        fila.className = 'flex items-start gap-4';
+        const avatar = formPost.querySelector(':scope > .flex-shrink-0');
+        if (avatar) fila.appendChild(avatar.cloneNode(true));
+
+        const cuerpo = document.createElement('div');
+        cuerpo.className = 'flex-grow min-w-0 pt-0.5';
+
+        const cabecera = document.createElement('div');
+        cabecera.className = 'flex items-center gap-2 mb-1.5';
+        const nombre = document.createElement('span');
+        nombre.className = 'font-extrabold text-[#2B2B2B] text-[15px]';
+        nombre.textContent = formPost.dataset.username;
+        const estado = document.createElement('span');
+        estado.className = 'text-[#3A7CA5] text-xs font-semibold opacity-80';
+        estado.textContent = '· publicando…';
+        cabecera.append(nombre, estado);
+        cuerpo.appendChild(cabecera);
+
+        if (texto) {
+            const parrafo = document.createElement('p');
+            parrafo.className = 'text-[#2B2B2B] text-[15px] leading-relaxed whitespace-pre-line break-words';
+            parrafo.textContent = texto;  // textContent: sin riesgo de XSS
+            cuerpo.appendChild(parrafo);
+        }
+
+        if (archivos.length) {
+            const grid = document.createElement('div');
+            grid.className = 'mt-3 grid gap-1.5 rounded-2xl overflow-hidden ' + (archivos.length > 1 ? 'grid-cols-2' : 'grid-cols-1');
+            archivos.forEach(archivo => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(archivo);
+                img.className = 'w-full object-cover ' + (archivos.length > 1 ? 'h-36' : 'max-h-96');
+                grid.appendChild(img);
+            });
+            cuerpo.appendChild(grid);
+        }
+
+        const barra = document.createElement('div');
+        barra.className = 'mt-3 h-1 w-full bg-gray-100 rounded-full overflow-hidden';
+        const progreso = document.createElement('div');
+        progreso.className = 'h-full bg-[#093D77] transition-all duration-200';
+        progreso.style.width = '5%';
+        barra.appendChild(progreso);
+        cuerpo.appendChild(barra);
+
+        fila.appendChild(cuerpo);
+        tarjeta.appendChild(fila);
+        tarjeta._progreso = progreso;
+        return tarjeta;
+    };
+
+    const quitarTarjetaProvisional = () => {
+        if (!tarjetaProvisional) return;
+        tarjetaProvisional.querySelectorAll('img[src^="blob:"]').forEach(img => URL.revokeObjectURL(img.src));
+        tarjetaProvisional.remove();
+        tarjetaProvisional = null;
+    };
+
+    formPost.addEventListener('htmx:beforeRequest', (event) => {
+        if (event.detail.elt !== formPost) return;
+        if (comprimiendo > 0) {
+            event.preventDefault();
+            mostrarToast('Espera un segundo, estamos optimizando tus imágenes.', 'error');
+        }
+    });
+
+    // Los datos ya están capturados: pintamos la tarjeta y vaciamos el formulario al instante.
+    formPost.addEventListener('htmx:beforeSend', (event) => {
+        if (event.detail.elt !== formPost) return;
+        borrador = { texto: textareaPost.value, archivos: archivosAcumulados.slice() };
+
+        const lista = document.getElementById('lista-hilos');
+        if (lista) {
+            const vacio = lista.querySelector('.text-center.py-16');
+            if (vacio) vacio.remove();
+            tarjetaProvisional = crearTarjetaProvisional(borrador.texto.trim(), borrador.archivos);
+            lista.prepend(tarjetaProvisional);
+        }
+
+        textareaPost.value = '';
+        archivosAcumulados = [];
+        sincronizarInputFiles();
+        actualizarPrevisualizacion();
+    });
+
+    formPost.addEventListener('htmx:xhr:progress', (event) => {
+        if (!tarjetaProvisional || !event.detail.lengthComputable || !event.detail.total) return;
+        const pct = Math.min(95, Math.round(event.detail.loaded / event.detail.total * 100));
+        const actual = parseFloat(tarjetaProvisional._progreso.style.width) || 0;
+        if (pct > actual) tarjetaProvisional._progreso.style.width = pct + '%';
+    });
+
+    formPost.addEventListener('htmx:afterRequest', (event) => {
+        if (event.detail.elt !== formPost) return;
+        quitarTarjetaProvisional();  // en éxito, htmx ya insertó la tarjeta real del servidor
+
+        if (event.detail.successful) {
+            nuevoToken();
+            borrador = null;
+            return;
+        }
+
+        // Falló: devolvemos el texto y las imágenes para que no se pierda nada.
+        if (borrador) {
+            if (!textareaPost.value) textareaPost.value = borrador.texto;
+            if (!archivosAcumulados.length) archivosAcumulados = borrador.archivos;
+            sincronizarInputFiles();
+            actualizarPrevisualizacion();
+            borrador = null;
+        }
+        const xhr = event.detail.xhr;
+        if (!xhr || !xhr.getResponseHeader('HX-Trigger')) {
+            mostrarToast(xhr && xhr.status ? 'No se pudo publicar. Intenta de nuevo.' : 'Sin conexión. Revisa tu internet e inténtalo de nuevo.', 'error');
+        }
+    });
+
+    textareaPost.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!btnPublicar.disabled) formPost.requestSubmit();
+        }
+    });
 });
-
-function generarTokenSeguro() {
-    const inputToken = document.getElementById('idem_token');
-    if (window.crypto && crypto.randomUUID) {
-        inputToken.value = crypto.randomUUID();
-    } else {
-        inputToken.value = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-}
-
 </script>
 
 <script>

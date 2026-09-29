@@ -339,8 +339,19 @@
             actualizarEstadoClip();
         }
 
-        function agregarArchivosChat(nuevosArchivos) {
+        var chatComprimiendo = 0;
+
+        async function agregarArchivosChat(nuevosArchivos) {
             var descartadasPorLimite = false;
+            // Se comprimen en el navegador antes de nada (~5 MB -> ~300 KB por foto).
+            chatComprimiendo++;
+            try {
+                nuevosArchivos = await comprimirImagenes(Array.from(nuevosArchivos).filter(function(a) {
+                    return a && a.type && a.type.startsWith('image/');
+                }));
+            } finally {
+                chatComprimiendo--;
+            }
             for (var i = 0; i < nuevosArchivos.length; i++) {
                 var archivo = nuevosArchivos[i];
                 if (!archivo.type.startsWith('image/')) continue;
@@ -401,6 +412,10 @@
                 e.preventDefault();
                 e.stopPropagation();
 
+                if (chatComprimiendo > 0) {
+                    mostrarToast('Espera un segundo, estamos optimizando tus imágenes.', 'error');
+                    return;
+                }
                 var formData = new FormData(this);
                 if (!formData.get('contenido') && !chatFile.files.length) return;
 
