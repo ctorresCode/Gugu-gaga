@@ -1,12 +1,33 @@
 from django.contrib import admin
+from django.db.models import Count
+
 from foro.models import AvisoGlobal, Hilo, Notificacion, Respuesta, RespuestaSugerencia, Sugerencia
 
 @admin.register(Hilo)
 class HiloAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'autor', 'universidad', 'fecha_creacion', 'activo')
+    list_display = ('titulo', 'autor', 'universidad', 'fecha_creacion', 'activo', 'total_reportes')
     list_filter = ('activo', 'universidad', 'fecha_creacion')
     search_fields = ('titulo', 'contenido')
     raw_id_fields = ('autor', 'universidad')
+    exclude = ('likes', 'reportes')
+    actions = ['reactivar_y_limpiar_reportes', 'ocultar']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_total_reportes=Count('reportes', distinct=True))
+
+    @admin.display(description='Reportes', ordering='_total_reportes')
+    def total_reportes(self, obj):
+        return obj._total_reportes
+
+    @admin.action(description='Reactivar y borrar sus reportes')
+    def reactivar_y_limpiar_reportes(self, request, queryset):
+        for hilo in queryset:
+            hilo.reportes.clear()
+        queryset.update(activo=True)
+
+    @admin.action(description='Ocultar')
+    def ocultar(self, request, queryset):
+        queryset.update(activo=False)
 
 @admin.register(Respuesta)
 class RespuestaAdmin(admin.ModelAdmin):

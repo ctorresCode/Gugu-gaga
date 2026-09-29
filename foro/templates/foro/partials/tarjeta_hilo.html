@@ -99,7 +99,7 @@
                 </g>
               </svg>
             </div>
-            <span id="contador-respuestas-hilo-{{ hilo.id }}" class="text-xs font-semibold">{{ hilo.respuestas.count|default:"0" }}</span>
+            <span id="contador-respuestas-hilo-{{ hilo.id }}" class="text-xs font-semibold">{{ hilo.conteo_respuestas|default:"0" }}</span>
           </button>
 
           <div onclick="event.stopPropagation()" class="flex items-center mt-1">

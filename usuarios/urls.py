@@ -1,5 +1,5 @@
-from django.urls import include, path
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView
+from django.urls import path
 
 from usuarios.views import (
     EditarPerfilView,
@@ -7,6 +7,7 @@ from usuarios.views import (
     RegistroUsuarioView,
     VerTodasLasImagenesSubidasPorUsuario, 
     actualizar_avatar, 
+    confirmar_email,
     logout_view,
     nueva_password, 
     seguir_usuario, 
@@ -27,6 +28,7 @@ urlpatterns = [
     path('perfil/<str:username>/', PerfilView.as_view(), name='perfil_usuario'),
     path('perfil/<str:username>/seguir/', seguir_usuario, name='seguir_usuario'),
     path('editar-perfil/<str:username>/', EditarPerfilView.as_view(), name='editar_perfil'),
+    path('confirmar-email/', confirmar_email, name='confirmar_email'),
     path('imagenes-subidas/<str:username>/', VerTodasLasImagenesSubidasPorUsuario.as_view(), name='imagenes_subidas_usuario'),
 
     #urls para el lanzamiento y recibimiento de mensajes

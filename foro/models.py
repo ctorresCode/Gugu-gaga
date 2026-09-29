@@ -1,13 +1,36 @@
 import uuid
-import secrets
 
+from django.conf import settings
 from django.db import models
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
-from django.contrib.auth import get_user_model
-from config import settings
+
 from usuarios.models import Universidad
 
-User = get_user_model()
+
+class HiloQuerySet(models.QuerySet):
+    def con_conteos(self, usuario=None):
+        """Añade conteo_respuestas (solo activas) y les_gusta_al_usuario en la misma consulta."""
+        qs = self.select_related('universidad', 'autor').annotate(
+            conteo_respuestas=Count('respuestas', filter=Q(respuestas__activo=True), distinct=True),
+        )
+        if usuario is not None and usuario.is_authenticated:
+            qs = qs.annotate(
+                les_gusta_al_usuario=Exists(
+                    Hilo.likes.through.objects.filter(hilo_id=OuterRef('pk'), usuarioforo_id=usuario.pk)
+                )
+            )
+        return qs
+
+    def visibles_para(self, usuario):
+        """Hilos activos que el usuario no ha reportado."""
+        qs = self.filter(activo=True)
+        if usuario is not None and usuario.is_authenticated:
+            qs = qs.exclude(
+                Exists(Hilo.reportes.through.objects.filter(hilo_id=OuterRef('pk'), usuarioforo_id=usuario.pk))
+            )
+        return qs
+
 
 class Hilo(models.Model):
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
@@ -18,7 +41,6 @@ class Hilo(models.Model):
     imagen3 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
     imagen4 = models.ImageField(upload_to='hilos/imagenes/', blank=True, null=True)
     likes_count = models.IntegerField(default=0)
-    respuestas_count = models.IntegerField(default=0)
 
     video = models.FileField(upload_to='hilos/videos/', blank=True, null=True)
     autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -29,6 +51,8 @@ class Hilo(models.Model):
 
     reportes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='hilos_reportados', blank=True)
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='hilos_likes', blank=True )
+
+    objects = HiloQuerySet.as_manager()
 
     class Meta:
         ordering = ['-ultima_actividad']
@@ -102,7 +126,7 @@ class Notificacion(models.Model):
         return nombres
 
     def texto_accion(self):
-        total = self.actores.count()
+        total = len(self.actores.all())  # usa el prefetch_related('actores') si existe
         plural = total != 1
         textos = {
             self.TIPO_LIKE_HILO: 'les ha gustado tu hilo' if plural else 'le ha gustado tu hilo',
@@ -117,6 +141,25 @@ class Notificacion(models.Model):
     def __str__(self):
         return f"Notificación para {self.destinatario} ({self.tipo})"
 
+class SugerenciaQuerySet(models.QuerySet):
+    def con_conteos(self, usuario=None):
+        qs = self.select_related('usuario').annotate(
+            conteo_likes=Count('likes', distinct=True),
+            conteo_dislikes=Count('dislikes', distinct=True),
+            conteo_respuestas=Count('respuestas', distinct=True),
+        )
+        if usuario is not None and usuario.is_authenticated:
+            qs = qs.annotate(
+                les_gusta_al_usuario=Exists(
+                    Sugerencia.likes.through.objects.filter(sugerencia_id=OuterRef('pk'), usuarioforo_id=usuario.pk)
+                ),
+                no_les_gusta_al_usuario=Exists(
+                    Sugerencia.dislikes.through.objects.filter(sugerencia_id=OuterRef('pk'), usuarioforo_id=usuario.pk)
+                ),
+            )
+        return qs
+
+
 class Sugerencia(models.Model):
     public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
@@ -125,6 +168,8 @@ class Sugerencia(models.Model):
     #likes para las sugerencias
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_likes', blank=True)
     dislikes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='sugerencias_dislikes', blank=True)
+
+    objects = SugerenciaQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -159,7 +204,7 @@ class AvisoGlobal(models.Model):
     activo = models.BooleanField(default=True, help_text="Desmárcalo para apagar el aviso a nivel global")
     fecha_creacion = models.DateTimeField(auto_now_add=True)       
 
-    visto_por = models.ManyToManyField(User, blank=True, related_name='avisos_vistos')
+    visto_por = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='avisos_vistos')
 
     class Meta:
         ordering = ['-fecha_creacion'] 

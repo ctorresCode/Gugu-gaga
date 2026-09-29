@@ -1,5 +1,5 @@
-from django.urls import include, path
-from foro.views import EditarHilos, EliminarHilos, reportar_hilo, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, marcar_aviso_visto, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
+from django.urls import path
+from foro.views import estado_tiempo_real, EditarHilos, EliminarHilos, reportar_hilo, InicioView, Like_respuesta, SugerenciasCreateView, boton_like, detalle_respuesta, detalle_respuesta_sugerencia, detalle_sugerencia, detalleHilo, explorar_usuarios, interaccion_sugerencia, like_respuesta_sugerencia, marcar_aviso_visto, notificaciones, obtener_tarjeta_hilo, obtener_tarjeta_notificacion, obtener_tarjeta_respuesta, obtener_tarjeta_respuesta_sugerencia, obtener_tarjeta_sugerencia
 
 urlpatterns = [
     path('', InicioView.as_view(), name='inicio'),
@@ -14,6 +14,7 @@ urlpatterns = [
     path('respuesta/<uuid:public_id>/', detalle_respuesta, name='detalle_respuesta'),
     path('explorar/', explorar_usuarios, name='explorar'),
     path('notificaciones/', notificaciones, name='notificaciones'),
+    path('estado/', estado_tiempo_real, name='estado_tiempo_real'),
     path('sugerencias/', SugerenciasCreateView.as_view(), name='sugerencias'),
     path('sugerencias/<uuid:public_id>/', detalle_sugerencia, name='detalle_sugerencia'),
     path('sugerencias/<uuid:public_id>/<str:accion>/', interaccion_sugerencia, name='interaccion_sugerencia'),

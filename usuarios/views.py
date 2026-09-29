@@ -33,6 +33,8 @@ from foro.limites import (
 from foro.models import Hilo
 from foro.utils import MAX_MENSAJE, a_int, limpiar_texto, procesar_imagenes
 from usuarios.forms import (
+    CodigoEmailForm,
+    EditarPerfilForm,
     NuevaPasswordForm,
     RegistroForm,
     SolicitarResetPasswordForm,
@@ -59,11 +61,7 @@ class RegistroUsuarioView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        universidades = cache.get('universidades_list')
-        if not universidades:
-            universidades = Universidad.objects.all()
-            cache.set('universidades_list', universidades, 86400)
-        context['universidades'] = universidades
+        context['universidades'] = Universidad.cacheadas()
         return context
 
     def form_valid(self, form):
@@ -71,7 +69,9 @@ class RegistroUsuarioView(CreateView):
         return redirect('login')
 
 
+@require_POST
 def logout_view(request):
+    # Solo POST (con CSRF): un GET permitiría que cualquier web externa cerrara tu sesión.
     logout(request)
     return redirect('login')
 
@@ -85,12 +85,12 @@ class PerfilView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['hilos_usuario'] = Hilo.objects.filter(
-            autor=self.object, activo=True
-        ).select_related('universidad', 'autor').annotate(
-            conteo_likes=Count('likes', distinct=True),
-            conteo_respuestas=Count('respuestas', filter=Q(respuestas__activo=True), distinct=True)
-        )[:50]
+        context['hilos_usuario'] = list(
+            Hilo.objects.filter(autor=self.object)
+            .visibles_para(self.request.user)
+            .con_conteos(self.request.user)
+            .order_by('-fecha_creacion')[:50]
+        )
 
         if self.request.user.is_authenticated:
             context['lo_sigo'] = self.request.user.seguidos.filter(id=self.object.id).exists()
@@ -140,7 +140,7 @@ def actualizar_avatar(request):
 @method_decorator(limite_perfil, name='post')
 class EditarPerfilView(LoginRequiredMixin, UpdateView):
     model = UsuarioForo
-    fields = ['banner', 'avatar', 'username', 'descripcion', 'email']
+    form_class = EditarPerfilForm
     template_name = 'usuarios/editar_perfil.html'
 
     def get_object(self, queryset=None):
@@ -162,18 +162,70 @@ class EditarPerfilView(LoginRequiredMixin, UpdateView):
                     return self.form_invalid(form)
                 setattr(form.instance, campo, limpios[0])
 
-        email = form.cleaned_data.get('email')
-        if email:
-            email = email.strip().lower()
-            if UsuarioForo.objects.filter(email__iexact=email).exclude(pk=self.request.user.pk).exists():
-                form.add_error('email', 'Ese correo ya está en uso.')
+        nuevo_email = form.cleaned_data.get('email')
+        pedir_confirmacion = False
+        if form.email_cambiado():
+            if not nuevo_email:
+                form.instance.email = None  # quitar el correo no necesita verificación
+            elif not self.request.user.puede_pedir_codigo_email():
+                form.add_error('email', 'Espera un minuto antes de pedir otro código.')
                 return self.form_invalid(form)
-        form.instance.email = email or None
+            else:
+                pedir_confirmacion = True
 
-        return super().form_valid(form)
+        respuesta = super().form_valid(form)
+
+        if pedir_confirmacion:
+            usuario = self.object
+            codigo = usuario.generar_codigo_cambio_email(nuevo_email)
+            try:
+                send_mail(
+                    subject='Confirma tu correo - UniVoz',
+                    message=(
+                        f'Tu código para confirmar este correo en UniVoz es: {codigo}\n\n'
+                        'Expira en 15 minutos. Si no fuiste tú, ignora este mensaje.'
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[nuevo_email],
+                    fail_silently=False,
+                )
+            except Exception:
+                logger.exception('No se pudo enviar el correo de confirmación (usuario %s)', usuario.id)
+                usuario.cancelar_cambio_email()
+                messages.error(self.request, 'No pudimos enviar el código a ese correo. Inténtalo más tarde.')
+                return respuesta
+            messages.success(self.request, f'Te enviamos un código a {nuevo_email} para confirmarlo.')
+            return redirect('confirmar_email')
+
+        return respuesta
 
     def get_success_url(self):
-        return reverse('perfil_usuario', kwargs={'username': self.request.user.username})
+        return reverse('perfil_usuario', kwargs={'username': self.object.username})
+
+
+@login_required
+@never_cache
+def confirmar_email(request):
+    usuario = request.user
+    if not usuario.email_pendiente:
+        return redirect('editar_perfil', username=usuario.username)
+
+    form = CodigoEmailForm(request.POST or None)
+    if request.method == 'POST':
+        if request.POST.get('accion') == 'cancelar':
+            usuario.cancelar_cambio_email()
+            messages.info(request, 'Cambio de correo cancelado.')
+            return redirect('editar_perfil', username=usuario.username)
+
+        if is_ratelimited(request, group='confirmar_email', key='user', rate='20/h', method='POST', increment=True):
+            messages.error(request, 'Demasiados intentos. Espera unos minutos.')
+        elif form.is_valid():
+            if usuario.confirmar_cambio_email(form.cleaned_data['codigo']):
+                messages.success(request, 'Correo confirmado.')
+                return redirect('perfil_usuario', username=usuario.username)
+            messages.error(request, 'Código incorrecto o expirado.')
+
+    return render(request, 'usuarios/confirmar_email.html', {'form': form, 'email_pendiente': usuario.email_pendiente})
 
 
 class VerTodasLasImagenesSubidasPorUsuario(LoginRequiredMixin, ListView):

@@ -1,24 +1,50 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="htmx-config" content='{"historyCacheSize": 10}' />
     <title>{%block title%} {%endblock%}</title>
-    
+
     <link rel="stylesheet" href="{% static 'css/output.css' %}" />
 
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="{% static 'js/vendor/htmx.min.js' %}"></script>
     <style>
       html {
         scrollbar-gutter: stable;
         overflow-y: scroll;
-        <!-- background-color: #F8F9FA; -->
       }
     </style>
 
     <link rel="icon" type="image/png" href="{% static 'img/wa.png' %}?v=1" />
+
+    {% if request.user.is_authenticated %}
+    <script src="{% static 'js/vendor/supabase.min.js' %}"></script>
+    <script>
+      window.UNIVOZ = {
+        usuarioId: {{ request.user.id }},
+        estadoUrl: "{% url 'estado_tiempo_real' %}",
+        logoutUrl: "{% url 'logout' %}",
+        supabaseUrl: "{{ SUPABASE_URL|escapejs }}",
+        supabaseAnonKey: "{{ SUPABASE_ANON_KEY|escapejs }}",
+      };
+
+      // Un único cliente de Supabase por página. Solo se usa para eventos PÚBLICOS del foro
+      // (la BD solo deja leer ids a la anon key). Si no está configurado, devuelve un cliente
+      // inerte para que las páginas no fallen.
+      window.getSupabase = function () {
+        if (window._supabaseClient) return window._supabaseClient;
+        if (window.supabase && UNIVOZ.supabaseUrl && UNIVOZ.supabaseAnonKey) {
+          window._supabaseClient = window.supabase.createClient(UNIVOZ.supabaseUrl, UNIVOZ.supabaseAnonKey);
+        } else {
+          const canal = { on: function () { return canal; }, subscribe: function () { return canal; } };
+          window._supabaseClient = { channel: function () { return canal; } };
+        }
+        return window._supabaseClient;
+      };
+    </script>
+    {% endif %}
   </head>
   <body>
     <div style="display:none">{% csrf_token %}</div>
@@ -44,14 +70,82 @@
 
     {%block content%} {%endblock%}
 
+    <div id="toasts" aria-live="polite" style="position:fixed; left:50%; bottom:88px; transform:translateX(-50%); z-index:100000; display:flex; flex-direction:column; gap:8px; width:max-content; max-width:92vw; pointer-events:none;"></div>
+    {% block mensajes_globales %}
+      {% if messages %}
+        <script>
+          document.addEventListener('DOMContentLoaded', function () {
+            {% for message in messages %}
+              mostrarToast("{{ message|escapejs }}", "{% if message.tags == 'error' %}error{% else %}ok{% endif %}");
+            {% endfor %}
+          });
+        </script>
+      {% endif %}
+    {% endblock %}
+
     <div id="visor-global" onclick="cerrarVisorGlobal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.92); z-index:99999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
         <button onclick="cerrarVisorGlobal()" style="position:absolute; top:24px; right:24px; background:rgba(255,255,255,0.1); border:none; border-radius:9999px; padding:12px; cursor:pointer; color:#fff; display:flex; transition: background 0.2s;">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.36 5.64L12 12l6.36 6.36-1.42 1.42L10.59 13.4 4.22 19.78 2.8 18.36 9.18 12 2.8 5.64 4.22 4.22l6.37 6.36 6.36-6.36z"></path></svg>
         </button>
         <img id="img-visor-global" src="" alt="Vista ampliada" onclick="event.stopPropagation()" style="max-width:100%; max-height:90vh; object-fit:contain; border-radius:12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
     </div>
-    
+
     <script>
+        function csrfToken() {
+          const input = document.querySelector('input[name=csrfmiddlewaretoken]');
+          return input ? input.value : '';
+        }
+
+        // Todas las peticiones htmx llevan el token CSRF (aunque el elemento no lo declare).
+        document.body.addEventListener('htmx:configRequest', function (e) {
+          if (!e.detail.headers['X-CSRFToken']) e.detail.headers['X-CSRFToken'] = csrfToken();
+        });
+
+        function mostrarToast(texto, tipo) {
+          const contenedor = document.getElementById('toasts');
+          if (!contenedor || !texto) return;
+          const toast = document.createElement('div');
+          toast.textContent = texto;
+          toast.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+          toast.style.cssText = 'pointer-events:auto; padding:10px 16px; border-radius:14px; font-size:14px; font-weight:700; color:#fff; box-shadow:0 10px 25px rgba(0,0,0,.15); transition:opacity .2s; background:' + (tipo === 'error' ? '#dc2626' : '#093D77');
+          contenedor.appendChild(toast);
+          setTimeout(function () { toast.style.opacity = '0'; setTimeout(function () { toast.remove(); }, 250); }, 4000);
+        }
+
+        // Eventos que envía el servidor con la cabecera HX-Trigger (foro/limites.py, reportes...).
+        document.body.addEventListener('mostrarError', function (e) { mostrarToast(e.detail.value, 'error'); });
+        document.body.addEventListener('mostrarAviso', function (e) { mostrarToast(e.detail.value, 'ok'); });
+
+        // Menú "⋯" de las tarjetas de hilo (inicio, perfil...).
+        document.addEventListener('click', function (event) {
+          const boton = event.target.closest('.btn-opciones');
+          if (!boton) {
+            document.querySelectorAll('.menu-opciones').forEach(function (m) { m.classList.add('hidden'); });
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          const menu = boton.nextElementSibling;
+          if (menu && menu.classList.contains('menu-opciones')) {
+            document.querySelectorAll('.menu-opciones').forEach(function (m) { if (m !== menu) m.classList.add('hidden'); });
+            menu.classList.toggle('hidden');
+          }
+        });
+
+        // Logout por POST con el token CSRF fresco de la página (el sidebar está cacheado).
+        function cerrarSesion() {
+          const form = document.createElement('form');
+          form.method = 'post';
+          form.action = window.UNIVOZ ? UNIVOZ.logoutUrl : '/logout/';
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'csrfmiddlewaretoken';
+          input.value = csrfToken();
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+        }
+
         function abrirVisorGlobal(src) {
             document.getElementById('img-visor-global').src = src;
             document.getElementById('visor-global').style.display = 'flex';
@@ -61,7 +155,7 @@
         function cerrarVisorGlobal() {
             document.getElementById('visor-global').style.display = 'none';
             document.body.style.overflow = '';
-            document.getElementById('img-visor-global').src = ''; 
+            document.getElementById('img-visor-global').src = '';
         }
 
         document.addEventListener('keydown', function (e) {
@@ -73,12 +167,11 @@
         function marcarAvisoVisto(boton) {
           const url = boton.getAttribute('data-url');
           const contenedor = boton.closest('div[id^="aviso-"]');
-          const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
 
           fetch(url, {
             method: 'POST',
             headers: {
-              'X-CSRFToken': csrftoken,
+              'X-CSRFToken': csrfToken(),
               'X-Requested-With': 'XMLHttpRequest'
             }
           })
@@ -91,7 +184,62 @@
               }
             })
             .catch(err => console.error('Error al marcar aviso como visto:', err));
-    }   
+        }
     </script>
+
+    {% if request.user.is_authenticated %}
+    <script>
+      // Estado privado (notificaciones, mensajes) consultado a Django con la sesión del usuario.
+      // Sustituye a escuchar tablas privadas por Supabase, que exponía todos los mensajes a todos.
+      // Una página puede acelerar el intervalo con window.UNIVOZ_INTERVALO_ESTADO (ms) y escuchar
+      // el evento 'univoz:estado' en document.
+      (function () {
+        const intervalo = window.UNIVOZ_INTERVALO_ESTADO || 20000;
+        let enCurso = false;
+
+        function pintarBadge(idBadge, idContador, total) {
+          const badge = document.getElementById(idBadge);
+          if (badge) badge.classList.toggle('hidden', !total);
+          const contador = idContador && document.getElementById(idContador);
+          if (contador) contador.innerText = total;
+        }
+
+        function panelNotificacionesAbierto() {
+          const panel = document.getElementById('notificaciones-panel');
+          return panel && !panel.classList.contains('translate-x-full');
+        }
+
+        async function consultar() {
+          if (enCurso || document.hidden) return;
+          enCurso = true;
+          try {
+            const res = await fetch(UNIVOZ.estadoUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' });
+            if (!res.ok) return;
+            const estado = await res.json();
+
+            if (estado.notificaciones && panelNotificacionesAbierto() && window.htmx) {
+              // La vista marca como leídas las que muestra.
+              htmx.ajax('GET', "{% url 'notificaciones' %}", { target: '#notificaciones-lista' });
+              estado.notificaciones = 0;
+            }
+            pintarBadge('badge-notif-desktop', 'badge-notif-desktop-count', estado.notificaciones);
+            pintarBadge('badge-notif-mobile', null, estado.notificaciones);
+            pintarBadge('badge-mensajes-desktop', 'badge-mensajes-desktop-count', estado.mensajes);
+            pintarBadge('badge-mensajes-mobile', null, estado.mensajes);
+
+            document.dispatchEvent(new CustomEvent('univoz:estado', { detail: estado }));
+          } catch (e) {
+            // sin conexión: se reintenta en el siguiente ciclo
+          } finally {
+            enCurso = false;
+          }
+        }
+
+        setInterval(consultar, intervalo);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) consultar(); });
+        document.addEventListener('DOMContentLoaded', consultar);
+      })();
+    </script>
+    {% endif %}
   </body>
 </html>

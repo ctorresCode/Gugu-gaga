@@ -1,3 +1,30 @@
+# Entorno y secretos
 .env
+.env.*
+!.env.example
 venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Dependencias de Node (se instalan con npm install)
 /node_modules
+
+# Generado por collectstatic en el deploy
+/staticfiles/
+
+# Archivos subidos por usuarios (en producción van a Cloudflare R2)
+/media/
+/.test_media/
+
+# Bases de datos locales
+*.sqlite3
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+/hilos/

@@ -153,11 +153,9 @@
     </aside>
 {% endcache %}
 
-    {% include 'foro/partials/nav_mobile.html' %}
     
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const inputImagen = document.getElementById('imagen-input');
@@ -264,35 +262,12 @@ function generarTokenSeguro() {
     }
 }
 
-document.addEventListener('click', function(event) {
-    const botonClickeado = event.target.closest('.btn-opciones');
-    
-    if (!botonClickeado) {
-        document.querySelectorAll('.menu-opciones').forEach(menu => {
-            menu.classList.add('hidden');
-        });
-        return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    
-    const menu = botonClickeado.nextElementSibling;
-    if (menu && menu.classList.contains('menu-opciones')) {
-        document.querySelectorAll('.menu-opciones').forEach(m => {
-            if (m !== menu) m.classList.add('hidden');
-        });
-        menu.classList.toggle('hidden');
-    }
-});
 </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const SUPABASE_URL = '{{ SUPABASE_URL|escapejs }}';
-    const SUPABASE_ANON_KEY = '{{ SUPABASE_ANON_KEY|escapejs }}';
     const miUsuarioId = Number("{{ request.user.id }}");
-    const supabaseClient = window.getSupabase ? window.getSupabase() : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.getSupabase();
 
     supabaseClient
         .channel('likes-en-vivo')

@@ -19,7 +19,7 @@
             </a>
             <div class="flex flex-col">
                 <h1 class="text-xl font-black text-[#2B2B2B] leading-tight">{{ perfil_usuario.username }}</h1>
-                <span class="text-xs text-[#3A7CA5] font-bold">{{ hilos_usuario.count }} publicaciones</span>
+                <span class="text-xs text-[#3A7CA5] font-bold">{{ hilos_usuario|length }} publicaciones</span>
             </div>
         </div>
 
@@ -159,7 +159,6 @@
 
     <aside class="hidden lg:block w-80 pl-8 py-8 sticky top-0 h-screen z-30"></aside>
 
-    {% include 'foro/partials/nav_mobile.html' %}
 </div>
 
 <div id="image-modal" class="fixed inset-0 z-[100] hidden bg-[#2B2B2B]/95 flex-col justify-center items-center opacity-0 transition-opacity duration-150" onclick="closeImageModal()">
@@ -225,15 +224,12 @@
     }
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
     const miUsuarioId = Number("{{ request.user.id|default:'0' }}");
     const perfilUsuarioId = Number("{{ perfil_usuario.id }}");
     
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.getSupabase();
 
     supabaseClient
         .channel('likes-en-vivo-perfil')

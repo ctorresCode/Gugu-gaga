@@ -1,9 +1,14 @@
+import importlib.util
+import sys
 from datetime import timedelta
 from pathlib import Path
 from decouple import config, Csv
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# `manage.py test` nunca debe tocar la base de datos, la caché ni el storage reales.
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
 SECRET_KEY = config('SECRET_KEY')
 
@@ -40,7 +45,7 @@ INSTALLED_APPS = [
     'axes',  
 ]
 
-if DEBUG:
+if DEBUG and importlib.util.find_spec('sslserver'):  # requirements-dev.txt
     INSTALLED_APPS += ['sslserver']  
 
 MIDDLEWARE = [
@@ -77,13 +82,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+if TESTING:
+    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}}
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=config('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -123,7 +131,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-USE_CLOUD_STORAGE = config('USE_CLOUD_STORAGE', default=not DEBUG, cast=bool)
+USE_CLOUD_STORAGE = config('USE_CLOUD_STORAGE', default=not DEBUG, cast=bool) and not TESTING
 r2_key = config('R2_ACCESS_KEY_ID', default='')
 
 if USE_CLOUD_STORAGE and r2_key:
@@ -148,7 +156,7 @@ else:
         "staticfiles": {"BACKEND": "whitenoise.storage.StaticFilesStorage"},
     }
 
-if DEBUG:
+if DEBUG or TESTING:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -160,7 +168,7 @@ else:
 
 DEFAULT_FROM_EMAIL = f"UniVoz <{config('EMAIL_HOST_USER', default='soporte.univoz@gmail.com')}>"
 
-if DEBUG:
+if DEBUG or TESTING:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -205,4 +213,13 @@ AXES_COOLOFF_TIME = timedelta(minutes=15)
 AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]   
 AXES_CLIENT_IP_CALLABLE = 'config.utils.get_client_ip'   
 AXES_RESET_ON_SUCCESS = True                             
-AXES_LOCKOUT_URL = '/login/?locked=1'                     
+AXES_LOCKOUT_URL = '/login/?locked=1'
+
+# Moderación: un hilo se oculta automáticamente cuando lo reportan este número de cuentas
+# con al menos REPORTES_ANTIGUEDAD_MINIMA de antigüedad (evita que cuentas recién creadas lo abusen).
+REPORTES_PARA_OCULTAR = config('REPORTES_PARA_OCULTAR', default=8, cast=int)
+REPORTES_ANTIGUEDAD_MINIMA = timedelta(days=config('REPORTES_ANTIGUEDAD_DIAS', default=3, cast=int))
+
+if TESTING:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+    MEDIA_ROOT = BASE_DIR / '.test_media'

@@ -213,7 +213,6 @@
     </main>
 
     {% if not chat_activo %}
-    {% include 'foro/partials/nav_mobile.html' %}
     {% endif %}
 </div>
 
@@ -446,51 +445,40 @@
 </script>
 {% endif %}
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const SUPABASE_URL = '{{ SUPABASE_URL|escapejs }}';
-    const SUPABASE_ANON_KEY = '{{ SUPABASE_ANON_KEY|escapejs }}';
-    
-    const miUsuarioId = Number("{{ request.user.id }}");
-    const chatActivoId = Number("{{ chat_activo.id|default:'0' }}");
-    
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Chat "en vivo" sin exponer mensajes: base.html consulta /estado/ (con la sesión) y avisa con
+// 'univoz:estado' cuando cambia el último mensaje. Entonces refrescamos chat y lista de amigos.
+window.UNIVOZ_INTERVALO_ESTADO = 4000;
+(function () {
+    let ultimoMensajeId = null;
 
-    supabaseClient
-        .channel('chat-vivo')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'usuarios_mensaje' }, async function(payload) {
-            let msg = payload.new;
-            
-            if (Number(msg.remitente_id) !== miUsuarioId && Number(msg.destinatario_id) !== miUsuarioId) return;
-            if (Number(msg.remitente_id) === miUsuarioId) return;
+    async function refrescarChat() {
+        try {
+            const response = await fetch(window.location.href, { cache: 'no-store' });
+            if (!response.ok) return;
+            const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
 
-            try {
-                let response = await fetch(window.location.href);
-                if (response.ok) {
-                    let htmlText = await response.text();
-                    let doc = new DOMParser().parseFromString(htmlText, 'text/html');
-
-                    if (Number(msg.remitente_id) === chatActivoId) {
-                        let newChat = doc.getElementById('chat-container');
-                        let currentChat = document.getElementById('chat-container');
-                        if (newChat && currentChat) {
-                            currentChat.innerHTML = newChat.innerHTML;
-                            currentChat.scrollTop = currentChat.scrollHeight;
-                        }
-                    }
-
-                    let newSidebar = doc.getElementById('lista-amigos-sidebar');
-                    let currentSidebar = document.getElementById('lista-amigos-sidebar');
-                    if (newSidebar && currentSidebar) {
-                        currentSidebar.innerHTML = newSidebar.innerHTML;
-                    }
-                }
-            } catch (error) {
-                console.error("Error en chat en vivo:", error);
+            const newChat = doc.getElementById('chat-container');
+            const currentChat = document.getElementById('chat-container');
+            if (newChat && currentChat && newChat.innerHTML !== currentChat.innerHTML) {
+                const estabaAbajo = currentChat.scrollHeight - currentChat.scrollTop - currentChat.clientHeight < 80;
+                currentChat.innerHTML = newChat.innerHTML;
+                if (estabaAbajo) currentChat.scrollTop = currentChat.scrollHeight;
             }
-        })
-        .subscribe();       
-});
+
+            const newSidebar = doc.getElementById('lista-amigos-sidebar');
+            const currentSidebar = document.getElementById('lista-amigos-sidebar');
+            if (newSidebar && currentSidebar) currentSidebar.innerHTML = newSidebar.innerHTML;
+        } catch (error) {
+            console.error('Error en chat en vivo:', error);
+        }
+    }
+
+    document.addEventListener('univoz:estado', function (e) {
+        const id = e.detail.ultimo_mensaje_id;
+        if (ultimoMensajeId !== null && id !== ultimoMensajeId) refrescarChat();
+        ultimoMensajeId = id;
+    });
+})();
 </script>
 {% endblock %}

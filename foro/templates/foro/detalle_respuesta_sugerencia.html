@@ -86,18 +86,14 @@
         </div>
     </main>
 
-    {% include 'foro/partials/nav_mobile.html' %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const SUPABASE_URL = 'https://lgsnyqaadlgqhdjhssnn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc255cWFhZGxncWhkamhzc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI1NjQsImV4cCI6MjEwNDk3ODU2NH0.uKc7iF53UUCXEStIjd_O8TY_6yyXnu-kRGE7DSdzy3o';
     const miUsuarioId = Number("{{ request.user.id|default:'0' }}");
     const respuestaPadreId = Number("{{ respuesta_padre.id }}");
     
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.getSupabase();
 
     supabaseClient
         .channel('respuestas-hijas-sug-vivo')
