@@ -1,121 +1,315 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 {% load static %}
-{% block title %} Registro {% endblock %} 
+{% block title %} Crear cuenta · UniVoz {% endblock %}
 
 {% block content %}
 <style>
-    body {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
+    #id_universidad option { background-color: #1e293b; color: #fff; }
 
-    .bg-registro {
-        background-image: url("{% static 'img/UniversidadSinFiltro.jpg' %}");
+    @keyframes registro-entrada {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
-
-    .custom-select {
-        appearance: none;
-        -webkit-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 1.1em;
+    .registro-entrada { animation: registro-entrada .5s cubic-bezier(.2, .8, .2, 1) both; }
+    .registro-entrada-2 { animation-delay: .08s; }
+    @media (prefers-reduced-motion: reduce) {
+        .registro-entrada { animation: none; }
     }
 </style>
 
-<div class="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+<div class="relative min-h-screen overflow-hidden bg-[#0b1120] text-white">
 
-    <div class="hidden md:flex md:w-[50%] lg:w-[55%] relative items-end p-10 lg:p-16 overflow-hidden">
-        <div class="absolute inset-0 bg-cover bg-center bg-registro"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-blue-950/95 via-blue-950/50 to-blue-950/10"></div>
-    </div>
+    {# Mismo fondo que el resto de pantallas de acceso: el collage de universidades del país #}
+    <img src="{% static 'img/LoginImageBackground.webp' %}" alt="" aria-hidden="true" decoding="async"
+         class="absolute inset-0 h-full w-full object-cover">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0b1120] via-[#0b1120]/85 to-[#0b1120]/40"></div>
+    <div class="pointer-events-none absolute -top-40 -left-40 h-[32rem] w-[32rem] rounded-full bg-[#3b82f6]/20 blur-3xl"></div>
 
-    <div class="w-full md:w-[50%] lg:w-[45%] flex items-center justify-center p-4 sm:p-8">
-        
-        <div class="bg-white p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
-            
-            <div class="mb-8 text-center">
-                <h1 class="text-2xl font-bold text-[#164e91]">Crea tu cuenta</h1>
+    <div class="relative z-10 mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-4 py-8 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:py-12">
+
+        {# ---------- Panel de marca (escritorio) ---------- #}
+        <section class="registro-entrada hidden flex-col gap-10 lg:flex">
+            <a href="{% url 'login' %}" class="w-fit transition-opacity hover:opacity-80" aria-label="UniVoz">
+                <img src="{% static 'img/VozUniLogo-oscuro.webp' %}" alt="UniVoz" width="210" height="74" class="h-14 w-auto">
+            </a>
+
+            <div>
+                <h1 class="mt-6 text-5xl font-extrabold leading-[1.08] tracking-tight">
+                    Tu universidad tiene mucho que decir.
+                    <span class="bg-gradient-to-r from-[#60a5fa] to-[#3b82f6] bg-clip-text text-transparent">Haz que se escuche.</span>
+                </h1>
+                <p class="mt-5 max-w-lg text-lg leading-relaxed text-gray-300">
+                    UniVoz reúne a estudiantes de todo el país en un solo lugar para conversar, compartir y proponer.
+                </p>
             </div>
 
-            {% if form.non_field_errors %}
-                <div class="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-xl mb-6 text-sm text-center font-bold">
-                    {% for error in form.non_field_errors %}{{ error }} {% endfor %}
-                </div>
-            {% endif %}
             
-            <form method="post" hx-boost="false">
-                {% csrf_token %} 
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
-                        <input type="text" name="username" placeholder="Tu nombre de usuario"
-                            value="{{ form.username.value|default:'' }}"
-                            class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" required>
-                        {% for error in form.username.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
-                    </div>
+        </section>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Universidad</label>
-                        <select name="universidad" class="custom-select w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all cursor-pointer">
-                            <option value="">Selecciona una universidad</option>
-                            {% for uni in universidades %}
-                                <option value="{{ uni.id }}" {% if form.universidad.value|stringformat:"s" == uni.id|stringformat:"s" %}selected{% endif %}>{{ uni.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                        {% for error in form.universidad.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
-                    </div>
+        {# ---------- Formulario ---------- #}
+        <section class="registro-entrada registro-entrada-2 mx-auto w-full max-w-md lg:max-w-[440px]">
+            <a href="{% url 'login' %}" class="mb-6 flex justify-center lg:hidden" aria-label="UniVoz">
+                <img src="{% static 'img/VozUniLogo-oscuro.webp' %}" alt="UniVoz" width="170" height="60" class="h-12 w-auto">
+            </a>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-                        <input type="password" name="password1" placeholder="••••••••"
-                            class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" required>
-                        {% for error in form.password1.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Confirmar password</label>
-                        <input type="password" name="password2" placeholder="••••••••"
-                            class="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" required>
-                        {% for error in form.password2.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
-                    </div>
-
-                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-200">
-                        <div class="flex items-start gap-3">
-                            <input type="checkbox" name="mayor_edad" id="mayor_edad" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" required>
-                            <label for="mayor_edad" class="text-xs text-gray-600 leading-snug cursor-pointer select-none">
-                                Confirmo que tengo 18 años o más.
-                            </label>
-                        </div>
-                        {% for error in form.mayor_edad.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
-                    </div>
-
-                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-200">
-                        <div class="flex items-start gap-3">
-                            <input type="checkbox" name="consentimiento" id="consentimiento" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" required>
-                            <label for="consentimiento" class="text-xs text-gray-600 leading-snug cursor-pointer">
-                                He leído y acepto los
-                                <a href="{% url 'terminos' %}" target="_blank" hx-boost="false" class="text-[#175196] font-semibold underline">Términos y Condiciones</a>
-                                y la
-                                <a href="{% url 'privacidad' %}" target="_blank" hx-boost="false" class="text-[#175196] font-semibold underline">Política de Privacidad</a>.
-                                Entiendo que soy responsable de lo que publique y que el contenido que infrinja las reglas puede ser eliminado y mi cuenta suspendida.
-                            </label>
-                        </div>
-                        {% for error in form.consentimiento.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
-                    </div>
+            <div class="rounded-3xl border border-gray-700/80 bg-[#0f172a]/90 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-extrabold tracking-tight">Crea tu cuenta</h2>
+                    <p class="mt-1.5 text-sm text-gray-400">Solo te toma un minuto. Es gratis.</p>
                 </div>
-                
-                <button type="submit" class="w-full bg-[#175196] text-white font-bold py-3 mt-8 rounded-xl hover:bg-[#164d8e] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 shadow-md cursor-pointer">
-                    Registrar
-                </button>
-            </form>
 
-            <p class="text-center text-sm text-gray-500 mt-6">
-                ¿Ya tienes una cuenta?
-                <a href="{% url 'login'%}" class="text-[#175196] font-semibold hover:underline">Inicia sesión</a>
-            </p>
-        </div>
+                {% if form.non_field_errors %}
+                    <div role="alert" class="mb-6 flex gap-2.5 rounded-xl border border-red-500/60 bg-red-500/10 p-3 text-sm font-semibold text-red-400">
+                        <svg class="mt-0.5 h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <span>{% for error in form.non_field_errors %}{{ error }} {% endfor %}</span>
+                    </div>
+                {% endif %}
 
+                <form method="post" hx-boost="false" id="form-registro" class="space-y-[18px]" novalidate>
+                    {% csrf_token %}
+
+                    {# Usuario #}
+                    <div>
+                        <label for="id_username" class="mb-2 block text-sm font-semibold text-gray-200">Nombre de usuario</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-bold text-gray-500" aria-hidden="true">@</span>
+                            <input type="text" name="username" id="id_username" required maxlength="150"
+                                   autocomplete="username" autocapitalize="none" spellcheck="false" autofocus
+                                   placeholder="tu_usuario"
+                                   value="{{ form.username.value|default:'' }}"
+                                   aria-describedby="ayuda-username{% if form.username.errors %} error-username{% endif %}"
+                                   {% if form.username.errors %}aria-invalid="true"{% endif %}
+                                   class="campo-registro w-full rounded-xl border-0 bg-[#1e293b] py-3 pl-9 pr-4 text-sm text-white placeholder-gray-500 shadow-inner outline-none ring-1 ring-inset transition hover:ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] {% if form.username.errors %}ring-red-500/70{% else %}ring-gray-600{% endif %}">
+                        </div>
+                        <p id="ayuda-username" class="mt-1.5 text-xs text-gray-500">Es público: así te verán los demás.</p>
+                        {% for error in form.username.errors %}
+                            <p id="error-username" class="mt-1.5 text-xs font-semibold text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    {# Universidad #}
+                    <div>
+                        <label for="id_universidad" class="mb-2 block text-sm font-semibold text-gray-200">Universidad</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-500" aria-hidden="true">
+                                <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
+                            </span>
+                            <select name="universidad" id="id_universidad" required
+                                    {% if form.universidad.errors %}aria-invalid="true" aria-describedby="error-universidad"{% endif %}
+                                    class="campo-registro w-full cursor-pointer rounded-xl border-0 bg-[#1e293b] py-3 pl-10 pr-10 text-sm text-white shadow-inner outline-none ring-1 ring-inset transition hover:ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] {% if form.universidad.errors %}ring-red-500/70{% else %}ring-gray-600{% endif %}">
+                                <option value="" class="text-gray-400">Selecciona tu universidad</option>
+                                {% for uni in universidades %}
+                                    <option value="{{ uni.id }}" {% if form.universidad.value|stringformat:"s" == uni.id|stringformat:"s" %}selected{% endif %}>{{ uni.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% for error in form.universidad.errors %}
+                            <p id="error-universidad" class="mt-1.5 text-xs font-semibold text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    {# Contraseña #}
+                    <div>
+                        <label for="id_password1" class="mb-2 block text-sm font-semibold text-gray-200">Contraseña</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-500" aria-hidden="true">
+                                <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            </span>
+                            <input type="password" name="password1" id="id_password1" required autocomplete="new-password"
+                                   placeholder="Mínimo 8 caracteres"
+                                   aria-describedby="fuerza-texto{% if form.password1.errors %} error-password1{% endif %}"
+                                   {% if form.password1.errors %}aria-invalid="true"{% endif %}
+                                   class="campo-registro w-full rounded-xl border-0 bg-[#1e293b] py-3 pl-10 pr-12 text-sm text-white placeholder-gray-500 shadow-inner outline-none ring-1 ring-inset transition hover:ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] {% if form.password1.errors %}ring-red-500/70{% else %}ring-gray-600{% endif %}">
+                            <button type="button" data-mostrar="id_password1" aria-label="Mostrar contraseña" aria-pressed="false"
+                                    class="absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-xl px-3.5 text-gray-400 transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none">
+                                <svg class="icono-ver h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg class="icono-ocultar hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            </button>
+                        </div>
+                        <div class="mt-2 flex items-center gap-3" aria-hidden="true">
+                            <div class="flex flex-1 gap-1.5">
+                                <span class="barra-fuerza h-1.5 flex-1 rounded-full bg-gray-700 transition-colors duration-300"></span>
+                                <span class="barra-fuerza h-1.5 flex-1 rounded-full bg-gray-700 transition-colors duration-300"></span>
+                                <span class="barra-fuerza h-1.5 flex-1 rounded-full bg-gray-700 transition-colors duration-300"></span>
+                                <span class="barra-fuerza h-1.5 flex-1 rounded-full bg-gray-700 transition-colors duration-300"></span>
+                            </div>
+                        </div>
+                        <p id="fuerza-texto" class="mt-1.5 text-xs text-gray-500" aria-live="polite">Mínimo 8 caracteres y que no se parezca a tu usuario.</p>
+                        {% for error in form.password1.errors %}
+                            <p id="error-password1" class="mt-1.5 text-xs font-semibold text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    {# Confirmar contraseña #}
+                    <div>
+                        <label for="id_password2" class="mb-2 block text-sm font-semibold text-gray-200">Confirma tu contraseña</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-500" aria-hidden="true">
+                                <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </span>
+                            <input type="password" name="password2" id="id_password2" required autocomplete="new-password"
+                                   placeholder="Repite la contraseña"
+                                   aria-describedby="coincidencia{% if form.password2.errors %} error-password2{% endif %}"
+                                   {% if form.password2.errors %}aria-invalid="true"{% endif %}
+                                   class="campo-registro w-full rounded-xl border-0 bg-[#1e293b] py-3 pl-10 pr-12 text-sm text-white placeholder-gray-500 shadow-inner outline-none ring-1 ring-inset transition hover:ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-[#3b82f6] {% if form.password2.errors %}ring-red-500/70{% else %}ring-gray-600{% endif %}">
+                            <button type="button" data-mostrar="id_password2" aria-label="Mostrar contraseña" aria-pressed="false"
+                                    class="absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-xl px-3.5 text-gray-400 transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none">
+                                <svg class="icono-ver h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg class="icono-ocultar hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            </button>
+                        </div>
+                        <p id="coincidencia" class="mt-1.5 text-xs empty:hidden" aria-live="polite"></p>
+                        {% for error in form.password2.errors %}
+                            <p id="error-password2" class="mt-1.5 text-xs font-semibold text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    {# Aceptaciones #}
+                    <div class="space-y-2.5 pt-1">
+                        <label for="mayor_edad" class="flex cursor-pointer items-start gap-3 rounded-xl bg-[#1e293b]/60 p-3.5 ring-1 ring-inset ring-gray-700 transition hover:ring-gray-600 has-[:checked]:bg-[#3b82f6]/10 has-[:checked]:ring-[#3b82f6]/50">
+                            <input type="checkbox" name="mayor_edad" id="mayor_edad" required {% if form.mayor_edad.value %}checked{% endif %}
+                                   class="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-gray-500 bg-[#0f172a] text-[#3b82f6] focus:ring-[#3b82f6] focus:ring-offset-[#0f172a]">
+                            <span class="select-none text-sm leading-snug text-gray-300">Confirmo que tengo <strong class="text-white">18 años o más</strong>.</span>
+                        </label>
+                        {% for error in form.mayor_edad.errors %}<p class="text-xs font-semibold text-red-400">Debes confirmar que eres mayor de edad.</p>{% endfor %}
+
+                        <label for="consentimiento" class="flex cursor-pointer items-start gap-3 rounded-xl bg-[#1e293b]/60 p-3.5 ring-1 ring-inset ring-gray-700 transition hover:ring-gray-600 has-[:checked]:bg-[#3b82f6]/10 has-[:checked]:ring-[#3b82f6]/50">
+                            <input type="checkbox" name="consentimiento" id="consentimiento" required {% if form.consentimiento.value %}checked{% endif %}
+                                   class="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-gray-500 bg-[#0f172a] text-[#3b82f6] focus:ring-[#3b82f6] focus:ring-offset-[#0f172a]">
+                            <span class="text-sm leading-snug text-gray-300">
+                                Acepto los
+                                <a href="{% url 'terminos' %}" target="_blank" rel="noopener" hx-boost="false" class="font-semibold text-[#60a5fa] underline-offset-2 hover:underline">Términos y Condiciones</a>
+                                y la
+                                <a href="{% url 'privacidad' %}" target="_blank" rel="noopener" hx-boost="false" class="font-semibold text-[#60a5fa] underline-offset-2 hover:underline">Política de Privacidad</a>.
+                                <span class="mt-1 block text-xs text-gray-500">Lo que publique es mi responsabilidad y puede eliminarse si incumple las reglas.</span>
+                            </span>
+                        </label>
+                        {% for error in form.consentimiento.errors %}<p class="text-xs font-semibold text-red-400">Debes aceptar los términos para continuar.</p>{% endfor %}
+                    </div>
+
+                    <button type="submit" id="btn-registro"
+                            class="group mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#174b9e] px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#174b9e]/30 transition hover:bg-[#1d5bc0] active:bg-[#0c2a5c] disabled:cursor-wait disabled:opacity-70">
+                        <svg class="spinner-registro hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                        <span class="texto-registro">Crear cuenta</span>
+                        <svg class="flecha-registro h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </button>
+                </form>
+
+                <div class="mt-6 border-t border-gray-700/80 pt-5 text-center">
+                    <p class="text-sm text-gray-400">
+                        ¿Ya tienes una cuenta?
+                        <a href="{% url 'login' %}" hx-boost="false" class="font-semibold text-[#3b82f6] transition-colors hover:text-[#60a5fa]">Inicia sesión</a>
+                    </p>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
+
+<script>
+(function () {
+    const form = document.getElementById('form-registro');
+    if (!form) return;
+    const pass1 = document.getElementById('id_password1');
+    const pass2 = document.getElementById('id_password2');
+    const usuario = document.getElementById('id_username');
+    const barras = form.querySelectorAll('.barra-fuerza');
+    const textoFuerza = document.getElementById('fuerza-texto');
+    const textoInicial = textoFuerza.textContent;
+    const coincidencia = document.getElementById('coincidencia');
+
+    // Mostrar / ocultar contraseña
+    form.querySelectorAll('[data-mostrar]').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const campo = document.getElementById(boton.dataset.mostrar);
+            const visible = campo.type === 'text';
+            campo.type = visible ? 'password' : 'text';
+            boton.setAttribute('aria-pressed', String(!visible));
+            boton.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+            boton.querySelector('.icono-ver').classList.toggle('hidden', !visible);
+            boton.querySelector('.icono-ocultar').classList.toggle('hidden', visible);
+        });
+    });
+
+    // Medidor orientativo; la validación real la hace el servidor.
+    const NIVELES = [
+        { color: 'bg-red-500', texto: 'Muy débil', clase: 'text-red-400' },
+        { color: 'bg-orange-500', texto: 'Débil', clase: 'text-orange-400' },
+        { color: 'bg-amber-400', texto: 'Aceptable', clase: 'text-amber-300' },
+        { color: 'bg-emerald-500', texto: 'Segura', clase: 'text-emerald-400' },
+    ];
+    const COLORES = NIVELES.map(function (n) { return n.color; });
+    const CLASES_TEXTO = ['text-gray-500'].concat(NIVELES.map(function (n) { return n.clase; }));
+
+    // -1 vacío · 0 muy débil · 1 débil · 2 aceptable · 3 segura
+    function puntuar(valor) {
+        if (!valor) return -1;
+        const pareceUsuario = usuario.value.length >= 3 && valor.toLowerCase().includes(usuario.value.toLowerCase());
+        if (valor.length < 8 || /^\d+$/.test(valor) || pareceUsuario) return 0;
+        let puntos = 1;
+        if (valor.length >= 12) puntos++;
+        if (/\d/.test(valor) && /\D/.test(valor)) puntos++;
+        if (/[^\w\s]/.test(valor) || (/[A-ZÑ]/.test(valor) && /[a-zñ]/.test(valor))) puntos++;
+        return Math.min(3, puntos);
+    }
+
+    function pintarFuerza() {
+        const nivel = puntuar(pass1.value);
+        barras.forEach(function (barra, i) {
+            barra.classList.remove('bg-gray-700', ...COLORES);
+            barra.classList.add(nivel >= 0 && i <= nivel ? NIVELES[nivel].color : 'bg-gray-700');
+        });
+        textoFuerza.classList.remove(...CLASES_TEXTO);
+        if (nivel < 0) {
+            textoFuerza.textContent = textoInicial;
+            textoFuerza.classList.add('text-gray-500');
+        } else {
+            textoFuerza.textContent = 'Seguridad: ' + NIVELES[nivel].texto + (pass1.value.length < 8 ? ' · faltan ' + (8 - pass1.value.length) + ' caracteres' : '');
+            textoFuerza.classList.add(NIVELES[nivel].clase);
+        }
+    }
+
+    function pintarCoincidencia() {
+        coincidencia.classList.remove('text-emerald-400', 'text-red-400');
+        if (!pass2.value) { coincidencia.textContent = ''; return; }
+        const iguales = pass1.value === pass2.value;
+        coincidencia.textContent = iguales ? '✓ Las contraseñas coinciden' : 'Las contraseñas no coinciden';
+        coincidencia.classList.add(iguales ? 'text-emerald-400' : 'text-red-400');
+    }
+
+    pass1.addEventListener('input', function () { pintarFuerza(); pintarCoincidencia(); });
+    usuario.addEventListener('input', pintarFuerza);
+    pass2.addEventListener('input', pintarCoincidencia);
+
+    // Al corregir un campo con error, se quita el borde rojo.
+    form.querySelectorAll('.campo-registro[aria-invalid="true"]').forEach(function (campo) {
+        campo.addEventListener('input', function () {
+            campo.classList.remove('ring-red-500/70');
+            campo.classList.add('ring-gray-600');
+            campo.removeAttribute('aria-invalid');
+        }, { once: true });
+    });
+
+    // Validación nativa del navegador (novalidate evita los globos por defecto; los mostramos nosotros)
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            const primero = form.querySelector(':invalid');
+            if (primero) {
+                primero.focus();
+                mostrarToast(primero.type === 'checkbox' ? 'Marca las casillas para continuar.' : 'Completa todos los campos.', 'error');
+            }
+            return;
+        }
+        const boton = document.getElementById('btn-registro');
+        boton.disabled = true;
+        boton.querySelector('.spinner-registro').classList.remove('hidden');
+        boton.querySelector('.flecha-registro').classList.add('hidden');
+        boton.querySelector('.texto-registro').textContent = 'Creando tu cuenta…';
+    });
+
+    if (pass1.value) pintarFuerza();
+})();
+</script>
 {% endblock %}

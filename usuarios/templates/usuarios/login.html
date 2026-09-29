@@ -1,4 +1,5 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
+{% load static %} 
 {% block title %} Iniciar Sesión {% endblock %} 
 
 {% block content %}
@@ -7,7 +8,7 @@
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 </style>
-<div class="min-h-screen flex items-center justify-center relative bg-gray-950 bg-cover bg-center" style="background-image: url('/static/img/LoginImageBackground.png');">
+<div class="min-h-screen flex items-center justify-center relative bg-gray-950 bg-cover bg-center" style="background-image: url('{% static 'img/LoginImageBackground.webp' %}');">
 
   <div class="absolute inset-0 bg-black/70 z-0"></div>
 

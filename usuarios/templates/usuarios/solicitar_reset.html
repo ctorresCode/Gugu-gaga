@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %} Recuperar contraseña {% endblock %}
 
 {% block content %}
 <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
 </style>
-<div class="min-h-screen flex items-center justify-center relative bg-gray-950 bg-cover bg-center py-10" style="background-image: url('/static/img/LoginImageBackground.png');">
+<div class="min-h-screen flex items-center justify-center relative bg-gray-950 bg-cover bg-center py-10" style="background-image: url('{% static 'img/LoginImageBackground.webp' %}');">
   <div class="absolute inset-0 bg-black/70 z-0"></div>
 
   <div class="w-full max-w-[92%] sm:max-w-md bg-[#0f172a] p-8 sm:p-10 rounded-2xl shadow-2xl relative z-10 border border-gray-700">
